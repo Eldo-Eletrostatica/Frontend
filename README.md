@@ -15,9 +15,11 @@ Frontend do site whitelabel da Eldo Eletrostática (empresa de pintura eletrost�
 
 ## Requisitos
 
-- Node.js 20+
-- npm
-- Docker e Docker Compose (opcional, para rodar containerizado)
+- Docker e Docker Compose
+
+Rodar via Docker é a forma padrão de desenvolvimento deste projeto, garantindo o mesmo ambiente (versão do Node, dependências) entre todos os desenvolvedores.
+
+Node.js 20+ e npm só são necessários se você optar por rodar localmente sem Docker (ver seção abaixo).
 
 ## Configuração
 
@@ -33,7 +35,15 @@ Variáveis disponíveis (`.env.example`):
 | --- | --- |
 | `NEXT_PUBLIC_API_URL` | URL base da API do backend (NestJS) |
 
-## Rodando localmente
+## Rodando com Docker (padrão)
+
+```bash
+docker compose up --build
+```
+
+Acesse [http://localhost:3000](http://localhost:3000). O serviço sobe no estágio `dev` do `Dockerfile`, com hot-reload via volume montado.
+
+## Rodando localmente sem Docker (alternativa)
 
 ```bash
 npm install
@@ -41,14 +51,6 @@ npm run dev
 ```
 
 Acesse [http://localhost:3000](http://localhost:3000).
-
-## Rodando com Docker
-
-```bash
-docker compose up --build
-```
-
-Acesse [http://localhost:3000](http://localhost:3000). O serviço sobe no estágio `dev` do `Dockerfile`, com hot-reload via volume montado.
 
 ## Scripts
 
