@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { apiRequest } from "@/lib/api/client";
+import { sendApiRequest } from "@/lib/api/client";
 
 export type Role = "admin" | "manager" | "employee";
 
@@ -47,7 +47,7 @@ function hasCsrfCookie(): boolean {
 async function fetchCurrentUser(): Promise<AuthenticatedEmployee | null> {
   if (!hasCsrfCookie()) return null;
   try {
-    return await apiRequest<AuthenticatedEmployee>("/auth/me");
+    return await sendApiRequest<AuthenticatedEmployee>("/auth/me");
   } catch {
     // An expired session (401) or an unreachable API both mean signed out.
     return null;
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { employee } = await apiRequest<LoginResponse>("/auth/login", {
+    const { employee } = await sendApiRequest<LoginResponse>("/auth/login", {
       method: "POST",
       body: { email, password },
     });
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await apiRequest<void>("/auth/logout", { method: "POST" });
+      await sendApiRequest<void>("/auth/logout", { method: "POST" });
     } finally {
       setState({ currentUser: null, hasLoaded: true });
     }
