@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { AlertTriangle, ArrowRight, Calculator, Check, ChevronDown, FileText, Upload } from "lucide-react";
 import { usePricing, calcEstimate } from "../../lib/pricingContext";

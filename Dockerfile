@@ -19,6 +19,13 @@ CMD ["npm", "run", "dev"]
 # ---- builder: gera o build de produção ----
 FROM base AS builder
 ENV NODE_ENV=production
+# next build writes the /api rewrite and the allowed image host into the
+# build output, so both URLs must be known here, not only when the container
+# runs: docker build --build-arg API_URL=... --build-arg STORAGE_PUBLIC_URL=...
+ARG API_URL
+ARG STORAGE_PUBLIC_URL
+ENV API_URL=$API_URL
+ENV STORAGE_PUBLIC_URL=$STORAGE_PUBLIC_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

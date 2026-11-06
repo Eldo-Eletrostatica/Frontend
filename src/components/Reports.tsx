@@ -1,6 +1,8 @@
+"use client";
+
 import { useState } from "react";
 import { FileDown, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react";
-import type { Role } from "../App";
+import type { Role } from "@/lib/demoSession";
 
 interface ReportTemplate {
   id: string;

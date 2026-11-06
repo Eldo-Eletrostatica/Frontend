@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { ArrowLeft, Clock, CheckCircle2, Circle, ChevronRight } from "lucide-react";
 import type { ServiceOrder, ServiceStatus } from "../lib/servicesContext";
@@ -143,7 +145,7 @@ function OrderCard({ order, expanded, onToggle }: { order: ServiceOrder; expande
   );
 }
 
-export default function ClientPortal({ orders, clientName, onBack }: Props) {
+export default function TrackingResult({ orders, clientName, onBack }: Props) {
   const [expanded, setExpanded] = useState<number | null>(orders[0]?.id ?? null);
 
   const active = orders.filter((o) => o.status !== "concluido");
@@ -161,7 +163,7 @@ export default function ClientPortal({ orders, clientName, onBack }: Props) {
               <span className="text-[11px] tracking-[2px]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>SAIR</span>
             </button>
             <div className="w-px h-4 bg-[rgba(245,242,236,0.15)]" />
-            <EldoLogo imageClassName="w-[30px] h-[30px]" subtitle="ÁREA DO CLIENTE" />
+            <EldoLogo imageClassName="w-[30px] h-[30px]" subtitle="ACOMPANHAR SERVIÇO" />
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400" />

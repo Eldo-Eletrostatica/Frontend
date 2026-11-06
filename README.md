@@ -33,7 +33,8 @@ Variáveis disponíveis (`.env.example`):
 
 | Variável | Descrição |
 | --- | --- |
-| `NEXT_PUBLIC_API_URL` | URL base da API do backend (NestJS) |
+| `API_URL` | URL do Backend, usada só no servidor do Next. O navegador chama a API pelo proxy `/api` do próprio site (ADR 0007). Com o Docker Compose, `http://host.docker.internal:3001`; sem Docker, `http://localhost:3001` |
+| `STORAGE_PUBLIC_URL` | URL pública do bucket de imagens, liberada para o `next/image` (`http://localhost:8333/eldo` no desenvolvimento; em produção, a URL pública do Cloudflare R2) |
 
 ## Rodando com Docker (padrão)
 
@@ -43,12 +44,42 @@ docker compose up --build
 
 Acesse [http://localhost:3000](http://localhost:3000). O serviço sobe no estágio `dev` do `Dockerfile`, com hot-reload via volume montado.
 
+Depois de puxar uma mudança no `package.json`, recrie o container com `docker compose up -d --build -V`. O `node_modules` fica num volume anônimo, e sem o `-V` o container continua com as dependências antigas (erro como `Cannot find module '@tailwindcss/postcss'`).
+
+O `npm run build` precisa de `NODE_ENV=production`. Dentro do container de desenvolvimento, que define `NODE_ENV=development`, rode `docker compose run --rm -e NODE_ENV=production frontend npm run build`.
+
+## Rotas
+
+| Rota | Tela |
+| --- | --- |
+| `/` | Página inicial: portfólio, avaliações e contato PF |
+| `/eventos` | Ações e eventos |
+| `/solicitar-orcamento` | Orçamento PJ |
+| `/acompanhar-servico` | Consulta da OS pelo CNPJ ou pelo protocolo |
+| `/area-interna/login` | Login dos funcionários |
+| `/area-interna/...` | Área interna: dashboard, relatórios, serviços, estoque, vendas, funcionários e editor do site |
+
+O site público não tem link para a área interna: os funcionários entram pelo endereço. A `/area-interna` fica fora dos buscadores (`noindex` e `robots.txt`). A proteção de verdade está no login e nos guards do Backend.
+
+Enquanto a integração da US09 não entra, o login ainda é o do protótipo: qualquer e-mail entra, e o nível de acesso sai do texto digitado (com `admin`, administrador; com `gestor`, gestor; os demais, funcionário).
+
+## Chamadas à API
+
+> [!IMPORTANT]
+> A `API_URL` e a `STORAGE_PUBLIC_URL` valem no **build**, e não só quando o servidor sobe: o `next build` grava o repasse do `/api` e o host liberado das imagens no resultado. Para a imagem de produção, passe as duas no build: `docker build --target prod --build-arg API_URL=... --build-arg STORAGE_PUBLIC_URL=... .`. Mudar a variável só no `docker run` não tem efeito.
+
+O navegador nunca chama o Backend direto. Uma requisição para `/api/<rota>` no site é repassada pelo Next para `<API_URL>/<rota>` (rewrites no `next.config.ts`), então o cookie da sessão é do próprio site (ADR 0007). Para o container do Frontend alcançar o Backend do host, o `docker-compose.yml` mapeia `host.docker.internal`.
+
 ## Rodando localmente sem Docker (alternativa)
+
+Fora do container, `host.docker.internal` não existe. No `.env`, troque a `API_URL` por `http://localhost:3001`:
 
 ```bash
 npm install
 npm run dev
 ```
+
+O Frontend usa a porta 3000. Se o Backend também rodar sem Docker, suba ele na 3001 (`PORT=3001` no `.env` do Backend), porque o padrão dele também é a 3000.
 
 Acesse [http://localhost:3000](http://localhost:3000).
 

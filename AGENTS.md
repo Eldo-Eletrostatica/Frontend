@@ -88,6 +88,7 @@ Single-context: `GLOSSARY.md` na raiz de cada repo; as ADRs ficam só no repo `D
 
 - Rotas do App Router em `src/app`. O nome da pasta vira a URL que o visitante vê, então segue o texto exibido: português, em kebab-case (`src/app/solicitar-orcamento`).
 - Componentes React em arquivos PascalCase com o mesmo nome do componente (`PortfolioGallery.tsx`).
-- A API do Backend fica em `NEXT_PUBLIC_API_URL` (`.env`), que aponta para `localhost:3001` em desenvolvimento.
+- O navegador chama a API só por `/api/...`, que o Next repassa ao Backend (ADR 0007). A URL do Backend fica em `API_URL` (`.env`), lida só no servidor; não crie variável `NEXT_PUBLIC_` com a URL da API.
+- Os caminhos das rotas ficam em `src/lib/routes.ts`; use `ROUTES` em vez de escrever a URL no componente.
 - A pasta `legacy/` guarda o site estático antigo, como referência de conteúdo e imagens. O código novo vive em `src/`.
 - Antes de dar uma tarefa por pronta, rode `npm run lint`.

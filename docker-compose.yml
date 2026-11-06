@@ -8,6 +8,9 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    # Lets the container reach the Backend published on the host (port 3001).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
       - /app/node_modules

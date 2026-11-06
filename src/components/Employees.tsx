@@ -1,21 +1,32 @@
+"use client";
+
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
-import type { Employee, Role } from "../App";
+import type { Role } from "@/lib/demoSession";
+
+interface Employee {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  status: "ativo" | "inativo";
+  lastAccess: string;
+}
 
 const INITIAL: Employee[] = [
   { id: 1, name: "Carlos Andrade", email: "carlos.andrade@eldo.com.br", role: "admin", status: "ativo", lastAccess: "12/09/2025 09:41" },
-  { id: 2, name: "Fernanda Lopes", email: "fernanda.lopes@eldo.com.br", role: "gestor", status: "ativo", lastAccess: "11/09/2025 16:20" },
-  { id: 3, name: "Ricardo Melo", email: "ricardo.melo@eldo.com.br", role: "funcionario", status: "ativo", lastAccess: "10/09/2025 08:05" },
-  { id: 4, name: "Aline Souza", email: "aline.souza@eldo.com.br", role: "gestor", status: "inativo", lastAccess: "28/08/2025 14:30" },
-  { id: 5, name: "Thiago Pires", email: "thiago.pires@eldo.com.br", role: "funcionario", status: "ativo", lastAccess: "12/09/2025 07:58" },
+  { id: 2, name: "Fernanda Lopes", email: "fernanda.lopes@eldo.com.br", role: "manager", status: "ativo", lastAccess: "11/09/2025 16:20" },
+  { id: 3, name: "Ricardo Melo", email: "ricardo.melo@eldo.com.br", role: "employee", status: "ativo", lastAccess: "10/09/2025 08:05" },
+  { id: 4, name: "Aline Souza", email: "aline.souza@eldo.com.br", role: "manager", status: "inativo", lastAccess: "28/08/2025 14:30" },
+  { id: 5, name: "Thiago Pires", email: "thiago.pires@eldo.com.br", role: "employee", status: "ativo", lastAccess: "12/09/2025 07:58" },
 ];
 
-const ROLE_LABELS: Record<Role, string> = { admin: "Administrador", gestor: "Gestor", funcionario: "Funcionário" };
+const ROLE_LABELS: Record<Role, string> = { admin: "Administrador", manager: "Gestor", employee: "Funcionário" };
 
 type ModalMode = "add" | "edit" | null;
 
-const EMPTY: Omit<Employee, "id" | "lastAccess"> = { name: "", email: "", role: "funcionario", status: "ativo" };
+const EMPTY: Omit<Employee, "id" | "lastAccess"> = { name: "", email: "", role: "employee", status: "ativo" };
 
 export default function Employees() {
   const [employees, setEmployees] = useState<Employee[]>(INITIAL);
@@ -221,8 +232,8 @@ export default function Employees() {
                     className="input-base"
                     style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
                   >
-                    <option value="funcionario">Funcionário</option>
-                    <option value="gestor">Gestor</option>
+                    <option value="employee">Funcionário</option>
+                    <option value="manager">Gestor</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </Field>
@@ -247,7 +258,7 @@ export default function Employees() {
                 <p className="text-[13px] text-[rgba(245,242,236,0.55)] leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                   {form.role === "admin"
                     ? "Acesso total: dashboard, relatórios, gestão de funcionários e configurações do sistema."
-                    : form.role === "gestor"
+                    : form.role === "manager"
                     ? "Acesso ao dashboard e exportação de relatórios. Sem acesso à gestão de funcionários."
                     : "Acesso básico à área interna. Sem dashboard, relatórios ou gestão de equipe."}
                 </p>
@@ -310,8 +321,8 @@ export default function Employees() {
 function RoleTag({ role }: { role: Role }) {
   const colors: Record<Role, string> = {
     admin: "bg-[#e9b421] text-[#12100d]",
-    gestor: "bg-[rgba(233,180,33,0.18)] text-[#e9b421]",
-    funcionario: "bg-[rgba(245,242,236,0.08)] text-[rgba(245,242,236,0.6)]",
+    manager: "bg-[rgba(233,180,33,0.18)] text-[#e9b421]",
+    employee: "bg-[rgba(245,242,236,0.08)] text-[rgba(245,242,236,0.6)]",
   };
   return (
     <span
