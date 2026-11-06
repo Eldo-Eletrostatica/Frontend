@@ -80,7 +80,7 @@ export default function LandingPage() {
                 {content.landing.heroDescription}
               </p>
               <div className="flex flex-wrap gap-3">
-                <button onClick={() => router.push(ROUTES.quoteRequest)}
+                <button onClick={() => router.push(ROUTES.quote)}
                   className="flex items-center gap-2 h-[52px] px-8 rounded-full bg-[#e9b421] text-[#12100d] text-[14px] hover:opacity-90 transition-opacity"
                   style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
                   Solicitar Orçamento <ArrowRight size={16} />
@@ -334,7 +334,7 @@ export default function LandingPage() {
               <p className="text-[12px] text-[rgba(245,242,236,0.4)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                 Para volumes maiores ou empresas, use o simulador de orçamento PJ — com cálculo automático por m² e tipo de material.
               </p>
-              <button onClick={() => router.push(ROUTES.quoteRequest)}
+              <button onClick={() => router.push(ROUTES.quote)}
                 className="flex items-center gap-2 mt-3 text-[12px] text-[#e9b421] hover:opacity-80 transition-opacity"
                 style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                 Solicitar Orçamento <ArrowRight size={13} />

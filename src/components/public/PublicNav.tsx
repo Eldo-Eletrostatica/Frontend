@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import logoImg from "@/imports/image.png";
 import { ROUTES } from "@/lib/routes";
 import { PUBLIC_LINKS } from "./publicLinks";
@@ -11,16 +11,15 @@ import { PUBLIC_LINKS } from "./publicLinks";
 export default function PublicNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  function navigate(href: string) {
+  // Link does the navigation; clicking the current page only scrolls back up.
+  function handleNavigate(href: string) {
     if (href === pathname) window.scrollTo({ top: 0, behavior: "smooth" });
-    router.push(href);
     setOpen(false);
   }
 
@@ -36,7 +35,7 @@ export default function PublicNav() {
       >
         <div className="max-w-[1240px] mx-auto px-5 h-[64px] flex items-center justify-between">
           {/* Logo */}
-          <button onClick={() => navigate(ROUTES.home)} className="flex items-center gap-3 flex-shrink-0">
+          <Link href={ROUTES.home} onClick={() => handleNavigate(ROUTES.home)} className="flex items-center gap-3 flex-shrink-0">
             <div className="w-[36px] h-[36px] flex items-center justify-center overflow-hidden flex-shrink-0">
               <img
                 src={logoImg.src}
@@ -49,16 +48,16 @@ export default function PublicNav() {
               <p className="text-[#f5f2ec] text-[13px] tracking-[2.1px] leading-tight" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>ELDO</p>
               <p className="text-[rgba(245,242,236,0.5)] text-[8px] tracking-[2.4px]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>PINTURA ELETROSTÁTICA</p>
             </div>
-          </button>
+          </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
             {PUBLIC_LINKS.map((l) => (
-              <button key={l.href} onClick={() => navigate(l.href)}
+              <Link key={l.href} href={l.href} onClick={() => handleNavigate(l.href)}
                 className={`text-[13px] transition-colors ${pathname === l.href ? "text-[#e9b421]" : "text-[rgba(245,242,236,0.65)] hover:text-[rgba(245,242,236,0.95)]"}`}
                 style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                 {l.label}
-              </button>
+              </Link>
             ))}
           </nav>
 
@@ -97,7 +96,7 @@ export default function PublicNav() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Logo in drawer */}
-            <button onClick={() => navigate(ROUTES.home)} className="w-full flex items-center gap-3 px-6 pt-8 pb-6 border-b border-[rgba(245,242,236,0.08)] text-left">
+            <Link href={ROUTES.home} onClick={() => handleNavigate(ROUTES.home)} className="w-full flex items-center gap-3 px-6 pt-8 pb-6 border-b border-[rgba(245,242,236,0.08)] text-left">
               <div className="w-[42px] h-[42px] overflow-hidden flex-shrink-0">
                 <img src={logoImg.src} alt="Eldo" className="w-full h-full object-contain"
                   style={{ filter: "invert(1)", mixBlendMode: "screen" }} />
@@ -106,12 +105,12 @@ export default function PublicNav() {
                 <p className="text-[#f5f2ec] text-[13px] tracking-[2px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>ELDO</p>
                 <p className="text-[rgba(245,242,236,0.4)] text-[9px] tracking-[2px]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>PINTURA ELETROSTÁTICA</p>
               </div>
-            </button>
+            </Link>
 
             {/* Nav links */}
             <nav className="flex flex-col px-4 pt-4 pb-4 gap-1 border-b border-[rgba(245,242,236,0.08)]">
               {PUBLIC_LINKS.map((l) => (
-                <button key={l.href} onClick={() => navigate(l.href)}
+                <Link key={l.href} href={l.href} onClick={() => handleNavigate(l.href)}
                   className={`flex items-center justify-between h-[52px] px-4 text-[15px] transition-colors ${
                     pathname === l.href
                       ? "text-[#e9b421] bg-[rgba(233,180,33,0.06)]"
@@ -120,22 +119,22 @@ export default function PublicNav() {
                   style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                   {l.label}
                   {pathname === l.href && <span className="w-1.5 h-1.5 rounded-full bg-[#e9b421]" />}
-                </button>
+                </Link>
               ))}
             </nav>
 
             <div className="flex flex-col px-6 pt-6 gap-3">
-              <button onClick={() => navigate(ROUTES.tracking)}
+              <Link href={ROUTES.tracking} onClick={() => handleNavigate(ROUTES.tracking)}
                 className="flex items-center gap-2 h-[48px] px-4 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] text-[13px] hover:border-[#e9b421] hover:text-[#e9b421] transition-all"
                 style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                 Acompanhar serviço
-              </button>
+              </Link>
 
-              <button onClick={() => navigate(ROUTES.quoteRequest)}
+              <Link href={ROUTES.quote} onClick={() => handleNavigate(ROUTES.quote)}
                 className="h-[48px] rounded-full bg-[#e9b421] text-[#12100d] text-[14px] hover:opacity-90 transition-opacity"
                 style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
                 Solicitar Orçamento
-              </button>
+              </Link>
             </div>
           </div>
         </div>

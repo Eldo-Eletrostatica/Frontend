@@ -2,7 +2,7 @@
 export const ROUTES = {
   home: "/",
   events: "/eventos",
-  quoteRequest: "/solicitar-orcamento",
+  quote: "/solicitar-orcamento",
   tracking: "/acompanhar-servico",
   internalArea: "/area-interna",
   internalLogin: "/area-interna/login",

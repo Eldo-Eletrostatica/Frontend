@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 
-export type Role = "admin" | "gestor" | "funcionario";
+export type Role = "admin" | "manager" | "employee";
 
 export interface CurrentUser {
   name: string;
@@ -33,7 +33,7 @@ const DemoSessionContext = createContext<DemoSessionValue>({
 });
 
 function userFromEmail(email: string): CurrentUser {
-  const role: Role = email.includes("admin") ? "admin" : email.includes("gestor") ? "gestor" : "funcionario";
+  const role: Role = email.includes("admin") ? "admin" : email.includes("gestor") ? "manager" : "employee";
   return { name: email.split("@")[0].replace(".", " "), role };
 }
 
@@ -60,20 +60,43 @@ function writeStoredUser(user: CurrentUser | null) {
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
+const ROLES: readonly Role[] = ["admin", "manager", "employee"];
+
+// The provider wraps the whole site, so a stored value it cannot read (edited
+// by hand, or saved with an older role name) counts as signed out instead of
+// breaking every page.
+function parseStoredUser(storedUser: string): CurrentUser | null {
+  try {
+    const user = JSON.parse(storedUser) as Partial<CurrentUser>;
+    return typeof user.name === "string" && ROLES.includes(user.role as Role)
+      ? { name: user.name, role: user.role as Role }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function signIn(email: string) {
+  writeStoredUser(userFromEmail(email));
+}
+
+function signOut() {
+  writeStoredUser(null);
+}
+
 export function DemoSessionProvider({ children }: { children: ReactNode }) {
   const storedUser = useSyncExternalStore(subscribe, readStoredUser, () => NOT_LOADED);
   const hasLoaded = storedUser !== NOT_LOADED;
-  const currentUser = useMemo(
-    () => (hasLoaded && storedUser ? (JSON.parse(storedUser) as CurrentUser) : null),
+
+  const value = useMemo<DemoSessionValue>(
+    () => ({
+      currentUser: hasLoaded && storedUser ? parseStoredUser(storedUser) : null,
+      hasLoaded,
+      signIn,
+      signOut,
+    }),
     [hasLoaded, storedUser],
   );
-
-  const value: DemoSessionValue = {
-    currentUser,
-    hasLoaded,
-    signIn: (email) => writeStoredUser(userFromEmail(email)),
-    signOut: () => writeStoredUser(null),
-  };
 
   return <DemoSessionContext.Provider value={value}>{children}</DemoSessionContext.Provider>;
 }

@@ -11,16 +11,16 @@ import EldoLogo from "./EldoLogo";
 interface NavItem { href: string; label: string; icon: React.ReactNode; roles: Role[]; group: string; }
 
 const NAV: NavItem[] = [
-  { href: ROUTES.dashboard,     label: "Dashboard",     icon: <LayoutDashboard size={16} />, roles: ["admin","gestor"],               group: "Análise" },
-  { href: ROUTES.reports,       label: "Relatórios",    icon: <FileBarChart2 size={16} />,   roles: ["admin","gestor"],               group: "Análise" },
-  { href: ROUTES.serviceOrders, label: "Serviços",      icon: <Wrench size={16} />,          roles: ["admin","gestor","funcionario"], group: "Operação" },
-  { href: ROUTES.inventory,     label: "Estoque",       icon: <Package size={16} />,         roles: ["admin","gestor","funcionario"], group: "Operação" },
-  { href: ROUTES.sales,         label: "Vendas",        icon: <ShoppingBag size={16} />,     roles: ["admin","gestor","funcionario"], group: "Comercial" },
+  { href: ROUTES.dashboard,     label: "Dashboard",     icon: <LayoutDashboard size={16} />, roles: ["admin","manager"],               group: "Análise" },
+  { href: ROUTES.reports,       label: "Relatórios",    icon: <FileBarChart2 size={16} />,   roles: ["admin","manager"],               group: "Análise" },
+  { href: ROUTES.serviceOrders, label: "Serviços",      icon: <Wrench size={16} />,          roles: ["admin","manager","employee"], group: "Operação" },
+  { href: ROUTES.inventory,     label: "Estoque",       icon: <Package size={16} />,         roles: ["admin","manager","employee"], group: "Operação" },
+  { href: ROUTES.sales,         label: "Vendas",        icon: <ShoppingBag size={16} />,     roles: ["admin","manager","employee"], group: "Comercial" },
   { href: ROUTES.employees,     label: "Funcionários",  icon: <Users size={16} />,           roles: ["admin"],                        group: "Admin" },
   { href: ROUTES.siteEditor,    label: "Editor do site",icon: <Palette size={16} />,         roles: ["admin"],                        group: "Admin" },
 ];
 
-const ROLE_LABEL: Record<Role, string> = { admin: "Administrador", gestor: "Gestor", funcionario: "Funcionário" };
+const ROLE_LABEL: Record<Role, string> = { admin: "Administrador", manager: "Gestor", employee: "Funcionário" };
 
 // Hiding a screen here only spares the employee a refusal: the Backend
 // guards decide what each role can really do.

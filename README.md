@@ -65,14 +65,21 @@ Enquanto a integração da US09 não entra, o login ainda é o do protótipo: qu
 
 ## Chamadas à API
 
+> [!IMPORTANT]
+> A `API_URL` e a `STORAGE_PUBLIC_URL` valem no **build**, e não só quando o servidor sobe: o `next build` grava o repasse do `/api` e o host liberado das imagens no resultado. Para a imagem de produção, passe as duas no build: `docker build --target prod --build-arg API_URL=... --build-arg STORAGE_PUBLIC_URL=... .`. Mudar a variável só no `docker run` não tem efeito.
+
 O navegador nunca chama o Backend direto. Uma requisição para `/api/<rota>` no site é repassada pelo Next para `<API_URL>/<rota>` (rewrites no `next.config.ts`), então o cookie da sessão é do próprio site (ADR 0007). Para o container do Frontend alcançar o Backend do host, o `docker-compose.yml` mapeia `host.docker.internal`.
 
 ## Rodando localmente sem Docker (alternativa)
+
+Fora do container, `host.docker.internal` não existe. No `.env`, troque a `API_URL` por `http://localhost:3001`:
 
 ```bash
 npm install
 npm run dev
 ```
+
+O Frontend usa a porta 3000. Se o Backend também rodar sem Docker, suba ele na 3001 (`PORT=3001` no `.env` do Backend), porque o padrão dele também é a 3000.
 
 Acesse [http://localhost:3000](http://localhost:3000).
 
