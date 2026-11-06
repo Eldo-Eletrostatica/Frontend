@@ -14,7 +14,7 @@ const ESTIMATOR_UNAVAILABLE: EstimatorOptions = { isEnabled: false, paintTypes: 
 
 async function loadEstimatorOptions(): Promise<EstimatorOptions> {
   try {
-    return await fetchPublicData<EstimatorOptions>("/quotes/estimator", CACHE_TAGS.estimator);
+    return await fetchPublicData<EstimatorOptions>("/quotes/estimator", CACHE_TAGS.quoteEstimator);
   } catch (error) {
     console.error("Falha ao carregar as opções do simulador de orçamento", error);
     return ESTIMATOR_UNAVAILABLE;

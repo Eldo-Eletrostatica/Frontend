@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, Calculator, Check, ChevronDown, FileText, Plus, Trash2, Upload } from "lucide-react";
-import { apiRequest } from "@/lib/api/client";
+import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
 import {
   buildEstimatedQuote,
@@ -105,7 +105,7 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
     const { errors, payload } = buildPdfQuote(customer, pdfFields);
     if (!startSubmit("pdf", errors) || !payload) return;
     try {
-      await apiRequest<Quote>("/quotes/pdf", { method: "POST", formData: payload });
+      await sendApiRequest<Quote>("/quotes/pdf", { method: "POST", formData: payload });
       setSentPdfName(pdfFields.file?.name ?? "");
       setPdfFields({ file: null, dueDate: "", notes: "" });
     } catch (error) {
@@ -120,7 +120,7 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
     const { errors, payload } = buildEstimatedQuote(customer, estimatorFields);
     if (!startSubmit("estimator", errors) || !payload) return;
     try {
-      setEstimatedQuote(await apiRequest<Quote>("/quotes/estimator", { method: "POST", body: payload }));
+      setEstimatedQuote(await sendApiRequest<Quote>("/quotes/estimator", { method: "POST", body: payload }));
     } catch (error) {
       setSubmitError({ path: "estimator", message: toErrorMessage(error) });
     } finally {

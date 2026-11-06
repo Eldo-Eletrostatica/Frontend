@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { apiRequest } from "@/lib/api/client";
+import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
 import {
   SERVICE_ORDER_STATUS_DESCRIPTIONS,
@@ -32,11 +32,11 @@ function normalizeTrackingCode(value: string): string {
 async function searchTracking(mode: SearchMode, value: string): Promise<TrackingLookup | null> {
   if (mode === "trackingCode") {
     const trackingCode = normalizeTrackingCode(value);
-    const serviceOrder = await apiRequest<ServiceOrderTracking>(`/service-orders/tracking/${encodeURIComponent(trackingCode)}`);
+    const serviceOrder = await sendApiRequest<ServiceOrderTracking>(`/service-orders/tracking/${encodeURIComponent(trackingCode)}`);
     return { kind: "trackingCode", serviceOrder };
   }
   const cnpj = value.trim();
-  const serviceOrders = await apiRequest<ServiceOrderProgress[]>(`/service-orders/tracking?cnpj=${encodeURIComponent(cnpj)}`);
+  const serviceOrders = await sendApiRequest<ServiceOrderProgress[]>(`/service-orders/tracking?cnpj=${encodeURIComponent(cnpj)}`);
   return serviceOrders.length > 0 ? { kind: "cnpj", cnpj, serviceOrders } : null;
 }
 
