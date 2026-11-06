@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import { apiRequest } from "@/lib/api/client";
+import { sendApiRequest } from "@/lib/api/client";
 import type { GoogleReview, GoogleReviews } from "./publicContent";
 
 type ReviewsState =
@@ -32,7 +32,7 @@ function useGoogleReviewsWhenVisible() {
       if (!entries.some((entry) => entry.isIntersecting) || hasRequestedRef.current) return;
       hasRequestedRef.current = true;
       observer.disconnect();
-      apiRequest<GoogleReviews>("/reviews")
+      sendApiRequest<GoogleReviews>("/reviews")
         .then((data) => setState(data.isAvailable ? { status: "loaded", data } : { status: "unavailable" }))
         .catch(() => setState({ status: "unavailable" }));
     }, { rootMargin: PRELOAD_MARGIN });

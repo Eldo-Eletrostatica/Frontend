@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
-import { apiRequest } from "@/lib/api/client";
+import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
 
 // Same limits as the Backend contact request DTO.
@@ -64,7 +64,7 @@ export default function ContactRequestForm() {
 
     setIsSubmitting(true);
     try {
-      await apiRequest("/contact-requests", {
+      await sendApiRequest("/contact-requests", {
         method: "POST",
         body: {
           name: fields.name.trim(),
