@@ -12,7 +12,7 @@ export class ApiError extends Error {
 
 const FALLBACK_MESSAGE = "Não foi possível concluir a operação. Tente novamente.";
 
-export async function toApiError(response: Response): Promise<ApiError> {
+export async function parseApiError(response: Response): Promise<ApiError> {
   try {
     const body = (await response.json()) as { message?: unknown };
     const message = Array.isArray(body.message) ? body.message.join(" ") : body.message;
@@ -22,9 +22,7 @@ export async function toApiError(response: Response): Promise<ApiError> {
   }
 }
 
-export async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) throw await toApiError(response);
-  // 204 No Content, such as the logout.
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
-}
+// Alias for backward compatibility.
+export const toApiError = parseApiError;
+
+export { readJson } from "./response";

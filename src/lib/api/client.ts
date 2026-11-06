@@ -1,6 +1,6 @@
 "use client";
 
-import { readJson } from "./ApiError";
+import { readJson } from "./response";
 
 // Browser calls to the Backend, always through this site's /api proxy, so the
 // session cookie goes along (ADR 0007).
@@ -26,7 +26,7 @@ function readCookie(name: string): string | undefined {
   return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : undefined;
 }
 
-export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+export async function sendApiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const method = options.method ?? "GET";
   const headers = new Headers();
 
@@ -51,3 +51,6 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   });
   return readJson<T>(response);
 }
+
+// Alias for backward compatibility.
+export const apiRequest = sendApiRequest;
