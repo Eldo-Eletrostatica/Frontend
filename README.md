@@ -119,3 +119,4 @@ docker compose run --rm -e NODE_ENV=production frontend npm run build
 | `npm run build` | Gera o build de produção (com `NODE_ENV=production`) |
 | `npm run start` | Inicia o build de produção |
 | `npm run lint` | Executa o linter. Rode antes de dar uma tarefa por pronta |
+| `npm run typecheck` | Gera os tipos das rotas (`next typegen`) e checa os tipos com o `tsc`. Funciona num checkout limpo, sem precisar de um build antes |
