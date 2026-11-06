@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import { Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
+import { ApiError } from "@/lib/api/ApiError";
 import EldoLogo from "./EldoLogo";
 
+const UNEXPECTED_ERROR_MESSAGE = "Não foi possível entrar. Tente novamente.";
+
 interface Props {
-  onLogin: (email: string, password: string) => void;
+  // Rejects with an ApiError whose message is shown, such as the 401 and 429 ones.
+  onLogin: (email: string, password: string) => Promise<void>;
   onBack?: () => void;
 }
 
@@ -16,12 +20,17 @@ export default function LoginPage({ onLogin, onBack }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !password) { setError("Preencha e-mail e senha."); return; }
     setError("");
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(email, password); }, 600);
+    try {
+      await onLogin(email, password);
+    } catch (loginError) {
+      setError(loginError instanceof ApiError ? loginError.message : UNEXPECTED_ERROR_MESSAGE);
+      setLoading(false);
+    }
   }
 
   return (
@@ -72,8 +81,7 @@ export default function LoginPage({ onLogin, onBack }: Props) {
             </button>
           </form>
           <p className="mt-8 text-[13px] text-[rgba(245,242,236,0.4)] text-center leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-            Esqueceu a senha? Contate o administrador.<br />
-            <span className="opacity-60">Use admin@, gestor@ ou funcionario@ para testar</span>
+            Esqueceu a senha? Contate o administrador.
           </p>
         </div>
       </div>
