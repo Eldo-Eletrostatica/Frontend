@@ -51,6 +51,3 @@ export async function sendApiRequest<T>(path: string, options: ApiRequestOptions
   });
   return readJson<T>(response);
 }
-
-// Alias for backward compatibility.
-export const apiRequest = sendApiRequest;

@@ -21,8 +21,3 @@ export async function parseApiError(response: Response): Promise<ApiError> {
     return new ApiError(response.status, FALLBACK_MESSAGE);
   }
 }
-
-// Alias for backward compatibility.
-export const toApiError = parseApiError;
-
-export { readJson } from "./response";

@@ -2,7 +2,7 @@ import { readJson } from "./response";
 
 // Server Components call the Backend directly by API_URL, without the /api
 // proxy. Only for public data: these requests carry no visitor cookie.
-const API_URL = process.env.API_URL ?? "http://localhost:3001";
+export const API_URL = process.env.API_URL ?? "http://localhost:3001";
 
 // Tags of the public data the internal area changes; after a change, the
 // internal area revalidates the tag so the site shows it at once.
@@ -10,9 +10,7 @@ export const CACHE_TAGS = {
   visualSettings: "visual-settings",
   portfolioProjects: "portfolio-projects",
   companyEvents: "company-events",
-  quoteEstimator: "estimator",
-  // Alias for backward compatibility.
-  estimator: "estimator",
+  quoteEstimator: "quote-estimator",
 } as const;
 
 export type CacheTag = (typeof CACHE_TAGS)[keyof typeof CACHE_TAGS];
