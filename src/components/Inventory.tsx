@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, AlertTriangle, ArrowUp, ArrowDown, History, X, Package } from "lucide-react";

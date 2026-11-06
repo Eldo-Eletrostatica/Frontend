@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Eye, RotateCcw, Check, Palette, Image as ImageIcon, Type, CalendarDays, SlidersHorizontal, Upload, Plus, Trash2 } from "lucide-react";
 import { DEFAULT_SITE_CONTENT, useSiteContent, type SiteContent } from "../lib/siteContentContext";

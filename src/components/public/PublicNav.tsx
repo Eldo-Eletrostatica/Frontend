@@ -1,31 +1,26 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import type { PublicPage } from "./PublicSite";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import logoImg from "@/imports/image.png";
+import { ROUTES } from "@/lib/routes";
+import { PUBLIC_LINKS } from "./publicLinks";
 
-interface Props {
-  page: PublicPage;
-  setPage: (p: PublicPage) => void;
-  onGoInternal: () => void;
-  onGoClientArea: () => void;
-}
 
-const LINKS: { id: PublicPage; label: string }[] = [
-  { id: "home",       label: "Início" },
-  { id: "events",     label: "Eventos" },
-  { id: "contact-pj", label: "Solicitar Orçamento" },
-];
-
-export default function PublicNav({ page, setPage, onGoInternal, onGoClientArea }: Props) {
+export default function PublicNav() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  function navigate(p: PublicPage) {
-    if (p === page) window.scrollTo({ top: 0, behavior: "smooth" });
-    setPage(p);
+  function navigate(href: string) {
+    if (href === pathname) window.scrollTo({ top: 0, behavior: "smooth" });
+    router.push(href);
     setOpen(false);
   }
 
@@ -41,7 +36,7 @@ export default function PublicNav({ page, setPage, onGoInternal, onGoClientArea 
       >
         <div className="max-w-[1240px] mx-auto px-5 h-[64px] flex items-center justify-between">
           {/* Logo */}
-          <button onClick={() => navigate("home")} className="flex items-center gap-3 flex-shrink-0">
+          <button onClick={() => navigate(ROUTES.home)} className="flex items-center gap-3 flex-shrink-0">
             <div className="w-[36px] h-[36px] flex items-center justify-center overflow-hidden flex-shrink-0">
               <img
                 src={logoImg.src}
@@ -58,9 +53,9 @@ export default function PublicNav({ page, setPage, onGoInternal, onGoClientArea 
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
-            {LINKS.map((l) => (
-              <button key={l.id} onClick={() => navigate(l.id)}
-                className={`text-[13px] transition-colors ${page === l.id ? "text-[#e9b421]" : "text-[rgba(245,242,236,0.65)] hover:text-[rgba(245,242,236,0.95)]"}`}
+            {PUBLIC_LINKS.map((l) => (
+              <button key={l.href} onClick={() => navigate(l.href)}
+                className={`text-[13px] transition-colors ${pathname === l.href ? "text-[#e9b421]" : "text-[rgba(245,242,236,0.65)] hover:text-[rgba(245,242,236,0.95)]"}`}
                 style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                 {l.label}
               </button>
@@ -69,17 +64,11 @@ export default function PublicNav({ page, setPage, onGoInternal, onGoClientArea 
 
           {/* Right area */}
           <div className="flex items-center gap-2">
-            <button onClick={onGoClientArea}
+            <Link href={ROUTES.tracking}
               className="flex items-center gap-1.5 px-3 py-2 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] text-[11px] hover:border-[#e9b421] hover:text-[#e9b421] transition-all"
               style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
-              <span className="hidden sm:inline">Acompanhar OS</span>
-            </button>
-
-            <button onClick={onGoInternal}
-              className="hidden md:block text-[10px] tracking-[1.5px] text-[rgba(245,242,236,0.3)] hover:text-[rgba(245,242,236,0.6)] transition-colors ml-1"
-              style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
-              ÁREA INTERNA
-            </button>
+              <span className="hidden sm:inline">Acompanhar serviço</span>
+            </Link>
 
             {/* Hamburger */}
             <button
@@ -108,7 +97,7 @@ export default function PublicNav({ page, setPage, onGoInternal, onGoClientArea 
             onClick={(e) => e.stopPropagation()}
           >
             {/* Logo in drawer */}
-            <button onClick={() => navigate("home")} className="w-full flex items-center gap-3 px-6 pt-8 pb-6 border-b border-[rgba(245,242,236,0.08)] text-left">
+            <button onClick={() => navigate(ROUTES.home)} className="w-full flex items-center gap-3 px-6 pt-8 pb-6 border-b border-[rgba(245,242,236,0.08)] text-left">
               <div className="w-[42px] h-[42px] overflow-hidden flex-shrink-0">
                 <img src={logoImg.src} alt="Eldo" className="w-full h-full object-contain"
                   style={{ filter: "invert(1)", mixBlendMode: "screen" }} />
@@ -121,37 +110,31 @@ export default function PublicNav({ page, setPage, onGoInternal, onGoClientArea 
 
             {/* Nav links */}
             <nav className="flex flex-col px-4 pt-4 pb-4 gap-1 border-b border-[rgba(245,242,236,0.08)]">
-              {LINKS.map((l) => (
-                <button key={l.id} onClick={() => navigate(l.id)}
+              {PUBLIC_LINKS.map((l) => (
+                <button key={l.href} onClick={() => navigate(l.href)}
                   className={`flex items-center justify-between h-[52px] px-4 text-[15px] transition-colors ${
-                    page === l.id
+                    pathname === l.href
                       ? "text-[#e9b421] bg-[rgba(233,180,33,0.06)]"
                       : "text-[rgba(245,242,236,0.75)] hover:text-[#f5f2ec] hover:bg-[rgba(245,242,236,0.04)]"
                   }`}
                   style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                   {l.label}
-                  {page === l.id && <span className="w-1.5 h-1.5 rounded-full bg-[#e9b421]" />}
+                  {pathname === l.href && <span className="w-1.5 h-1.5 rounded-full bg-[#e9b421]" />}
                 </button>
               ))}
             </nav>
 
             <div className="flex flex-col px-6 pt-6 gap-3">
-              <button onClick={() => { onGoClientArea(); setOpen(false); }}
+              <button onClick={() => navigate(ROUTES.tracking)}
                 className="flex items-center gap-2 h-[48px] px-4 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] text-[13px] hover:border-[#e9b421] hover:text-[#e9b421] transition-all"
                 style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
-                Acompanhar OS
+                Acompanhar serviço
               </button>
 
-              <button onClick={() => navigate("contact-pj")}
+              <button onClick={() => navigate(ROUTES.quoteRequest)}
                 className="h-[48px] rounded-full bg-[#e9b421] text-[#12100d] text-[14px] hover:opacity-90 transition-opacity"
                 style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
                 Solicitar Orçamento
-              </button>
-
-              <button onClick={() => { onGoInternal(); setOpen(false); }}
-                className="h-[40px] text-[11px] tracking-[2px] text-[rgba(245,242,236,0.3)] hover:text-[rgba(245,242,236,0.6)] transition-colors"
-                style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
-                ÁREA INTERNA
               </button>
             </div>
           </div>

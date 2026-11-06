@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { useServices } from "../lib/servicesContext";
@@ -9,7 +11,7 @@ interface Props {
   onBack: () => void;
 }
 
-export default function ClientLogin({ onFound, onBack }: Props) {
+export default function TrackingSearch({ onFound, onBack }: Props) {
   const { orders } = useServices();
   const [mode, setMode] = useState<"cnpj" | "code">("cnpj");
   const [value, setValue] = useState("");
@@ -55,8 +57,8 @@ export default function ClientLogin({ onFound, onBack }: Props) {
         </button>
 
         <div>
-          <EldoLogo className="mb-10" imageClassName="w-[52px] h-[52px]" subtitle="ÁREA DO CLIENTE" />
-          <p className="text-[11px] tracking-[3px] text-[#e9b421] mb-4" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ELDO · ÁREA DO CLIENTE</p>
+          <EldoLogo className="mb-10" imageClassName="w-[52px] h-[52px]" subtitle="ACOMPANHAR SERVIÇO" />
+          <p className="text-[11px] tracking-[3px] text-[#e9b421] mb-4" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ELDO · ACOMPANHAR SERVIÇO</p>
           <h1 className="text-[40px] text-[#f5f2ec] leading-[1.1] tracking-[-1px] mb-6" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
             Acompanhe<br />seu serviço<br />em tempo real
           </h1>
@@ -89,8 +91,8 @@ export default function ClientLogin({ onFound, onBack }: Props) {
         </button>
 
         <div className="w-full max-w-[420px]">
-          <EldoLogo className="lg:hidden mb-10" imageClassName="w-[44px] h-[44px]" subtitle="ÁREA DO CLIENTE" />
-          <p className="text-[11px] tracking-[3px] text-[#e9b421] mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ÁREA DO CLIENTE</p>
+          <EldoLogo className="lg:hidden mb-10" imageClassName="w-[44px] h-[44px]" subtitle="ACOMPANHAR SERVIÇO" />
+          <p className="text-[11px] tracking-[3px] text-[#e9b421] mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ACOMPANHAR SERVIÇO</p>
           <h2 className="text-[32px] text-[#f5f2ec] tracking-[-0.5px] mb-2" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Consultar OS</h2>
           <p className="text-[14px] text-[rgba(245,242,236,0.45)] mb-10" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             Nenhum cadastro necessário — busque pelo CNPJ ou código.

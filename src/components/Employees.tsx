@@ -1,7 +1,18 @@
+"use client";
+
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
-import type { Employee, Role } from "../App";
+import type { Role } from "@/lib/demoSession";
+
+interface Employee {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  status: "ativo" | "inativo";
+  lastAccess: string;
+}
 
 const INITIAL: Employee[] = [
   { id: 1, name: "Carlos Andrade", email: "carlos.andrade@eldo.com.br", role: "admin", status: "ativo", lastAccess: "12/09/2025 09:41" },
