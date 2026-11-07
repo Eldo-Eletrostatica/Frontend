@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Check, Mail, MessageCircle, Phone, RotateCcw } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { sendApiRequest } from "@/lib/api/client";
@@ -46,7 +45,7 @@ const BRAZIL_COUNTRY_CODE = "55";
 // carry the country code.
 const MAX_NATIONAL_PHONE_DIGITS = 11;
 
-const dateFormatter = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
 
 function buildListPath(filter: StatusFilter): string {
   return filter === "all" ? "/contact-requests" : `/contact-requests?status=${filter}`;
@@ -56,8 +55,17 @@ function readPhoneDigits(phone: string): string {
   return phone.replace(/\D/g, "");
 }
 
+function cleanNationalPhoneDigits(digits: string): string {
+  if ((digits.length === 11 || digits.length === 12) && digits.startsWith("0")) {
+    return digits.slice(1);
+  }
+  return digits;
+}
+
 function buildWhatsAppUrl(phone: string): string {
-  const digits = readPhoneDigits(phone);
+  let digits = readPhoneDigits(phone);
+  if (!digits) return "#";
+  digits = cleanNationalPhoneDigits(digits);
   const hasCountryCode = digits.length > MAX_NATIONAL_PHONE_DIGITS && digits.startsWith(BRAZIL_COUNTRY_CODE);
   return `https://wa.me/${hasCountryCode ? digits : `${BRAZIL_COUNTRY_CODE}${digits}`}`;
 }
@@ -71,18 +79,17 @@ function readErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function ContactRequests() {
-  const router = useRouter();
   const [filter, setFilter] = useState<StatusFilter>("requested");
   const [reloadCount, setReloadCount] = useState(0);
   const [listState, setListState] = useState<ListState>({ kind: "loading" });
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState("");
 
-  // An expired session keeps the current screen in "next" to come back to it.
+  // An expired session navigates cleanly to login preserving the current destination.
   const redirectToLogin = useCallback(() => {
     const { pathname, search } = window.location;
-    router.replace(buildLoginPath(`${pathname}${search}`));
-  }, [router]);
+    window.location.assign(buildLoginPath(`${pathname}${search}`));
+  }, []);
 
   useEffect(() => {
     // Switching filters fast must not let an older answer overwrite a newer one.
@@ -136,6 +143,16 @@ export default function ContactRequests() {
       if (isUnauthorized(error)) {
         redirectToLogin();
         return;
+      }
+      if (error instanceof ApiError && error.status === 409) {
+        // A contact request that turned into a quote leaves this screen.
+        setListState((current) => {
+          if (current.kind !== "loaded") return current;
+          return {
+            kind: "loaded",
+            contactRequests: current.contactRequests.filter((item) => item.orderId !== contactRequest.orderId),
+          };
+        });
       }
       setUpdateError(readErrorMessage(error, UNEXPECTED_UPDATE_ERROR_MESSAGE));
     } finally {
@@ -248,7 +265,7 @@ function ContactRequestCard({ contactRequest, isUpdating, onChangeStatus }: Cont
           <StatusTag isHandled={isHandled} />
         </div>
         <p className="text-[12px] text-[rgba(245,242,236,0.4)] mb-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-          Recebido em {dateFormatter.format(new Date(contactRequest.createdAt))}
+          Recebido em {DATE_FORMATTER.format(new Date(contactRequest.createdAt))}
         </p>
         <p className="text-[14px] text-[rgba(245,242,236,0.75)] whitespace-pre-line break-words" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           {contactRequest.message}
