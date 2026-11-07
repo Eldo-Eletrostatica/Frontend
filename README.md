@@ -82,7 +82,10 @@ O Frontend usa a porta 3000. Se o Backend também rodar sem Docker, suba ele na 
 
 O site público não tem link para a área interna: os funcionários entram pelo endereço. A `/area-interna` fica fora dos buscadores (`noindex` e `robots.txt`). Cada tela aparece só para os níveis de acesso que podem usá-la, e quem não está logado vai para o login. A proteção de verdade está no login e nos guards do Backend.
 
-Enquanto a integração da US09 não entra, o login é o do protótipo: qualquer e-mail entra, e o nível de acesso sai do texto digitado (com `admin`, administrador; com `gestor`, gestor; os demais, funcionário).
+O login é autenticado diretamente pelo Backend via cookies `HttpOnly` (ADR 0007). Para testes locais com as contas padrão geradas pelo seed do Backend:
+- Administrador: `admin@eldo.com.br` / `Senha@123`
+- Gestor: `login.manager@eldo.com.br` / `Senha@123`
+- Funcionário: `login.employee@eldo.com.br` / `Senha@123`
 
 ## Chamadas à API
 

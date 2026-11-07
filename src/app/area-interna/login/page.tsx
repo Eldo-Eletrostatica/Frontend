@@ -12,15 +12,15 @@ const BLANK_SCREEN = <div className="min-h-screen" style={{ background: "#12100d
 function InternalLogin() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, hasLoaded, login } = useAuth();
+  const { currentEmployee, hasLoaded, login } = useAuth();
 
   // Runs after a successful login and when someone already signed in opens
   // this page.
   useEffect(() => {
-    if (currentUser) router.replace(findPathAfterLogin(searchParams));
-  }, [currentUser, searchParams, router]);
+    if (currentEmployee) router.replace(findPathAfterLogin(searchParams, currentEmployee.role));
+  }, [currentEmployee, searchParams, router]);
 
-  if (!hasLoaded || currentUser) return BLANK_SCREEN;
+  if (!hasLoaded || currentEmployee) return BLANK_SCREEN;
 
   return <LoginPage onLogin={login} onBack={() => router.push(ROUTES.home)} />;
 }

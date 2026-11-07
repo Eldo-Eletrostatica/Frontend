@@ -2,36 +2,39 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { sendApiRequest } from "@/lib/api/client";
+import { CSRF_COOKIE, readCookie } from "@/lib/api/cookies";
 
 export type Role = "admin" | "manager" | "employee";
 
-export interface AuthenticatedEmployee {
+export interface Employee {
   employeeId: string;
   name: string;
   email: string;
   role: Role;
 }
 
+// Kept as alias for AuthenticatedEmployee to prevent breaking other files
+export type AuthenticatedEmployee = Employee;
+
 interface LoginResponse {
   accessToken: string;
-  employee: AuthenticatedEmployee;
+  employee: Employee;
 }
 
 interface AuthState {
-  currentUser: AuthenticatedEmployee | null;
+  currentEmployee: Employee | null;
   hasLoaded: boolean;
 }
 
 interface AuthValue extends AuthState {
+  /** @deprecated Use currentEmployee instead (GLOSSARY.md) */
+  currentUser: Employee | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
-// The Backend writes this readable cookie next to the HttpOnly session cookie,
-// with the same lifetime (ADR 0007).
-const CSRF_COOKIE = "csrf_token";
-
 const AuthContext = createContext<AuthValue>({
+  currentEmployee: null,
   currentUser: null,
   hasLoaded: false,
   login: async () => {},
@@ -39,15 +42,16 @@ const AuthContext = createContext<AuthValue>({
 });
 
 function hasCsrfCookie(): boolean {
-  return document.cookie.split("; ").some((entry) => entry.startsWith(`${CSRF_COOKIE}=`));
+  const token = readCookie(CSRF_COOKIE);
+  return Boolean(token && token.trim().length > 0);
 }
 
 // The provider wraps the public site too. Without the CSRF cookie there is no
 // session, so visitors skip a GET /auth/me that would only answer 401.
-async function fetchCurrentUser(): Promise<AuthenticatedEmployee | null> {
+async function fetchCurrentEmployee(): Promise<Employee | null> {
   if (!hasCsrfCookie()) return null;
   try {
-    return await sendApiRequest<AuthenticatedEmployee>("/auth/me");
+    return await sendApiRequest<Employee>("/auth/me", { skipAuthRedirect: true });
   } catch {
     // An expired session (401) or an unreachable API both mean signed out.
     return null;
@@ -55,12 +59,12 @@ async function fetchCurrentUser(): Promise<AuthenticatedEmployee | null> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ currentUser: null, hasLoaded: false });
+  const [state, setState] = useState<AuthState>({ currentEmployee: null, hasLoaded: false });
 
   useEffect(() => {
     let isMounted = true;
-    fetchCurrentUser().then((currentUser) => {
-      if (isMounted) setState({ currentUser, hasLoaded: true });
+    fetchCurrentEmployee().then((currentEmployee) => {
+      if (isMounted) setState({ currentEmployee, hasLoaded: true });
     });
     return () => {
       isMounted = false;
@@ -72,18 +76,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "POST",
       body: { email, password },
     });
-    setState({ currentUser: employee, hasLoaded: true });
+    setState({ currentEmployee: employee, hasLoaded: true });
   }, []);
 
   const logout = useCallback(async () => {
     try {
       await sendApiRequest<void>("/auth/logout", { method: "POST" });
     } finally {
-      setState({ currentUser: null, hasLoaded: true });
+      setState({ currentEmployee: null, hasLoaded: true });
     }
   }, []);
 
-  const value = useMemo<AuthValue>(() => ({ ...state, login, logout }), [state, login, logout]);
+  const value = useMemo<AuthValue>(
+    () => ({
+      ...state,
+      currentUser: state.currentEmployee,
+      login,
+      logout,
+    }),
+    [state, login, logout],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
