@@ -6,6 +6,7 @@ import {
 } from "@/lib/validation/name";
 import { INVALID_PHONE_MESSAGE, isValidPhone, normalizePhoneDigits } from "@/lib/validation/phone";
 import type { CreateEstimatedQuote, QuoteCustomer, QuoteItem } from "./types";
+import { INVALID_EMAIL_MESSAGE, isValidEmail } from "@/lib/validation/email";
 
 // Limits of the Backend DTOs (CreateEstimatedQuoteDto, QuoteCustomerDto).
 export const CUSTOMER_NAME_MAX_LENGTH = 150;
@@ -15,7 +16,6 @@ export const MAX_QUOTE_PDF_BYTES = 10 * 1024 * 1024;
 const CNPJ_DIGITS = 14;
 // area is numeric(10,3) in the database.
 const AREA_PATTERN = /^\d+([.,]\d{1,3})?$/;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface CustomerFields {
   companyName: string;
@@ -77,7 +77,7 @@ export function validateCustomer(customer: CustomerFields): FieldErrors {
   if (!customer.phone.trim()) errors.phone = "Informe o telefone.";
   else if (!isValidPhone(customer.phone)) errors.phone = INVALID_PHONE_MESSAGE;
   if (!customer.email.trim()) errors.email = "Informe o e-mail.";
-  else if (!EMAIL_PATTERN.test(customer.email.trim())) errors.email = "Informe um e-mail válido.";
+  else if (!isValidEmail(customer.email)) errors.email = INVALID_EMAIL_MESSAGE;
   return errors;
 }
 
