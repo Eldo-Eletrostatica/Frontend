@@ -2,49 +2,66 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { useServices } from "../lib/servicesContext";
-import type { ServiceOrder } from "../lib/servicesContext";
+import { sendApiRequest } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/ApiError";
+import {
+  SERVICE_ORDER_STATUS_DESCRIPTIONS,
+  SERVICE_ORDER_STATUS_LABELS,
+  SERVICE_ORDER_STEPS,
+  type ServiceOrderProgress,
+  type ServiceOrderTracking,
+  type TrackingLookup,
+} from "./tracking/types";
 import EldoLogo from "./EldoLogo";
 
 interface Props {
-  onFound: (orders: ServiceOrder[], clientName: string) => void;
+  onFound: (lookup: TrackingLookup) => void;
   onBack: () => void;
 }
 
+type SearchMode = "cnpj" | "trackingCode";
+
+const FALLBACK_ERROR = "Não foi possível consultar agora. Tente novamente.";
+const NO_OPEN_SERVICE_ORDERS = "Nenhuma OS em andamento para este CNPJ.";
+
+// The tracking code alphabet has only capital letters and digits (ADR 0001).
+function normalizeTrackingCode(value: string): string {
+  return value.replace(/\s/g, "").toUpperCase();
+}
+
+async function searchTracking(mode: SearchMode, value: string): Promise<TrackingLookup | null> {
+  if (mode === "trackingCode") {
+    const trackingCode = normalizeTrackingCode(value);
+    const serviceOrder = await sendApiRequest<ServiceOrderTracking>(`/service-orders/tracking/${encodeURIComponent(trackingCode)}`);
+    return { kind: "trackingCode", serviceOrder };
+  }
+  const cnpj = value.trim();
+  const serviceOrders = await sendApiRequest<ServiceOrderProgress[]>(`/service-orders/tracking?cnpj=${encodeURIComponent(cnpj)}`);
+  return serviceOrders.length > 0 ? { kind: "cnpj", cnpj, serviceOrders } : null;
+}
+
 export default function TrackingSearch({ onFound, onBack }: Props) {
-  const { orders } = useServices();
-  const [mode, setMode] = useState<"cnpj" | "code">("cnpj");
+  const [mode, setMode] = useState<SearchMode>("cnpj");
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleSearch(e: React.FormEvent) {
+  async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      const query = value.trim().toUpperCase().replace(/\s/g, "");
-
-      let found: ServiceOrder[] = [];
-
-      if (mode === "cnpj") {
-        found = orders.filter((o) => o.cnpj.replace(/\D/g, "") === query.replace(/\D/g, "") && o.cnpj !== "");
-      } else {
-        found = orders.filter((o) => o.code.toUpperCase() === query || o.saleCode.toUpperCase() === query);
-      }
-
-      if (!found.length) {
-        setError(mode === "cnpj" ? "Nenhuma OS encontrada para este CNPJ." : "Código não encontrado. Verifique e tente novamente.");
-        return;
-      }
-
-      onFound(found, found[0].client);
-    }, 600);
+    setIsLoading(true);
+    try {
+      const lookup = await searchTracking(mode, value);
+      if (lookup) onFound(lookup);
+      else setError(NO_OPEN_SERVICE_ORDERS);
+    } catch (searchError) {
+      setError(searchError instanceof ApiError ? searchError.message : FALLBACK_ERROR);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  const inp = "w-full h-[52px] px-4 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[15px] placeholder-[rgba(245,242,236,0.3)] outline-none focus:border-[#e9b421] transition-colors tracking-wider";
+  const inputClass = "w-full h-[52px] px-4 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[15px] placeholder-[rgba(245,242,236,0.3)] outline-none focus:border-[#e9b421] transition-colors tracking-wider";
 
   return (
     <div className="min-h-screen flex" style={{ background: "#12100d" }}>
@@ -63,24 +80,21 @@ export default function TrackingSearch({ onFound, onBack }: Props) {
             Acompanhe<br />seu serviço<br />em tempo real
           </h1>
           <p className="text-[14px] text-[rgba(245,242,236,0.5)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-            Consulte o andamento das suas ordens de serviço sem precisar entrar em contato. Seus dados são buscados pelo CNPJ da empresa ou pelo código da OS/venda.
+            Consulte o andamento das suas ordens de serviço sem precisar entrar em contato. Busque pelo CNPJ da empresa ou pelo protocolo que você recebeu quando a venda foi lançada.
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {[
-            { code: "OS-0089", client: "Metalúrgica Prata", status: "Em produção" },
-            { code: "OS-0090", client: "Construmetal SP", status: "Em fila" },
-          ].map((ex) => (
-            <div key={ex.code} className="flex items-center justify-between px-4 py-3 border border-[rgba(245,242,236,0.07)]" style={{ background: "rgba(245,242,236,0.02)" }}>
+        <ol className="flex flex-col gap-3">
+          {SERVICE_ORDER_STEPS.map((status, index) => (
+            <li key={status} className="flex items-center gap-4 px-4 py-3 border border-[rgba(245,242,236,0.07)]" style={{ background: "rgba(245,242,236,0.02)" }}>
+              <span className="text-[12px] text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>{index + 1}</span>
               <div>
-                <p className="text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{ex.code}</p>
-                <p className="text-[13px] text-[rgba(245,242,236,0.7)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{ex.client}</p>
+                <p className="text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.7)]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>{SERVICE_ORDER_STATUS_LABELS[status].toUpperCase()}</p>
+                <p className="text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{SERVICE_ORDER_STATUS_DESCRIPTIONS[status]}</p>
               </div>
-              <span className="text-[11px] tracking-[1.5px] text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>{ex.status.toUpperCase()}</span>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
 
       {/* Form panel */}
@@ -95,16 +109,16 @@ export default function TrackingSearch({ onFound, onBack }: Props) {
           <p className="text-[11px] tracking-[3px] text-[#e9b421] mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ACOMPANHAR SERVIÇO</p>
           <h2 className="text-[32px] text-[#f5f2ec] tracking-[-0.5px] mb-2" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Consultar OS</h2>
           <p className="text-[14px] text-[rgba(245,242,236,0.45)] mb-10" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-            Nenhum cadastro necessário — busque pelo CNPJ ou código.
+            Nenhum cadastro necessário: busque pelo CNPJ ou pelo protocolo.
           </p>
 
           {/* Mode toggle */}
           <div className="flex mb-6 border border-[rgba(245,242,236,0.12)]">
-            {(["cnpj", "code"] as const).map((m) => (
-              <button key={m} onClick={() => { setMode(m); setValue(""); setError(""); }}
+            {(["cnpj", "trackingCode"] as const).map((m) => (
+              <button key={m} type="button" onClick={() => { setMode(m); setValue(""); setError(""); }}
                 className={`flex-1 py-2.5 text-[12px] tracking-[1.5px] transition-all ${mode === m ? "bg-[#e9b421] text-[#12100d]" : "text-[rgba(245,242,236,0.5)] hover:text-[rgba(245,242,236,0.8)]"}`}
                 style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
-                {m === "cnpj" ? "CNPJ DA EMPRESA" : "CÓDIGO OS / VENDA"}
+                {m === "cnpj" ? "CNPJ DA EMPRESA" : "PROTOCOLO"}
               </button>
             ))}
           </div>
@@ -113,39 +127,32 @@ export default function TrackingSearch({ onFound, onBack }: Props) {
             <div className="flex flex-col gap-2">
               <label className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)]"
                 style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
-                {mode === "cnpj" ? "CNPJ" : "CÓDIGO DA OS OU VENDA"}
+                {mode === "cnpj" ? "CNPJ" : "PROTOCOLO DA OS"}
               </label>
               <input
                 type="text"
                 value={value}
                 onChange={(e) => { setValue(e.target.value); setError(""); }}
-                placeholder={mode === "cnpj" ? "00.000.000/0001-00" : "OS-0089 ou VD-0041"}
-                className={inp}
+                placeholder={mode === "cnpj" ? "00.000.000/0001-00" : "8 caracteres, ex.: ABCD2345"}
+                className={inputClass}
                 style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
                 autoFocus
               />
               {error && (
-                <p className="text-[12px] text-red-400" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{error}</p>
+                <p className="text-[12px] text-red-400" role="alert" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{error}</p>
               )}
             </div>
 
-            <button type="submit" disabled={!value.trim() || loading}
+            <button type="submit" disabled={!value.trim() || isLoading}
               className="flex items-center justify-center gap-2 h-[52px] bg-[#e9b421] text-[#12100d] text-[14px] disabled:opacity-40 hover:opacity-90 transition-opacity mt-2"
               style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
-              {loading ? (
+              {isLoading ? (
                 <span className="w-4 h-4 border-2 border-[#12100d] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <><Search size={16} /> Buscar ordens de serviço</>
               )}
             </button>
           </form>
-
-          <div className="mt-10 border-t border-[rgba(245,242,236,0.08)] pt-8">
-            <p className="text-[12px] text-[rgba(245,242,236,0.35)] leading-[1.8] text-center" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-              Para testes: CNPJ <strong className="text-[rgba(245,242,236,0.55)]">12.345.678/0001-90</strong><br />
-              ou código <strong className="text-[rgba(245,242,236,0.55)]">OS-0089</strong> / <strong className="text-[rgba(245,242,236,0.55)]">VD-0041</strong>
-            </p>
-          </div>
         </div>
       </div>
     </div>
