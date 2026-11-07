@@ -1,8 +1,14 @@
+import {
+  INVALID_PERSON_NAME_MESSAGE,
+  isValidCompanyName,
+  isValidPersonName,
+  SHORT_COMPANY_NAME_MESSAGE,
+} from "@/lib/validation/name";
+import { INVALID_PHONE_MESSAGE, isValidPhone, normalizePhoneDigits } from "@/lib/validation/phone";
 import type { CreateEstimatedQuote, QuoteCustomer, QuoteItem } from "./types";
 
 // Limits of the Backend DTOs (CreateEstimatedQuoteDto, QuoteCustomerDto).
 export const CUSTOMER_NAME_MAX_LENGTH = 150;
-export const PHONE_MAX_LENGTH = 20;
 export const EMAIL_MAX_LENGTH = 254;
 export const CUSTOMER_MESSAGE_MAX_LENGTH = 2000;
 export const MAX_QUOTE_PDF_BYTES = 10 * 1024 * 1024;
@@ -64,9 +70,12 @@ function parseArea(value: string): number {
 export function validateCustomer(customer: CustomerFields): FieldErrors {
   const errors: FieldErrors = {};
   if (!customer.companyName.trim()) errors.companyName = "Informe a razão social da empresa.";
+  else if (!isValidCompanyName(customer.companyName)) errors.companyName = SHORT_COMPANY_NAME_MESSAGE;
   if (!customer.cnpj.trim()) errors.cnpj = "Informe o CNPJ.";
   else if (onlyDigits(customer.cnpj).length !== CNPJ_DIGITS) errors.cnpj = "O CNPJ precisa ter 14 dígitos.";
+  if (customer.contactName.trim() && !isValidPersonName(customer.contactName)) errors.contactName = INVALID_PERSON_NAME_MESSAGE;
   if (!customer.phone.trim()) errors.phone = "Informe o telefone.";
+  else if (!isValidPhone(customer.phone)) errors.phone = INVALID_PHONE_MESSAGE;
   if (!customer.email.trim()) errors.email = "Informe o e-mail.";
   else if (!EMAIL_PATTERN.test(customer.email.trim())) errors.email = "Informe um e-mail válido.";
   return errors;
@@ -125,7 +134,7 @@ function toQuoteCustomer(customer: CustomerFields): QuoteCustomer {
     name: customer.companyName.trim(),
     cnpj: onlyDigits(customer.cnpj),
     email: customer.email.trim(),
-    phone: customer.phone.trim(),
+    phone: normalizePhoneDigits(customer.phone),
   };
 }
 

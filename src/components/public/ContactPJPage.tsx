@@ -4,13 +4,13 @@ import { useState } from "react";
 import { AlertTriangle, Calculator, Check, ChevronDown, FileText, Plus, Trash2, Upload } from "lucide-react";
 import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
+import { formatPhone } from "@/lib/validation/phone";
 import {
   buildEstimatedQuote,
   buildPdfQuote,
   CUSTOMER_NAME_MAX_LENGTH,
   EMAIL_MAX_LENGTH,
   EMPTY_CUSTOMER,
-  PHONE_MAX_LENGTH,
   todayAsDateOnly,
   type CustomerFields,
   type EstimatorFields,
@@ -154,12 +154,12 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
           <Field label="CNPJ *" error={customerErrorOf("cnpj")}>
             <input type="text" inputMode="numeric" value={customer.cnpj} onChange={(e) => updateCustomer("cnpj", e.target.value)} placeholder="00.000.000/0001-00" className={INPUT_CLASS} />
           </Field>
-          <Field label="RESPONSÁVEL PELO CONTATO">
-            <input type="text" value={customer.contactName} onChange={(e) => updateCustomer("contactName", e.target.value)} placeholder="Nome completo" className={INPUT_CLASS} />
+          <Field label="RESPONSÁVEL PELO CONTATO" error={customerErrorOf("contactName")}>
+            <input type="text" value={customer.contactName} maxLength={CUSTOMER_NAME_MAX_LENGTH} onChange={(e) => updateCustomer("contactName", e.target.value)} placeholder="Nome completo" className={INPUT_CLASS} />
           </Field>
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="TELEFONE (WHATSAPP) *" error={customerErrorOf("phone")}>
-              <input type="tel" value={customer.phone} maxLength={PHONE_MAX_LENGTH} onChange={(e) => updateCustomer("phone", e.target.value)} placeholder="(00) 00000-0000" className={INPUT_CLASS} />
+              <input type="tel" inputMode="numeric" value={customer.phone} onChange={(e) => updateCustomer("phone", formatPhone(e.target.value))} placeholder="(61) 99999-9999" className={INPUT_CLASS} />
             </Field>
             <Field label="E-MAIL COMERCIAL *" error={customerErrorOf("email")}>
               <input type="email" value={customer.email} maxLength={EMAIL_MAX_LENGTH} onChange={(e) => updateCustomer("email", e.target.value)} placeholder="compras@empresa.com.br" className={INPUT_CLASS} />
