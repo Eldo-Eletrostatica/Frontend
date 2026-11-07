@@ -1,9 +1,9 @@
 "use client";
 
 import Dashboard from "@/components/Dashboard";
-import { useDemoSession } from "@/lib/demoSession";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 export default function DashboardPage() {
-  const { currentUser } = useDemoSession();
+  const { currentUser } = useAuth();
   return currentUser && <Dashboard role={currentUser.role} />;
 }

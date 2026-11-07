@@ -11,6 +11,7 @@ export const ROUTES = {
   serviceOrders: "/area-interna/servicos",
   inventory: "/area-interna/estoque",
   sales: "/area-interna/vendas",
+  contactRequests: "/area-interna/contatos",
   employees: "/area-interna/funcionarios",
   siteEditor: "/area-interna/editor-do-site",
 } as const;
