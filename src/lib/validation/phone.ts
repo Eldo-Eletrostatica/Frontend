@@ -9,8 +9,15 @@ const PHONE_DIGITS_PATTERN = /^[1-9]\d(?:\d{8}|9\d{8})$/;
 
 export const INVALID_PHONE_MESSAGE = "Informe um telefone com DDD, como (61) 99999-9999.";
 
+// A number pasted with the country code (+55) would push the last digits out
+// of the mask, so the code is dropped when the digits do not fit otherwise.
+const BRAZIL_COUNTRY_CODE = "55";
+
 export function normalizePhoneDigits(value: string): string {
-  return value.replace(/\D/g, "");
+  const digits = value.replace(/\D/g, "");
+  return digits.length > MAX_PHONE_DIGITS && digits.startsWith(BRAZIL_COUNTRY_CODE)
+    ? digits.slice(BRAZIL_COUNTRY_CODE.length)
+    : digits;
 }
 
 export function isValidPhone(value: string): boolean {
