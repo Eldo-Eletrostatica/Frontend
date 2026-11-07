@@ -34,6 +34,9 @@ export interface QuoteItemFields {
   quantity: string;
 }
 
+// Domain alias (GLOSSARY.md: OrderItem)
+export type OrderItemFields = QuoteItemFields;
+
 export interface EstimatorFields {
   items: QuoteItemFields[];
   dueDate: string;
@@ -52,16 +55,20 @@ export type FieldErrors = Record<string, string>;
 
 export const EMPTY_CUSTOMER: CustomerFields = { companyName: "", cnpj: "", contactName: "", phone: "", email: "" };
 
-export function onlyDigits(value: string): string {
+export function extractDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
+// Alias for backward compatibility
+export const onlyDigits = extractDigits;
 
-export function todayAsDateOnly(): string {
+export function getTodayDateOnly(): string {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${now.getFullYear()}-${month}-${day}`;
 }
+// Alias for backward compatibility
+export const todayAsDateOnly = getTodayDateOnly;
 
 function parseArea(value: string): number {
   return Number(value.trim().replace(",", "."));
@@ -72,7 +79,7 @@ export function validateCustomer(customer: CustomerFields): FieldErrors {
   if (!customer.companyName.trim()) errors.companyName = "Informe a razão social da empresa.";
   else if (!isValidCompanyName(customer.companyName)) errors.companyName = SHORT_COMPANY_NAME_MESSAGE;
   if (!customer.cnpj.trim()) errors.cnpj = "Informe o CNPJ.";
-  else if (onlyDigits(customer.cnpj).length !== CNPJ_DIGITS) errors.cnpj = "O CNPJ precisa ter 14 dígitos.";
+  else if (extractDigits(customer.cnpj).length !== CNPJ_DIGITS) errors.cnpj = "O CNPJ precisa ter 14 dígitos.";
   if (customer.contactName.trim() && !isValidPersonName(customer.contactName)) errors.contactName = INVALID_PERSON_NAME_MESSAGE;
   if (!customer.phone.trim()) errors.phone = "Informe o telefone.";
   else if (!isValidPhone(customer.phone)) errors.phone = INVALID_PHONE_MESSAGE;
@@ -83,7 +90,7 @@ export function validateCustomer(customer: CustomerFields): FieldErrors {
 
 function validateDueDate(dueDate: string, isRequired: boolean): string | undefined {
   if (!dueDate) return isRequired ? "Informe o prazo desejado." : undefined;
-  if (dueDate < todayAsDateOnly()) return "O prazo não pode ser anterior a hoje.";
+  if (dueDate < getTodayDateOnly()) return "O prazo não pode ser anterior a hoje.";
   return undefined;
 }
 
@@ -93,13 +100,22 @@ function validateItem(item: QuoteItemFields, index: number): FieldErrors {
   if (!item.paintCatalogItemId) errors[`${prefix}.paintCatalogItemId`] = "Escolha o tipo de pintura.";
   if (!item.materialCatalogItemId) errors[`${prefix}.materialCatalogItemId`] = "Escolha o material da peça.";
 
-  if (!item.areaM2.trim()) errors[`${prefix}.areaM2`] = "Informe a área.";
-  else if (!AREA_PATTERN.test(item.areaM2.trim())) errors[`${prefix}.areaM2`] = "Use um número com até 3 casas decimais.";
-  else if (parseArea(item.areaM2) <= 0) errors[`${prefix}.areaM2`] = "A área precisa ser maior que zero.";
+  const trimmedArea = item.areaM2.trim();
+  const parsedArea = parseArea(trimmedArea);
+  if (!trimmedArea) {
+    errors[`${prefix}.areaM2`] = "Informe a área.";
+  } else if (Number.isNaN(parsedArea) || parsedArea <= 0) {
+    errors[`${prefix}.areaM2`] = "A área precisa ser maior que zero.";
+  } else if (!AREA_PATTERN.test(trimmedArea)) {
+    errors[`${prefix}.areaM2`] = "Use um número com até 3 casas decimais.";
+  }
 
   const quantity = Number(item.quantity);
-  if (!item.quantity.trim()) errors[`${prefix}.quantity`] = "Informe a quantidade.";
-  else if (!Number.isInteger(quantity) || quantity <= 0) errors[`${prefix}.quantity`] = "A quantidade precisa ser um número inteiro maior que zero.";
+  if (!item.quantity.trim()) {
+    errors[`${prefix}.quantity`] = "Informe a quantidade.";
+  } else if (!Number.isInteger(quantity) || quantity <= 0) {
+    errors[`${prefix}.quantity`] = "A quantidade precisa ser um número inteiro maior que zero.";
+  }
   return errors;
 }
 

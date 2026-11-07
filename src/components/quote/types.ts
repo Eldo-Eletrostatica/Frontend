@@ -26,6 +26,9 @@ export interface QuoteItem {
   quantity: number;
 }
 
+// Domain alias (GLOSSARY.md: OrderItem)
+export type OrderItem = QuoteItem;
+
 export interface CreateEstimatedQuote {
   customer: QuoteCustomer;
   items: QuoteItem[];

@@ -24,20 +24,30 @@ type SearchMode = "cnpj" | "trackingCode";
 const FALLBACK_ERROR = "Não foi possível consultar agora. Tente novamente.";
 const NO_OPEN_SERVICE_ORDERS = "Nenhuma OS em andamento para este CNPJ.";
 
-// The tracking code alphabet has only capital letters and digits (ADR 0001).
+// The tracking code alphabet has only capital letters and digits, excluding 0, O, 1, and I (ADR 0001).
+const TRACKING_CODE_PATTERN = /^[2-9A-HJ-NP-Z]{8}$/;
+
 function normalizeTrackingCode(value: string): string {
   return value.replace(/\s/g, "").toUpperCase();
 }
 
-async function searchTracking(mode: SearchMode, value: string): Promise<TrackingLookup | null> {
+function toErrorMessage(error: unknown, mode: SearchMode): string {
+  if (!(error instanceof ApiError)) return FALLBACK_ERROR;
+  if (error.status === 404 || error.message.toLowerCase().includes("not found")) {
+    return mode === "trackingCode" ? "Nenhuma ordem de serviço encontrada para este protocolo." : NO_OPEN_SERVICE_ORDERS;
+  }
+  return error.message;
+}
+
+async function findTracking(mode: SearchMode, value: string): Promise<TrackingLookup | null> {
   if (mode === "trackingCode") {
     const trackingCode = normalizeTrackingCode(value);
     const serviceOrder = await sendApiRequest<ServiceOrderTracking>(`/service-orders/tracking/${encodeURIComponent(trackingCode)}`);
     return { kind: "trackingCode", serviceOrder };
   }
-  const cnpj = value.trim();
-  const serviceOrders = await sendApiRequest<ServiceOrderProgress[]>(`/service-orders/tracking?cnpj=${encodeURIComponent(cnpj)}`);
-  return serviceOrders.length > 0 ? { kind: "cnpj", cnpj, serviceOrders } : null;
+  const cnpjDigits = value.replace(/\D/g, "");
+  const serviceOrders = await sendApiRequest<ServiceOrderProgress[]>(`/service-orders/tracking?cnpj=${encodeURIComponent(cnpjDigits)}`);
+  return serviceOrders.length > 0 ? { kind: "cnpj", cnpj: cnpjDigits, serviceOrders } : null;
 }
 
 export default function TrackingSearch({ onFound, onBack }: Props) {
@@ -49,13 +59,36 @@ export default function TrackingSearch({ onFound, onBack }: Props) {
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (mode === "cnpj") {
+      const cnpjDigits = value.replace(/\D/g, "");
+      if (cnpjDigits.length !== 14) {
+        setError("O CNPJ precisa ter 14 dígitos.");
+        return;
+      }
+    } else {
+      const trackingCode = normalizeTrackingCode(value);
+      if (trackingCode.length !== 8) {
+        setError("O protocolo precisa ter exatamente 8 caracteres.");
+        return;
+      }
+      if (/[01OI]/.test(trackingCode)) {
+        setError("O protocolo não contém os dígitos 0 e 1 nem as letras O e I.");
+        return;
+      }
+      if (!TRACKING_CODE_PATTERN.test(trackingCode)) {
+        setError("O protocolo contém caracteres inválidos.");
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
-      const lookup = await searchTracking(mode, value);
+      const lookup = await findTracking(mode, value);
       if (lookup) onFound(lookup);
       else setError(NO_OPEN_SERVICE_ORDERS);
     } catch (searchError) {
-      setError(searchError instanceof ApiError ? searchError.message : FALLBACK_ERROR);
+      setError(toErrorMessage(searchError, mode));
     } finally {
       setIsLoading(false);
     }
@@ -134,6 +167,7 @@ export default function TrackingSearch({ onFound, onBack }: Props) {
                 value={value}
                 onChange={(e) => { setValue(e.target.value); setError(""); }}
                 placeholder={mode === "cnpj" ? "00.000.000/0001-00" : "8 caracteres, ex.: ABCD2345"}
+                maxLength={mode === "cnpj" ? 18 : 8}
                 className={inputClass}
                 style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
                 autoFocus

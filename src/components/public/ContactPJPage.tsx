@@ -62,11 +62,11 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
 
   const today = todayAsDateOnly();
 
-  function errorOf(path: QuotePath, field: string): string | undefined {
+  function getFieldError(path: QuotePath, field: string): string | undefined {
     return fieldErrors?.path === path ? fieldErrors.errors[field] : undefined;
   }
 
-  function customerErrorOf(field: keyof CustomerFields): string | undefined {
+  function getCustomerError(field: keyof CustomerFields): string | undefined {
     return fieldErrors?.errors[field];
   }
 
@@ -148,20 +148,20 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
       <section className="border border-[rgba(245,242,236,0.1)] bg-[rgba(23,21,17,0.55)] p-6 md:p-8 mb-8">
         <SectionTitle>DADOS DA EMPRESA</SectionTitle>
         <div className="grid md:grid-cols-2 gap-4 mt-5">
-          <Field label="EMPRESA *" error={customerErrorOf("companyName")}>
+          <Field label="EMPRESA *" error={getCustomerError("companyName")}>
             <input type="text" value={customer.companyName} maxLength={CUSTOMER_NAME_MAX_LENGTH} onChange={(e) => updateCustomer("companyName", e.target.value)} placeholder="Razão social" className={INPUT_CLASS} />
           </Field>
-          <Field label="CNPJ *" error={customerErrorOf("cnpj")}>
+          <Field label="CNPJ *" error={getCustomerError("cnpj")}>
             <input type="text" inputMode="numeric" value={customer.cnpj} onChange={(e) => updateCustomer("cnpj", e.target.value)} placeholder="00.000.000/0001-00" className={INPUT_CLASS} />
           </Field>
-          <Field label="RESPONSÁVEL PELO CONTATO" error={customerErrorOf("contactName")}>
+          <Field label="RESPONSÁVEL PELO CONTATO" error={getCustomerError("contactName")}>
             <input type="text" value={customer.contactName} maxLength={CUSTOMER_NAME_MAX_LENGTH} onChange={(e) => updateCustomer("contactName", e.target.value)} placeholder="Nome completo" className={INPUT_CLASS} />
           </Field>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="TELEFONE (WHATSAPP) *" error={customerErrorOf("phone")}>
+            <Field label="TELEFONE (WHATSAPP) *" error={getCustomerError("phone")}>
               <input type="tel" inputMode="numeric" value={customer.phone} onChange={(e) => updateCustomer("phone", formatPhone(e.target.value))} placeholder="(61) 99999-9999" className={INPUT_CLASS} />
             </Field>
-            <Field label="E-MAIL COMERCIAL *" error={customerErrorOf("email")}>
+            <Field label="E-MAIL COMERCIAL *" error={getCustomerError("email")}>
               <input type="email" value={customer.email} maxLength={EMAIL_MAX_LENGTH} onChange={(e) => updateCustomer("email", e.target.value)} placeholder="compras@empresa.com.br" className={INPUT_CLASS} />
             </Field>
           </div>
@@ -204,14 +204,14 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                   <span className="text-[11px] text-[rgba(245,242,236,0.4)] mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{pdfFields.file ? "Clique para trocar o arquivo" : "Somente arquivos .pdf"}</span>
                   <input type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(event) => setPdfFields({ ...pdfFields, file: event.target.files?.[0] ?? null })} />
                 </label>
-                <FieldError message={errorOf("pdf", "file")} />
+                <FieldError message={getFieldError("pdf", "file")} />
               </div>
             </div>
             <div className="grid md:grid-cols-[220px_1fr] gap-4 mt-8">
-              <Field label="PRAZO DESEJADO" error={errorOf("pdf", "dueDate")}>
+              <Field label="PRAZO DESEJADO" error={getFieldError("pdf", "dueDate")}>
                 <input type="date" min={today} value={pdfFields.dueDate} onChange={(e) => setPdfFields({ ...pdfFields, dueDate: e.target.value })} className={`${INPUT_CLASS} [color-scheme:dark]`} />
               </Field>
-              <Field label="OBSERVAÇÕES" error={errorOf("pdf", "notes")}>
+              <Field label="OBSERVAÇÕES" error={getFieldError("pdf", "notes")}>
                 <input type="text" value={pdfFields.notes} onChange={(e) => setPdfFields({ ...pdfFields, notes: e.target.value })} placeholder="Algo que a equipe precise saber sobre o projeto" className={INPUT_CLASS} />
               </Field>
             </div>
@@ -257,13 +257,13 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                           )}
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
-                          <Field label="TIPO DE PINTURA *" error={errorOf("estimator", `items.${index}.paintCatalogItemId`)}>
+                          <Field label="TIPO DE PINTURA *" error={getFieldError("estimator", `items.${index}.paintCatalogItemId`)}>
                             <select value={item.paintCatalogItemId} onChange={(e) => updateItem(item.key, "paintCatalogItemId", e.target.value)} className={`${INPUT_CLASS} cursor-pointer`}>
                               <option value="">Selecione</option>
                               {paintTypes.map((paintType) => <option key={paintType.catalogItemId} value={paintType.catalogItemId}>{paintType.name}</option>)}
                             </select>
                           </Field>
-                          <Field label="MATERIAL DA PEÇA *" error={errorOf("estimator", `items.${index}.materialCatalogItemId`)}>
+                          <Field label="MATERIAL DA PEÇA *" error={getFieldError("estimator", `items.${index}.materialCatalogItemId`)}>
                             <select value={item.materialCatalogItemId} onChange={(e) => updateItem(item.key, "materialCatalogItemId", e.target.value)} className={`${INPUT_CLASS} cursor-pointer`}>
                               <option value="">Selecione</option>
                               {partMaterials.map((partMaterial) => <option key={partMaterial.catalogItemId} value={partMaterial.catalogItemId}>{partMaterial.name}</option>)}
@@ -273,10 +273,10 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                             <input type="text" value={item.description} onChange={(e) => updateItem(item.key, "description", e.target.value)} placeholder="Ex.: chassi de máquina, grade 3m x 2m" className={INPUT_CLASS} />
                           </Field>
                           <div className="grid grid-cols-2 gap-4">
-                            <Field label="ÁREA (m²/peça) *" error={errorOf("estimator", `items.${index}.areaM2`)}>
+                            <Field label="ÁREA (m²/peça) *" error={getFieldError("estimator", `items.${index}.areaM2`)}>
                               <input type="text" inputMode="decimal" value={item.areaM2} onChange={(e) => updateItem(item.key, "areaM2", e.target.value)} placeholder="4,5" className={INPUT_CLASS} />
                             </Field>
-                            <Field label="QUANTIDADE *" error={errorOf("estimator", `items.${index}.quantity`)}>
+                            <Field label="QUANTIDADE *" error={getFieldError("estimator", `items.${index}.quantity`)}>
                               <input type="number" min="1" step="1" value={item.quantity} onChange={(e) => updateItem(item.key, "quantity", e.target.value)} placeholder="10" className={INPUT_CLASS} />
                             </Field>
                           </div>
@@ -291,7 +291,7 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                   <div className="mt-8">
                     <SectionTitle>PRAZO E DETALHES</SectionTitle>
                     <div className="grid md:grid-cols-[220px_1fr] gap-4 mt-5">
-                      <Field label="PRAZO DESEJADO *" error={errorOf("estimator", "dueDate")}>
+                      <Field label="PRAZO DESEJADO *" error={getFieldError("estimator", "dueDate")}>
                         <input type="date" min={today} value={estimatorFields.dueDate} onChange={(e) => setEstimatorFields({ ...estimatorFields, dueDate: e.target.value })} className={`${INPUT_CLASS} [color-scheme:dark]`} />
                       </Field>
                       <Field label="COR DESEJADA">
@@ -299,7 +299,7 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                       </Field>
                     </div>
                     <div className="mt-4">
-                      <Field label="OBSERVAÇÕES" error={errorOf("estimator", "notes")}>
+                      <Field label="OBSERVAÇÕES" error={getFieldError("estimator", "notes")}>
                         <textarea value={estimatorFields.notes} onChange={(e) => setEstimatorFields({ ...estimatorFields, notes: e.target.value })} placeholder="Algo que a equipe precise saber sobre o projeto" className={TEXTAREA_CLASS} />
                       </Field>
                     </div>

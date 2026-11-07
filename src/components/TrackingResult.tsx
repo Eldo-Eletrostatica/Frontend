@@ -34,14 +34,14 @@ function formatCnpj(cnpj: string): string {
   return cnpj.replace(/\D/g, "").replace(CNPJ_FORMAT, "$1.$2.$3/$4-$5");
 }
 
-function todayAsDateOnly(): string {
+function getTodayDateOnly(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
 // Both dates are AAAA-MM-DD, so the text comparison follows the calendar.
 function isLate(dueDate: string, status: ServiceOrderStatus): boolean {
-  return status !== "completed" && dueDate < todayAsDateOnly();
+  return status !== "completed" && dueDate < getTodayDateOnly();
 }
 
 // Noon keeps the date-only value on the same day in any time zone.
@@ -197,7 +197,7 @@ export default function TrackingResult({ lookup, onBack }: Props) {
         <div className="mt-14 p-6 border border-[rgba(245,242,236,0.08)]" style={{ background: "#171511" }}>
           <p className="text-[13px] text-[rgba(245,242,236,0.5)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             Dúvidas sobre seu pedido? Entre em contato pelo WhatsApp
-            {" "}<a href="https://wa.me/5511999999999" className="text-[#e9b421] hover:underline">(11) 99999-9999</a>{" "}
+            {" "}<a href="https://wa.me/5561999999999" className="text-[#e9b421] hover:underline">(61) 99999-9999</a>{" "}
             ou pelo e-mail <a href="mailto:atendimento@eldo.com.br" className="text-[#e9b421] hover:underline">atendimento@eldo.com.br</a>.
           </p>
         </div>
