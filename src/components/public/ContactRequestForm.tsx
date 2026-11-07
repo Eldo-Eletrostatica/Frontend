@@ -4,10 +4,11 @@ import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
+import { INVALID_PERSON_NAME_MESSAGE, isValidPersonName } from "@/lib/validation/name";
+import { INVALID_PHONE_MESSAGE, formatPhone, isValidPhone, normalizePhoneDigits } from "@/lib/validation/phone";
 
 // Same limits as the Backend contact request DTO.
 const NAME_MAX_LENGTH = 150;
-const PHONE_MAX_LENGTH = 20;
 const EMAIL_MAX_LENGTH = 254;
 const MESSAGE_MAX_LENGTH = 2000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,7 +29,9 @@ const EMPTY_FIELDS: ContactRequestFields = { name: "", phone: "", email: "", mes
 function validateContactRequest(fields: ContactRequestFields): FieldErrors {
   const errors: FieldErrors = {};
   if (!fields.name.trim()) errors.name = "Informe seu nome.";
+  else if (!isValidPersonName(fields.name)) errors.name = INVALID_PERSON_NAME_MESSAGE;
   if (!fields.phone.trim()) errors.phone = "Informe um telefone para contato.";
+  else if (!isValidPhone(fields.phone)) errors.phone = INVALID_PHONE_MESSAGE;
   if (!fields.email.trim()) errors.email = "Informe seu e-mail.";
   else if (!EMAIL_PATTERN.test(fields.email.trim())) errors.email = "Informe um e-mail válido, como nome@email.com.";
   if (!fields.message.trim()) errors.message = "Descreva o que você precisa.";
@@ -68,7 +71,7 @@ export default function ContactRequestForm() {
         method: "POST",
         body: {
           name: fields.name.trim(),
-          phone: fields.phone.trim(),
+          phone: normalizePhoneDigits(fields.phone),
           email: fields.email.trim(),
           message: fields.message.trim(),
         },
@@ -91,9 +94,9 @@ export default function ContactRequestForm() {
             placeholder="Seu nome" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.name)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </FormField>
         <FormField label="TELEFONE (WHATSAPP)" htmlFor="contact-phone" error={errors.phone}>
-          <input id="contact-phone" type="tel" autoComplete="tel" value={fields.phone} maxLength={PHONE_MAX_LENGTH}
-            onChange={(event) => updateField("phone", event.target.value)} aria-invalid={Boolean(errors.phone)}
-            placeholder="(00) 00000-0000" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.phone)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+          <input id="contact-phone" type="tel" inputMode="numeric" autoComplete="tel" value={fields.phone}
+            onChange={(event) => updateField("phone", formatPhone(event.target.value))} aria-invalid={Boolean(errors.phone)}
+            placeholder="(61) 99999-9999" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.phone)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </FormField>
       </div>
       <FormField label="E-MAIL" htmlFor="contact-email" error={errors.email}>
