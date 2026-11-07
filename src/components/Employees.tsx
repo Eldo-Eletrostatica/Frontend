@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
-import type { Role } from "@/lib/demoSession";
+import type { Role } from "@/lib/auth/AuthProvider";
 
 interface Employee {
   id: number;

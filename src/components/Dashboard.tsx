@@ -5,7 +5,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
-import type { Role } from "@/lib/demoSession";
+import type { Role } from "@/lib/auth/AuthProvider";
 import { TrendingUp, TrendingDown, FileText, CheckCircle, Clock, Wrench } from "lucide-react";
 
 const monthlyData = [
