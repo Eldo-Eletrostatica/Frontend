@@ -36,9 +36,9 @@ function validateContactRequest(fields: ContactRequestFields): FieldErrors {
   return errors;
 }
 
-const inputClassName = "w-full h-[46px] px-4 bg-site-card border text-site-text text-[14px] placeholder-site-text/30 outline-none focus:border-site-accent transition-colors";
+const INPUT_CLASS_NAME = "w-full h-[46px] px-4 bg-site-card border text-site-text text-[14px] placeholder-site-text/30 outline-none focus:border-site-accent transition-colors";
 
-function borderFor(error: string | undefined): string {
+function getBorderClassName(error: string | undefined): string {
   return error ? "border-red-400" : "border-site-text/18";
 }
 
@@ -88,24 +88,24 @@ export default function ContactRequestForm() {
         <FormField label="NOME COMPLETO" htmlFor="contact-name" error={errors.name}>
           <input id="contact-name" type="text" autoComplete="name" value={fields.name} maxLength={NAME_MAX_LENGTH}
             onChange={(event) => updateField("name", event.target.value)} aria-invalid={Boolean(errors.name)}
-            placeholder="Seu nome" className={`${inputClassName} ${borderFor(errors.name)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+            placeholder="Seu nome" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.name)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </FormField>
         <FormField label="TELEFONE (WHATSAPP)" htmlFor="contact-phone" error={errors.phone}>
           <input id="contact-phone" type="tel" autoComplete="tel" value={fields.phone} maxLength={PHONE_MAX_LENGTH}
             onChange={(event) => updateField("phone", event.target.value)} aria-invalid={Boolean(errors.phone)}
-            placeholder="(00) 00000-0000" className={`${inputClassName} ${borderFor(errors.phone)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+            placeholder="(00) 00000-0000" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.phone)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </FormField>
       </div>
       <FormField label="E-MAIL" htmlFor="contact-email" error={errors.email}>
         <input id="contact-email" type="email" autoComplete="email" value={fields.email} maxLength={EMAIL_MAX_LENGTH}
           onChange={(event) => updateField("email", event.target.value)} aria-invalid={Boolean(errors.email)}
-          placeholder="seu@email.com" className={`${inputClassName} ${borderFor(errors.email)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+          placeholder="seu@email.com" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.email)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
       </FormField>
       <FormField label="DESCRIÇÃO DO QUE PRECISO" htmlFor="contact-message" error={errors.message}>
         <textarea id="contact-message" value={fields.message} rows={4} maxLength={MESSAGE_MAX_LENGTH}
           onChange={(event) => updateField("message", event.target.value)} aria-invalid={Boolean(errors.message)}
           placeholder="Que peça é, medidas aproximadas, quantidade e a cor que você quer. Se tiver foto, envie depois pelo WhatsApp."
-          className={`w-full px-4 py-3 bg-site-card border ${borderFor(errors.message)} text-site-text text-[14px] placeholder-site-text/30 outline-none focus:border-site-accent resize-none transition-colors`}
+          className={`w-full px-4 py-3 bg-site-card border ${getBorderClassName(errors.message)} text-site-text text-[14px] placeholder-site-text/30 outline-none focus:border-site-accent resize-none transition-colors`}
           style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
       </FormField>
       <div>

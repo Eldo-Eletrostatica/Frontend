@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { sendApiRequest } from "@/lib/api/client";
 import type { GoogleReview, GoogleReviews } from "./publicContent";
+import PublicNotice from "./PublicNotice";
 
 type ReviewsState =
   | { status: "waiting" }
@@ -14,7 +15,7 @@ const MAX_RATING = 5;
 // Starts the request a little before the section scrolls into view.
 const PRELOAD_MARGIN = "200px";
 
-const publishedAtFormat = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
+const PUBLISHED_AT_FORMAT = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
 
 // The Google terms forbid storing reviews, so they are fetched in the browser on
 // every visit, never through the cached server fetch. The Backend also limits
@@ -71,14 +72,15 @@ export default function GoogleReviewsSection({ title }: { title: string }) {
         )}
 
         {state.status === "unavailable" && (
-          <ReviewsNotice
+          <PublicNotice
+            className="py-14 px-6 bg-site-page"
             title="Avaliações indisponíveis no momento"
             description="Não conseguimos carregar as avaliações do Google agora. Tente novamente mais tarde."
           />
         )}
 
         {state.status === "loaded" && state.data.reviews.length === 0 && (
-          <ReviewsNotice title="Ainda não há avaliações no Google" description="Assim que recebermos avaliações, elas aparecem aqui." />
+          <PublicNotice className="py-14 px-6 bg-site-page" title="Ainda não há avaliações no Google" description="Assim que recebermos avaliações, elas aparecem aqui." />
         )}
 
         {state.status === "loaded" && state.data.reviews.length > 0 && (
@@ -96,15 +98,6 @@ export default function GoogleReviewsSection({ title }: { title: string }) {
         )}
       </div>
     </section>
-  );
-}
-
-function ReviewsNotice({ title, description }: { title: string; description: string }) {
-  return (
-    <div role="status" className="py-14 px-6 text-center border border-site-text/8 bg-site-page">
-      <p className="text-[18px] text-site-text mb-2" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{title}</p>
-      <p className="text-[14px] text-site-text/55" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{description}</p>
-    </div>
   );
 }
 
@@ -136,7 +129,7 @@ function ReviewCard({ review }: { review: GoogleReview }) {
             <p className="text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{review.authorName}</p>
           )}
           <p className="text-[11px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-            {publishedAtFormat.format(new Date(review.publishedAt))}
+            {PUBLISHED_AT_FORMAT.format(new Date(review.publishedAt))}
             {review.reviewUrl && (
               <>
                 {" · "}

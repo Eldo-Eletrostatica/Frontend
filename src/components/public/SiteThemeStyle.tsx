@@ -4,7 +4,7 @@ const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 // The values go into a <style> tag, so anything that is not a plain hex color
 // is dropped and the default from globals.css stays.
-function toDeclaration(variable: string, color: string): string {
+function formatDeclaration(variable: string, color: string): string {
   return HEX_COLOR_PATTERN.test(color) ? `${variable}: ${color};` : "";
 }
 
@@ -13,10 +13,10 @@ function toDeclaration(variable: string, color: string): string {
 // site layout.
 export default function SiteThemeStyle({ colors }: { colors: VisualSettings["colors"] }) {
   const declarations = [
-    toDeclaration("--site-accent", colors.accent),
-    toDeclaration("--site-page-background", colors.pageBackground),
-    toDeclaration("--site-card-background", colors.cardBackground),
-    toDeclaration("--site-text", colors.text),
+    formatDeclaration("--site-accent", colors.accent),
+    formatDeclaration("--site-page-background", colors.pageBackground),
+    formatDeclaration("--site-card-background", colors.cardBackground),
+    formatDeclaration("--site-text", colors.text),
   ].join(" ");
 
   return <style>{`:root { ${declarations} }`}</style>;

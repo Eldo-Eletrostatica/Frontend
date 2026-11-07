@@ -92,7 +92,7 @@ export default function LandingPage({ visualSettings, portfolioProjects }: Landi
         </div>
       </section>
 
-      <PortfolioGallery title={sectionTitles.portfolio} projects={portfolioProjects} />
+      <PortfolioGallery title={sectionTitles.portfolio} portfolioProjects={portfolioProjects} />
 
       <GoogleReviewsSection title={sectionTitles.reviews} />
 
