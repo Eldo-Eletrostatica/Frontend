@@ -14,7 +14,11 @@ export const INVALID_PHONE_MESSAGE = "Informe um telefone com DDD, como (61) 999
 const BRAZIL_COUNTRY_CODE = "55";
 
 export function normalizePhoneDigits(value: string): string {
-  const digits = value.replace(/\D/g, "");
+  const trimmed = value.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (trimmed.startsWith("+55") && digits.startsWith(BRAZIL_COUNTRY_CODE)) {
+    return digits.slice(BRAZIL_COUNTRY_CODE.length);
+  }
   return digits.length > MAX_PHONE_DIGITS && digits.startsWith(BRAZIL_COUNTRY_CODE)
     ? digits.slice(BRAZIL_COUNTRY_CODE.length)
     : digits;

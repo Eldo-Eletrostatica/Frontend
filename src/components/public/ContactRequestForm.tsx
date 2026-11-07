@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
 import { INVALID_EMAIL_MESSAGE, isValidEmail } from "@/lib/validation/email";
-import { INVALID_PERSON_NAME_MESSAGE, isValidPersonName } from "@/lib/validation/name";
+import { INVALID_PERSON_NAME_MESSAGE, isValidPersonName, normalizePersonName } from "@/lib/validation/name";
 import { INVALID_PHONE_MESSAGE, formatPhone, isValidPhone, normalizePhoneDigits } from "@/lib/validation/phone";
 
 // Same limits as the Backend contact request DTO.
@@ -72,7 +72,7 @@ export default function ContactRequestForm() {
       await sendApiRequest("/contact-requests", {
         method: "POST",
         body: {
-          name: fields.name.trim(),
+          name: normalizePersonName(fields.name).trim(),
           phone: normalizePhoneDigits(fields.phone),
           email: fields.email.trim(),
           message: fields.message.trim(),
