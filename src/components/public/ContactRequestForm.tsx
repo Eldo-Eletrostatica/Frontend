@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
+import CaptchaField, { type CaptchaFieldHandle } from "@/components/public/CaptchaField";
 import { INVALID_EMAIL_MESSAGE, isValidEmail } from "@/lib/validation/email";
 import { INVALID_PERSON_NAME_MESSAGE, isValidPersonName, normalizePersonName } from "@/lib/validation/name";
 import { INVALID_PHONE_MESSAGE, formatPhone, isValidPhone, normalizePhoneDigits } from "@/lib/validation/phone";
@@ -48,6 +49,7 @@ function getBorderClassName(error: string | undefined): string {
 export default function ContactRequestForm() {
   const [fields, setFields] = useState<ContactRequestFields>(EMPTY_FIELDS);
   const honeypotRef = useRef<HTMLInputElement>(null);
+  const captchaRef = useRef<CaptchaFieldHandle>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -64,7 +66,8 @@ export default function ContactRequestForm() {
     const validationErrors = validateContactRequest(fields);
     setErrors(validationErrors);
     setSubmitError(null);
-    if (Object.keys(validationErrors).length > 0) return;
+    const captchaToken = captchaRef.current?.requireToken() ?? null;
+    if (Object.keys(validationErrors).length > 0 || !captchaToken) return;
 
     const honeypot = honeypotRef.current?.value ?? "";
     setIsSubmitting(true);
@@ -79,6 +82,7 @@ export default function ContactRequestForm() {
           // Only a script fills the honeypot, so people never send this field.
           ...(honeypot ? { website: honeypot } : {}),
         },
+        captchaToken,
       });
       setFields(EMPTY_FIELDS);
       setIsSent(true);
@@ -86,6 +90,7 @@ export default function ContactRequestForm() {
       setSubmitError(error instanceof ApiError ? error.message : UNEXPECTED_ERROR_MESSAGE);
     } finally {
       setIsSubmitting(false);
+      captchaRef.current?.reset();
     }
   }
 
@@ -131,6 +136,8 @@ export default function ContactRequestForm() {
         </label>
         {errors.hasConsent && <FieldError message={errors.hasConsent} />}
       </div>
+
+      <CaptchaField ref={captchaRef} />
 
       {submitError && (
         <p role="alert" className="px-4 py-3 border border-red-400 bg-red-400/10 text-red-300 text-[13px]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>

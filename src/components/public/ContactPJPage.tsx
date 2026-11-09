@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AlertTriangle, Calculator, Check, ChevronDown, FileText, Plus, Trash2, Upload } from "lucide-react";
 import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
+import CaptchaField, { type CaptchaFieldHandle } from "@/components/public/CaptchaField";
 import { formatPhone } from "@/lib/validation/phone";
 import {
   buildEstimatedQuote,
@@ -59,6 +60,8 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
   const [submittingPath, setSubmittingPath] = useState<QuotePath | null>(null);
   const [sentPdfName, setSentPdfName] = useState("");
   const [estimatedQuote, setEstimatedQuote] = useState<Quote | null>(null);
+  const pdfCaptchaRef = useRef<CaptchaFieldHandle>(null);
+  const estimatorCaptchaRef = useRef<CaptchaFieldHandle>(null);
 
   const today = getTodayDateOnly();
 
@@ -89,13 +92,14 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
     setEstimatorFields((current) => ({ ...current, items: current.items.filter((item) => item.key !== key) }));
   }
 
-  function startSubmit(path: QuotePath, errors: FieldErrors | undefined): boolean {
+  function startSubmit(path: QuotePath, errors: FieldErrors | undefined, captchaToken: string | null): boolean {
     setSubmitError(null);
     if (errors) {
       setFieldErrors({ path, errors });
       return false;
     }
     setFieldErrors(null);
+    if (!captchaToken) return false;
     setSubmittingPath(path);
     return true;
   }
@@ -103,28 +107,32 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
   async function handlePdfSubmit(event: React.FormEvent) {
     event.preventDefault();
     const { errors, payload } = buildPdfQuote(customer, pdfFields);
-    if (!startSubmit("pdf", errors) || !payload) return;
+    const captchaToken = pdfCaptchaRef.current?.requireToken() ?? null;
+    if (!startSubmit("pdf", errors, captchaToken) || !payload || !captchaToken) return;
     try {
-      await sendApiRequest<Quote>("/quotes/pdf", { method: "POST", formData: payload });
+      await sendApiRequest<Quote>("/quotes/pdf", { method: "POST", formData: payload, captchaToken });
       setSentPdfName(pdfFields.file?.name ?? "");
       setPdfFields({ file: null, dueDate: "", notes: "" });
     } catch (error) {
       setSubmitError({ path: "pdf", message: toErrorMessage(error) });
     } finally {
       setSubmittingPath(null);
+      pdfCaptchaRef.current?.reset();
     }
   }
 
   async function handleEstimatorSubmit(event: React.FormEvent) {
     event.preventDefault();
     const { errors, payload } = buildEstimatedQuote(customer, estimatorFields);
-    if (!startSubmit("estimator", errors) || !payload) return;
+    const captchaToken = estimatorCaptchaRef.current?.requireToken() ?? null;
+    if (!startSubmit("estimator", errors, captchaToken) || !payload || !captchaToken) return;
     try {
-      setEstimatedQuote(await sendApiRequest<Quote>("/quotes/estimator", { method: "POST", body: payload }));
+      setEstimatedQuote(await sendApiRequest<Quote>("/quotes/estimator", { method: "POST", body: payload, captchaToken }));
     } catch (error) {
       setSubmitError({ path: "estimator", message: toErrorMessage(error) });
     } finally {
       setSubmittingPath(null);
+      estimatorCaptchaRef.current?.reset();
     }
   }
 
@@ -214,6 +222,9 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
               <Field label="OBSERVAÇÕES" error={getFieldError("pdf", "notes")}>
                 <input type="text" value={pdfFields.notes} onChange={(e) => setPdfFields({ ...pdfFields, notes: e.target.value })} placeholder="Algo que a equipe precise saber sobre o projeto" className={INPUT_CLASS} />
               </Field>
+            </div>
+            <div className="mt-6">
+              <CaptchaField ref={pdfCaptchaRef} />
             </div>
             <SubmitError message={submitError?.path === "pdf" ? submitError.message : undefined} />
             <div className="mt-6 flex justify-end">
@@ -305,6 +316,9 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                     </div>
                   </div>
 
+                  <div className="mt-8">
+                    <CaptchaField ref={estimatorCaptchaRef} />
+                  </div>
                   <SubmitError message={submitError?.path === "estimator" ? submitError.message : undefined} />
                   <div className="mt-8 flex justify-end">
                     <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-3 h-[48px] px-7 border border-[rgba(245,242,236,0.2)] text-[rgba(245,242,236,0.78)] text-[14px] hover:border-[#e9b421] hover:text-[#e9b421] transition-colors disabled:opacity-50" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
