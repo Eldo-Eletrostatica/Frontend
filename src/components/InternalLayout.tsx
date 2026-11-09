@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Users, FileBarChart2, LogOut, Menu, X, Package, Wrench, ShoppingBag, Palette } from "lucide-react";
-import { useDemoSession, type Role } from "@/lib/demoSession";
+import { useAuth, type Role } from "@/lib/auth/AuthProvider";
+import { buildLoginPath } from "@/lib/auth/loginRedirect";
 import { ROUTES } from "@/lib/routes";
 import EldoLogo from "./EldoLogo";
 
@@ -27,28 +28,34 @@ const ROLE_LABEL: Record<Role, string> = { admin: "Administrador", manager: "Ges
 export default function InternalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentUser, hasLoaded, signOut } = useDemoSession();
+  const { currentEmployee, hasLoaded, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Leaving on purpose goes to the plain login; losing the session keeps the
+  // current screen in "next" to come back to it.
+  const isLoggingOutRef = useRef(false);
 
-  const allowed = currentUser ? NAV.filter((n) => n.roles.includes(currentUser.role)) : [];
+  const allowed = currentEmployee ? NAV.filter((n) => n.roles.includes(currentEmployee.role)) : [];
   const isCurrentRouteAllowed = allowed.some((n) => n.href === pathname);
   const firstAllowedHref = allowed[0]?.href;
 
   useEffect(() => {
     if (!hasLoaded) return;
-    if (!currentUser) {
-      router.replace(ROUTES.internalLogin);
+    if (!currentEmployee) {
+      const { pathname: currentPath, search } = window.location;
+      router.replace(isLoggingOutRef.current ? ROUTES.internalLogin : buildLoginPath(`${currentPath}${search}`));
     } else if (!isCurrentRouteAllowed && firstAllowedHref) {
       router.replace(firstAllowedHref);
     }
-  }, [hasLoaded, currentUser, isCurrentRouteAllowed, firstAllowedHref, router]);
+  }, [hasLoaded, currentEmployee, isCurrentRouteAllowed, firstAllowedHref, router]);
 
-  function logout() {
-    signOut();
-    router.replace(ROUTES.internalLogin);
+  function handleLogout() {
+    isLoggingOutRef.current = true;
+    // The provider clears the local session even when the request fails, and
+    // the effect above then leads to the login either way.
+    logout().catch(() => {});
   }
 
-  if (!currentUser || !isCurrentRouteAllowed) {
+  if (!currentEmployee || !isCurrentRouteAllowed) {
     return <div className="min-h-screen" style={{ background: "#12100d" }} />;
   }
 
@@ -94,12 +101,12 @@ export default function InternalLayout({ children }: { children: React.ReactNode
         <div className="px-5 py-4 border-t border-[rgba(245,242,236,0.07)]">
           <div className="flex items-center justify-between">
             <div className="overflow-hidden">
-              <p className="text-[13px] text-[#f5f2ec] truncate capitalize" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{currentUser.name}</p>
+              <p className="text-[13px] text-[#f5f2ec] truncate" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{currentEmployee.name}</p>
               <p className="text-[10px] tracking-[1.5px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
-                {ROLE_LABEL[currentUser.role].toUpperCase()}
+                {ROLE_LABEL[currentEmployee.role].toUpperCase()}
               </p>
             </div>
-            <button onClick={logout} className="text-[rgba(245,242,236,0.35)] hover:text-[#e9b421] transition-colors ml-2 flex-shrink-0" title="Sair">
+            <button onClick={handleLogout} className="text-[rgba(245,242,236,0.35)] hover:text-[#e9b421] transition-colors ml-2 flex-shrink-0" title="Sair">
               <LogOut size={15} />
             </button>
           </div>
@@ -115,7 +122,7 @@ export default function InternalLayout({ children }: { children: React.ReactNode
         <header className="lg:hidden flex items-center justify-between px-5 py-4 border-b border-[rgba(245,242,236,0.07)]">
           <button onClick={() => setMenuOpen(true)} className="text-[rgba(245,242,236,0.7)]"><Menu size={20} /></button>
           <EldoLogo imageClassName="w-[32px] h-[32px]" subtitle="ÁREA INTERNA" />
-          <button onClick={logout} className="text-[rgba(245,242,236,0.4)]"><X size={20} /></button>
+          <button onClick={handleLogout} className="text-[rgba(245,242,236,0.4)]"><X size={20} /></button>
         </header>
 
         <main className="flex-1 overflow-auto px-6 py-8 lg:px-10 lg:py-10">

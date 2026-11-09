@@ -1,9 +1,9 @@
 "use client";
 
 import Reports from "@/components/Reports";
-import { useDemoSession } from "@/lib/demoSession";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 export default function ReportsPage() {
-  const { currentUser } = useDemoSession();
-  return currentUser && <Reports role={currentUser.role} />;
+  const { currentEmployee } = useAuth();
+  return currentEmployee && <Reports role={currentEmployee.role} />;
 }

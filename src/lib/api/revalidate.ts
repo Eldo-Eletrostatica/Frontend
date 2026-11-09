@@ -3,8 +3,8 @@
 import { cookies } from "next/headers";
 import { revalidateTag, updateTag } from "next/cache";
 import { API_URL, CACHE_TAGS, type CacheTag } from "./server";
+import { SESSION_COOKIE } from "./cookies";
 
-const SESSION_COOKIE = "session";
 const PUBLIC_DATA_TAGS: readonly string[] = Object.values(CACHE_TAGS);
 
 // A Server Action can be called by any visitor, so it only runs for a session
