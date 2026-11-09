@@ -11,12 +11,12 @@ import {
   CUSTOMER_NAME_MAX_LENGTH,
   EMAIL_MAX_LENGTH,
   EMPTY_CUSTOMER,
-  todayAsDateOnly,
+  getTodayDateOnly,
   type CustomerFields,
   type EstimatorFields,
   type FieldErrors,
   type PdfFields,
-  type QuoteItemFields,
+  type OrderItemFields,
 } from "@/components/quote/quoteForm";
 import type { EstimatorOptions, Quote } from "@/components/quote/types";
 
@@ -32,7 +32,7 @@ const TEXTAREA_CLASS = "w-full min-h-[92px] px-4 py-3 bg-[#171511] border border
 
 let nextItemKey = 0;
 
-function createEmptyItem(): QuoteItemFields {
+function createEmptyItem(): OrderItemFields {
   nextItemKey += 1;
   return { key: nextItemKey, paintCatalogItemId: "", materialCatalogItemId: "", description: "", areaM2: "", quantity: "" };
 }
@@ -60,7 +60,7 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
   const [sentPdfName, setSentPdfName] = useState("");
   const [estimatedQuote, setEstimatedQuote] = useState<Quote | null>(null);
 
-  const today = todayAsDateOnly();
+  const today = getTodayDateOnly();
 
   function getFieldError(path: QuotePath, field: string): string | undefined {
     return fieldErrors?.path === path ? fieldErrors.errors[field] : undefined;
@@ -74,7 +74,7 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
     setCustomer((current) => ({ ...current, [field]: value }));
   }
 
-  function updateItem(key: number, field: keyof Omit<QuoteItemFields, "key">, value: string) {
+  function updateItem(key: number, field: keyof Omit<OrderItemFields, "key">, value: string) {
     setEstimatorFields((current) => ({
       ...current,
       items: current.items.map((item) => (item.key === key ? { ...item, [field]: value } : item)),

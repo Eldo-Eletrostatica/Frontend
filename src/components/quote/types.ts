@@ -19,19 +19,16 @@ export interface QuoteCustomer {
   phone: string;
 }
 
-export interface QuoteItem {
+export interface OrderItem {
   materialCatalogItemId: string;
   paintCatalogItemId: string;
   areaM2: number;
   quantity: number;
 }
 
-// Domain alias (GLOSSARY.md: OrderItem)
-export type OrderItem = QuoteItem;
-
 export interface CreateEstimatedQuote {
   customer: QuoteCustomer;
-  items: QuoteItem[];
+  items: OrderItem[];
   // AAAA-MM-DD.
   dueDate: string;
   message?: string;

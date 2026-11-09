@@ -5,7 +5,7 @@ import {
   SHORT_COMPANY_NAME_MESSAGE,
 } from "@/lib/validation/name";
 import { INVALID_PHONE_MESSAGE, isValidPhone, normalizePhoneDigits } from "@/lib/validation/phone";
-import type { CreateEstimatedQuote, QuoteCustomer, QuoteItem } from "./types";
+import type { CreateEstimatedQuote, QuoteCustomer, OrderItem } from "./types";
 import { INVALID_EMAIL_MESSAGE, isValidEmail } from "@/lib/validation/email";
 
 // Limits of the Backend DTOs (CreateEstimatedQuoteDto, QuoteCustomerDto).
@@ -25,7 +25,7 @@ export interface CustomerFields {
   email: string;
 }
 
-export interface QuoteItemFields {
+export interface OrderItemFields {
   key: number;
   paintCatalogItemId: string;
   materialCatalogItemId: string;
@@ -34,11 +34,8 @@ export interface QuoteItemFields {
   quantity: string;
 }
 
-// Domain alias (GLOSSARY.md: OrderItem)
-export type OrderItemFields = QuoteItemFields;
-
 export interface EstimatorFields {
-  items: QuoteItemFields[];
+  items: OrderItemFields[];
   dueDate: string;
   color: string;
   notes: string;
@@ -58,8 +55,6 @@ export const EMPTY_CUSTOMER: CustomerFields = { companyName: "", cnpj: "", conta
 export function extractDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
-// Alias for backward compatibility
-export const onlyDigits = extractDigits;
 
 export function getTodayDateOnly(): string {
   const now = new Date();
@@ -67,8 +62,6 @@ export function getTodayDateOnly(): string {
   const day = String(now.getDate()).padStart(2, "0");
   return `${now.getFullYear()}-${month}-${day}`;
 }
-// Alias for backward compatibility
-export const todayAsDateOnly = getTodayDateOnly;
 
 function parseArea(value: string): number {
   return Number(value.trim().replace(",", "."));
@@ -94,7 +87,7 @@ function validateDueDate(dueDate: string, isRequired: boolean): string | undefin
   return undefined;
 }
 
-function validateItem(item: QuoteItemFields, index: number): FieldErrors {
+function validateItem(item: OrderItemFields, index: number): FieldErrors {
   const errors: FieldErrors = {};
   const prefix = `items.${index}`;
   if (!item.paintCatalogItemId) errors[`${prefix}.paintCatalogItemId`] = "Escolha o tipo de pintura.";
@@ -104,7 +97,9 @@ function validateItem(item: QuoteItemFields, index: number): FieldErrors {
   const parsedArea = parseArea(trimmedArea);
   if (!trimmedArea) {
     errors[`${prefix}.areaM2`] = "Informe a área.";
-  } else if (Number.isNaN(parsedArea) || parsedArea <= 0) {
+  } else if (Number.isNaN(parsedArea)) {
+    errors[`${prefix}.areaM2`] = "Use um número com até 3 casas decimais.";
+  } else if (parsedArea <= 0) {
     errors[`${prefix}.areaM2`] = "A área precisa ser maior que zero.";
   } else if (!AREA_PATTERN.test(trimmedArea)) {
     errors[`${prefix}.areaM2`] = "Use um número com até 3 casas decimais.";
@@ -148,13 +143,13 @@ function validateMessageLength(message: string): FieldErrors {
 function toQuoteCustomer(customer: CustomerFields): QuoteCustomer {
   return {
     name: customer.companyName.trim(),
-    cnpj: onlyDigits(customer.cnpj),
+    cnpj: extractDigits(customer.cnpj),
     email: customer.email.trim(),
     phone: normalizePhoneDigits(customer.phone),
   };
 }
 
-function toQuoteItem(item: QuoteItemFields): QuoteItem {
+function toOrderItem(item: OrderItemFields): OrderItem {
   return {
     paintCatalogItemId: item.paintCatalogItemId,
     materialCatalogItemId: item.materialCatalogItemId,
@@ -179,7 +174,7 @@ export function buildEstimatedQuote(customer: CustomerFields, fields: EstimatorF
   return {
     payload: {
       customer: toQuoteCustomer(customer),
-      items: fields.items.map(toQuoteItem),
+      items: fields.items.map(toOrderItem),
       dueDate: fields.dueDate,
       message: message || undefined,
     },
