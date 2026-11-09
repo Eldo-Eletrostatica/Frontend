@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, FileBarChart2, LogOut, Menu, X, Package, Wrench, ShoppingBag, Palette } from "lucide-react";
+import { LayoutDashboard, Users, FileBarChart2, LogOut, Menu, X, Package, Wrench, ShoppingBag, Palette, MessageSquare } from "lucide-react";
 import { useAuth, type Role } from "@/lib/auth/AuthProvider";
 import { buildLoginPath } from "@/lib/auth/loginRedirect";
 import { ROUTES } from "@/lib/routes";
@@ -17,6 +17,7 @@ const NAV: NavItem[] = [
   { href: ROUTES.serviceOrders, label: "Serviços",      icon: <Wrench size={16} />,          roles: ["admin","manager","employee"], group: "Operação" },
   { href: ROUTES.inventory,     label: "Estoque",       icon: <Package size={16} />,         roles: ["admin","manager","employee"], group: "Operação" },
   { href: ROUTES.sales,         label: "Vendas",        icon: <ShoppingBag size={16} />,     roles: ["admin","manager","employee"], group: "Comercial" },
+  { href: ROUTES.contactRequests, label: "Contatos",    icon: <MessageSquare size={16} />,   roles: ["admin","manager","employee"], group: "Comercial" },
   { href: ROUTES.employees,     label: "Funcionários",  icon: <Users size={16} />,           roles: ["admin"],                        group: "Admin" },
   { href: ROUTES.siteEditor,    label: "Editor do site",icon: <Palette size={16} />,         roles: ["admin"],                        group: "Admin" },
 ];
