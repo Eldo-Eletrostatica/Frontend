@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
+import { INVALID_EMAIL_MESSAGE, isValidEmail } from "@/lib/validation/email";
+import { INVALID_PERSON_NAME_MESSAGE, isValidPersonName, normalizePersonName } from "@/lib/validation/name";
+import { INVALID_PHONE_MESSAGE, formatPhone, isValidPhone, normalizePhoneDigits } from "@/lib/validation/phone";
 
 // Same limits as the Backend contact request DTO.
 const NAME_MAX_LENGTH = 150;
-const PHONE_MAX_LENGTH = 20;
 const EMAIL_MAX_LENGTH = 254;
 const MESSAGE_MAX_LENGTH = 2000;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UNEXPECTED_ERROR_MESSAGE = "Não foi possível enviar a mensagem. Tente novamente.";
 
 interface ContactRequestFields {
@@ -28,9 +29,11 @@ const EMPTY_FIELDS: ContactRequestFields = { name: "", phone: "", email: "", mes
 function validateContactRequest(fields: ContactRequestFields): FieldErrors {
   const errors: FieldErrors = {};
   if (!fields.name.trim()) errors.name = "Informe seu nome.";
+  else if (!isValidPersonName(fields.name)) errors.name = INVALID_PERSON_NAME_MESSAGE;
   if (!fields.phone.trim()) errors.phone = "Informe um telefone para contato.";
+  else if (!isValidPhone(fields.phone)) errors.phone = INVALID_PHONE_MESSAGE;
   if (!fields.email.trim()) errors.email = "Informe seu e-mail.";
-  else if (!EMAIL_PATTERN.test(fields.email.trim())) errors.email = "Informe um e-mail válido, como nome@email.com.";
+  else if (!isValidEmail(fields.email)) errors.email = INVALID_EMAIL_MESSAGE;
   if (!fields.message.trim()) errors.message = "Descreva o que você precisa.";
   if (!fields.hasConsent) errors.hasConsent = "Autorize o contato para enviar a mensagem.";
   return errors;
@@ -44,6 +47,7 @@ function getBorderClassName(error: string | undefined): string {
 
 export default function ContactRequestForm() {
   const [fields, setFields] = useState<ContactRequestFields>(EMPTY_FIELDS);
+  const honeypotRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -62,15 +66,18 @@ export default function ContactRequestForm() {
     setSubmitError(null);
     if (Object.keys(validationErrors).length > 0) return;
 
+    const honeypot = honeypotRef.current?.value ?? "";
     setIsSubmitting(true);
     try {
       await sendApiRequest("/contact-requests", {
         method: "POST",
         body: {
-          name: fields.name.trim(),
-          phone: fields.phone.trim(),
+          name: normalizePersonName(fields.name).trim(),
+          phone: normalizePhoneDigits(fields.phone),
           email: fields.email.trim(),
           message: fields.message.trim(),
+          // Only a script fills the honeypot, so people never send this field.
+          ...(honeypot ? { website: honeypot } : {}),
         },
       });
       setFields(EMPTY_FIELDS);
@@ -84,6 +91,12 @@ export default function ContactRequestForm() {
 
   return (
     <form onSubmit={submitContactRequest} noValidate className="p-8 md:p-10 flex flex-col gap-5 bg-site-page">
+      {/* Honeypot: off screen and out of the tab order, so people never fill it;
+          a script that fills every field gets a fake success from the API. */}
+      <div aria-hidden="true" className="absolute -left-[10000px] w-px h-px overflow-hidden">
+        <label htmlFor="contact-website">Deixe este campo em branco</label>
+        <input id="contact-website" ref={honeypotRef} type="text" name="website" tabIndex={-1} autoComplete="off" defaultValue="" />
+      </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <FormField label="NOME COMPLETO" htmlFor="contact-name" error={errors.name}>
           <input id="contact-name" type="text" autoComplete="name" value={fields.name} maxLength={NAME_MAX_LENGTH}
@@ -91,9 +104,9 @@ export default function ContactRequestForm() {
             placeholder="Seu nome" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.name)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </FormField>
         <FormField label="TELEFONE (WHATSAPP)" htmlFor="contact-phone" error={errors.phone}>
-          <input id="contact-phone" type="tel" autoComplete="tel" value={fields.phone} maxLength={PHONE_MAX_LENGTH}
-            onChange={(event) => updateField("phone", event.target.value)} aria-invalid={Boolean(errors.phone)}
-            placeholder="(00) 00000-0000" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.phone)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+          <input id="contact-phone" type="tel" inputMode="numeric" autoComplete="tel" value={fields.phone}
+            onChange={(event) => updateField("phone", formatPhone(event.target.value))} aria-invalid={Boolean(errors.phone)}
+            placeholder="(61) 99999-9999" className={`${INPUT_CLASS_NAME} ${getBorderClassName(errors.phone)}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </FormField>
       </div>
       <FormField label="E-MAIL" htmlFor="contact-email" error={errors.email}>
