@@ -5,7 +5,7 @@ import {
   SHORT_COMPANY_NAME_MESSAGE,
 } from "@/lib/validation/name";
 import { INVALID_PHONE_MESSAGE, isValidPhone, normalizePhoneDigits } from "@/lib/validation/phone";
-import type { CreateEstimatedQuote, QuoteCustomer, OrderItem } from "./types";
+import type { CalculatePriceRange, CreateEstimatedQuote, QuoteCustomer, OrderItem } from "./types";
 import { INVALID_EMAIL_MESSAGE, isValidEmail } from "@/lib/validation/email";
 
 // Limits of the Backend DTOs (CreateEstimatedQuoteDto, QuoteCustomerDto).
@@ -160,11 +160,22 @@ function toOrderItem(item: OrderItemFields): OrderItem {
 
 type BuildResult<T> = { errors: FieldErrors; payload?: undefined } | { errors?: undefined; payload: T };
 
+function validateItems(items: OrderItemFields[]): FieldErrors {
+  return items.reduce<FieldErrors>((all, item, index) => ({ ...all, ...validateItem(item, index) }), {});
+}
+
+// The range needs only the parts: the company data comes with the formal quote.
+export function buildPriceRangeRequest(items: OrderItemFields[]): BuildResult<CalculatePriceRange> {
+  const errors = validateItems(items);
+  if (Object.keys(errors).length > 0) return { errors };
+  return { payload: { items: items.map(toOrderItem) } };
+}
+
 export function buildEstimatedQuote(customer: CustomerFields, fields: EstimatorFields): BuildResult<CreateEstimatedQuote> {
   const message = buildEstimatorMessage(customer, fields);
   const errors: FieldErrors = {
     ...validateCustomer(customer),
-    ...fields.items.reduce<FieldErrors>((all, item, index) => ({ ...all, ...validateItem(item, index) }), {}),
+    ...validateItems(fields.items),
     ...validateMessageLength(message),
   };
   const dueDateError = validateDueDate(fields.dueDate, true);
