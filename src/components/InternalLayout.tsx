@@ -29,25 +29,25 @@ const ROLE_LABEL: Record<Role, string> = { admin: "Administrador", manager: "Ges
 export default function InternalLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentUser, hasLoaded, logout } = useAuth();
+  const { currentEmployee, hasLoaded, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   // Leaving on purpose goes to the plain login; losing the session keeps the
   // current screen in "next" to come back to it.
   const isLoggingOutRef = useRef(false);
 
-  const allowed = currentUser ? NAV.filter((n) => n.roles.includes(currentUser.role)) : [];
+  const allowed = currentEmployee ? NAV.filter((n) => n.roles.includes(currentEmployee.role)) : [];
   const isCurrentRouteAllowed = allowed.some((n) => n.href === pathname);
   const firstAllowedHref = allowed[0]?.href;
 
   useEffect(() => {
     if (!hasLoaded) return;
-    if (!currentUser) {
+    if (!currentEmployee) {
       const { pathname: currentPath, search } = window.location;
       router.replace(isLoggingOutRef.current ? ROUTES.internalLogin : buildLoginPath(`${currentPath}${search}`));
     } else if (!isCurrentRouteAllowed && firstAllowedHref) {
       router.replace(firstAllowedHref);
     }
-  }, [hasLoaded, currentUser, isCurrentRouteAllowed, firstAllowedHref, router]);
+  }, [hasLoaded, currentEmployee, isCurrentRouteAllowed, firstAllowedHref, router]);
 
   function handleLogout() {
     isLoggingOutRef.current = true;
@@ -56,7 +56,7 @@ export default function InternalLayout({ children }: { children: React.ReactNode
     logout().catch(() => {});
   }
 
-  if (!currentUser || !isCurrentRouteAllowed) {
+  if (!currentEmployee || !isCurrentRouteAllowed) {
     return <div className="min-h-screen" style={{ background: "#12100d" }} />;
   }
 
@@ -102,9 +102,9 @@ export default function InternalLayout({ children }: { children: React.ReactNode
         <div className="px-5 py-4 border-t border-[rgba(245,242,236,0.07)]">
           <div className="flex items-center justify-between">
             <div className="overflow-hidden">
-              <p className="text-[13px] text-[#f5f2ec] truncate" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{currentUser.name}</p>
+              <p className="text-[13px] text-[#f5f2ec] truncate" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{currentEmployee.name}</p>
               <p className="text-[10px] tracking-[1.5px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
-                {ROLE_LABEL[currentUser.role].toUpperCase()}
+                {ROLE_LABEL[currentEmployee.role].toUpperCase()}
               </p>
             </div>
             <button onClick={handleLogout} className="text-[rgba(245,242,236,0.35)] hover:text-[#e9b421] transition-colors ml-2 flex-shrink-0" title="Sair">

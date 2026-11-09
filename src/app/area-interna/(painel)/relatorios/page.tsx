@@ -4,6 +4,6 @@ import Reports from "@/components/Reports";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
 export default function ReportsPage() {
-  const { currentUser } = useAuth();
-  return currentUser && <Reports role={currentUser.role} />;
+  const { currentEmployee } = useAuth();
+  return currentEmployee && <Reports role={currentEmployee.role} />;
 }

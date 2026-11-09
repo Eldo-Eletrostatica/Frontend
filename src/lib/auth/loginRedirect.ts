@@ -11,24 +11,26 @@ export function buildLoginPath(requestedPath: string): string {
   return `${ROUTES.internalLogin}?${params}`;
 }
 
-function isInternalAreaPath(pathname: string): boolean {
+export function isInternalAreaPath(pathname: string): boolean {
   const isInsideInternalArea = pathname === ROUTES.internalArea || pathname.startsWith(`${ROUTES.internalArea}/`);
   return isInsideInternalArea && pathname !== ROUTES.internalLogin;
 }
 
 // The "next" parameter comes from the address bar, so anything that is not a
-// path inside the internal area falls back to it, which blocks open redirects.
-export function findPathAfterLogin(searchParams: URLSearchParams): string {
+// path inside the internal area falls back to the role's landing route, which
+// blocks open redirects and skips landing on forbidden screens.
+export function findPathAfterLogin(searchParams: URLSearchParams, role?: string): string {
   const requestedPath = searchParams.get(NEXT_PATH_PARAM);
-  if (!requestedPath) return ROUTES.internalArea;
+  const defaultPath = role === "employee" ? ROUTES.serviceOrders : ROUTES.internalArea;
+  if (!requestedPath) return defaultPath;
 
   let url: URL;
   try {
     url = new URL(requestedPath, PLACEHOLDER_ORIGIN);
   } catch {
-    return ROUTES.internalArea;
+    return defaultPath;
   }
 
-  if (url.origin !== PLACEHOLDER_ORIGIN || !isInternalAreaPath(url.pathname)) return ROUTES.internalArea;
+  if (url.origin !== PLACEHOLDER_ORIGIN || !isInternalAreaPath(url.pathname)) return defaultPath;
   return `${url.pathname}${url.search}${url.hash}`;
 }
