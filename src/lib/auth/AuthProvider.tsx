@@ -13,9 +13,6 @@ export interface Employee {
   role: Role;
 }
 
-// Kept as alias for AuthenticatedEmployee to prevent breaking other files
-export type AuthenticatedEmployee = Employee;
-
 interface LoginResponse {
   accessToken: string;
   employee: Employee;
@@ -27,15 +24,12 @@ interface AuthState {
 }
 
 interface AuthValue extends AuthState {
-  /** @deprecated Use currentEmployee instead (GLOSSARY.md) */
-  currentUser: Employee | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue>({
   currentEmployee: null,
-  currentUser: null,
   hasLoaded: false,
   login: async () => {},
   logout: async () => {},
@@ -90,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthValue>(
     () => ({
       ...state,
-      currentUser: state.currentEmployee,
       login,
       logout,
     }),
