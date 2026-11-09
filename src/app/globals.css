@@ -1,5 +1,14 @@
 @import 'tailwindcss';
 
+/* Tailwind colors of the public site, as text-site-accent, bg-site-card/60... */
+@theme inline {
+  --color-site-accent: var(--site-accent);
+  --color-site-page: var(--site-page-background);
+  --color-site-card: var(--site-card-background);
+  --color-site-deep: var(--site-deep-background);
+  --color-site-text: var(--site-text);
+}
+
 @font-face {
   font-family: "Poppins:Bold";
   font-style: normal;
@@ -66,6 +75,16 @@
 
 /* Respect device notch / dynamic island / home indicator */
 :root {
+  /* Published colors of the public site (US25). The defaults are the Eldo
+     identity; the (site) layout overrides them with the published ones. */
+  --site-accent: #e9b421;
+  --site-page-background: #12100d;
+  --site-card-background: #171511;
+  --site-text: #f5f2ec;
+  /* Darker band behind the reviews and the footer, derived so it follows the
+     published page background. */
+  --site-deep-background: color-mix(in srgb, var(--site-page-background), black 18%);
+
   --sat: env(safe-area-inset-top, 0px);
   --sar: env(safe-area-inset-right, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
@@ -74,7 +93,7 @@
 
 html {
   /* Extend background colour behind the status bar */
-  background-color: #12100d;
+  background-color: var(--site-page-background);
 }
 
 body {
