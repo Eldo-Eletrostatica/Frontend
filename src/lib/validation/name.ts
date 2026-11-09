@@ -21,8 +21,3 @@ export function isValidPersonName(value: string): boolean {
 export function isValidCompanyName(value: string): boolean {
   return value.trim().length >= MIN_NAME_LENGTH;
 }
-
-// Domain aliases (GLOSSARY.md: IndividualCustomer / BusinessCustomer)
-export const normalizeCustomerName = normalizePersonName;
-export const isValidCustomerName = isValidPersonName;
-export const isValidBusinessCustomerName = isValidCompanyName;
