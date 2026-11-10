@@ -26,6 +26,7 @@ interface AuthState {
 interface AuthValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateCurrentEmployee: (employee: Employee) => void;
 }
 
 const AuthContext = createContext<AuthValue>({
@@ -33,6 +34,7 @@ const AuthContext = createContext<AuthValue>({
   hasLoaded: false,
   login: async () => {},
   logout: async () => {},
+  updateCurrentEmployee: () => {},
 });
 
 function hasCsrfCookie(): boolean {
@@ -81,13 +83,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Keeps the sidebar and role guards in sync when an administrator edits
+  // their own account in the Employees screen.
+  const updateCurrentEmployee = useCallback((employee: Employee) => {
+    setState((current) => {
+      if (current.currentEmployee?.employeeId !== employee.employeeId) return current;
+      return { ...current, currentEmployee: employee };
+    });
+  }, []);
+
   const value = useMemo<AuthValue>(
     () => ({
       ...state,
       login,
       logout,
+      updateCurrentEmployee,
     }),
-    [state, login, logout],
+    [state, login, logout, updateCurrentEmployee],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
