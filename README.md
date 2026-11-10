@@ -129,3 +129,26 @@ docker compose run --rm -e NODE_ENV=production frontend npm run build
 | `npm run start` | Inicia o build de produção |
 | `npm run lint` | Executa o linter. Rode antes de dar uma tarefa por pronta |
 | `npm run typecheck` | Gera os tipos das rotas (`next typegen`) e checa os tipos com o `tsc`. Funciona num checkout limpo, sem precisar de um build antes |
+| `npm run test:e2e` | Roda a suíte de ponta a ponta com Selenium, no Chrome sem tela |
+
+## Testes de ponta a ponta
+
+A suíte em `e2e/` abre o navegador de verdade contra o Frontend e o Backend, então os dois precisam estar rodando:
+
+```bash
+# no Backend, com o banco de dados de pé
+docker compose exec backend npm run seed:demo   # cria o gestor de demonstração
+
+# no Frontend
+npm run dev -- -p 3001
+npm run test:e2e
+```
+
+O endereço e as credenciais vêm do ambiente:
+
+| Variável | Padrão |
+| --- | --- |
+| `E2E_BASE_URL` | `http://localhost:3001` |
+| `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | `admin@eldo.com.br` / `Admin@123` |
+| `E2E_MANAGER_EMAIL` / `E2E_MANAGER_PASSWORD` | `gestor.demo@eldo.com.br` / `Gestor@2026` |
+| `E2E_HEADLESS` | `true`; com `false` o navegador abre com a tela visível |
