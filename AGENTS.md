@@ -70,7 +70,7 @@ Ao escrever texto em português (documentação, README, issue, PR, commit), sig
 ## Git
 
 - Commits no padrão Conventional Commits, com o tipo em inglês e a descrição em português: `feat: adiciona upload de PDF no orçamento`.
-- Uma branch por tarefa, criada a partir da `main` (`feat/`, `fix/`, `docs/`, `test/`, `chore/`) e integrada por PR.
+- Uma branch por tarefa, criada a partir da `main` e nomeada com as iniciais de quem trabalha nela (`yg/`), integrada por PR.
 - Commit e push acontecem quando a pessoa pede.
 - Commits e PRs levam só a autoria humana, sem linhas de atribuição a agentes.
 
@@ -92,3 +92,13 @@ Single-context: `GLOSSARY.md` na raiz de cada repo; as ADRs ficam só no repo `D
 - Os caminhos das rotas ficam em `src/lib/routes.ts`; use `ROUTES` em vez de escrever a URL no componente.
 - A pasta `legacy/` guarda o site estático antigo, como referência de conteúdo e imagens. O código novo vive em `src/`.
 - Antes de dar uma tarefa por pronta, rode `npm run lint`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
