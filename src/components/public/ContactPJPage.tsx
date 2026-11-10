@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, Calculator, Check, ChevronDown, FileText, Plus, Trash2, Upload } from "lucide-react";
+import { useRef, useState } from "react";
+import { AlertTriangle, Calculator, Check, ChevronDown, FileText, Plus, Send, Trash2, Upload } from "lucide-react";
 import { sendApiRequest } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/ApiError";
+import CaptchaField, { type CaptchaFieldHandle } from "@/components/public/CaptchaField";
 import { formatPhone } from "@/lib/validation/phone";
 import {
   buildEstimatedQuote,
   buildPdfQuote,
+  buildPriceRangeRequest,
   CUSTOMER_NAME_MAX_LENGTH,
   EMAIL_MAX_LENGTH,
   EMPTY_CUSTOMER,
@@ -18,9 +20,10 @@ import {
   type PdfFields,
   type OrderItemFields,
 } from "@/components/quote/quoteForm";
-import type { EstimatorOptions, Quote } from "@/components/quote/types";
+import type { EstimatorOptions, PriceRange, Quote } from "@/components/quote/types";
 
-type QuotePath = "pdf" | "estimator";
+// "priceRange" only calculates the range; "estimator" is the formal quote.
+type QuotePath = "pdf" | "priceRange" | "estimator";
 
 interface Props {
   estimatorOptions: EstimatorOptions;
@@ -53,12 +56,16 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
   const [pdfFields, setPdfFields] = useState<PdfFields>({ file: null, dueDate: "", notes: "" });
   const [estimatorFields, setEstimatorFields] = useState<EstimatorFields>(() => ({ items: [createEmptyItem()], dueDate: "", color: "", notes: "" }));
   const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
-  // Errors of the last submitted path; the company fields are shared by both.
+  // Errors of the last submitted path. The company fields appear in the PDF form
+  // and in the formal quote, with the same values.
   const [fieldErrors, setFieldErrors] = useState<{ path: QuotePath; errors: FieldErrors } | null>(null);
   const [submitError, setSubmitError] = useState<{ path: QuotePath; message: string } | null>(null);
   const [submittingPath, setSubmittingPath] = useState<QuotePath | null>(null);
   const [sentPdfName, setSentPdfName] = useState("");
-  const [estimatedQuote, setEstimatedQuote] = useState<Quote | null>(null);
+  const [priceRange, setPriceRange] = useState<PriceRange | null>(null);
+  const [isQuoteRequested, setIsQuoteRequested] = useState(false);
+  const pdfCaptchaRef = useRef<CaptchaFieldHandle>(null);
+  const estimatorCaptchaRef = useRef<CaptchaFieldHandle>(null);
 
   const today = getTodayDateOnly();
 
@@ -66,9 +73,6 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
     return fieldErrors?.path === path ? fieldErrors.errors[field] : undefined;
   }
 
-  function getCustomerError(field: keyof CustomerFields): string | undefined {
-    return fieldErrors?.errors[field];
-  }
 
   function updateCustomer(field: keyof CustomerFields, value: string) {
     setCustomer((current) => ({ ...current, [field]: value }));
@@ -96,7 +100,6 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
       return false;
     }
     setFieldErrors(null);
-    setSubmittingPath(path);
     return true;
   }
 
@@ -104,12 +107,31 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
     event.preventDefault();
     const { errors, payload } = buildPdfQuote(customer, pdfFields);
     if (!startSubmit("pdf", errors) || !payload) return;
+    const captchaToken = pdfCaptchaRef.current?.requireToken();
+    if (!captchaToken) return;
+    setSubmittingPath("pdf");
     try {
-      await sendApiRequest<Quote>("/quotes/pdf", { method: "POST", formData: payload });
+      await sendApiRequest<Quote>("/quotes/pdf", { method: "POST", formData: payload, captchaToken });
       setSentPdfName(pdfFields.file?.name ?? "");
       setPdfFields({ file: null, dueDate: "", notes: "" });
     } catch (error) {
       setSubmitError({ path: "pdf", message: toErrorMessage(error) });
+    } finally {
+      setSubmittingPath(null);
+      pdfCaptchaRef.current?.reset();
+    }
+  }
+
+  // Only shows the range: nothing is saved and the company is not notified.
+  async function handlePriceRangeSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const { errors, payload } = buildPriceRangeRequest(estimatorFields.items);
+    if (!startSubmit("priceRange", errors) || !payload) return;
+    setSubmittingPath("priceRange");
+    try {
+      setPriceRange(await sendApiRequest<PriceRange>("/quotes/estimator/price-range", { method: "POST", body: payload }));
+    } catch (error) {
+      setSubmitError({ path: "priceRange", message: toErrorMessage(error) });
     } finally {
       setSubmittingPath(null);
     }
@@ -119,17 +141,23 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
     event.preventDefault();
     const { errors, payload } = buildEstimatedQuote(customer, estimatorFields);
     if (!startSubmit("estimator", errors) || !payload) return;
+    const captchaToken = estimatorCaptchaRef.current?.requireToken();
+    if (!captchaToken) return;
+    setSubmittingPath("estimator");
     try {
-      setEstimatedQuote(await sendApiRequest<Quote>("/quotes/estimator", { method: "POST", body: payload }));
+      await sendApiRequest<Quote>("/quotes/estimator", { method: "POST", body: payload, captchaToken });
+      setIsQuoteRequested(true);
     } catch (error) {
       setSubmitError({ path: "estimator", message: toErrorMessage(error) });
     } finally {
       setSubmittingPath(null);
+      estimatorCaptchaRef.current?.reset();
     }
   }
 
   function startNewEstimate() {
-    setEstimatedQuote(null);
+    setPriceRange(null);
+    setIsQuoteRequested(false);
     setEstimatorFields({ items: [createEmptyItem()], dueDate: "", color: "", notes: "" });
   }
 
@@ -140,33 +168,10 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
         <h1 className="text-[48px] text-[#f5f2ec] leading-[1.05] tracking-[-1.44px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Orçamento para<br />empresas</h1>
         <p className="mt-5 max-w-[720px] text-[15px] text-[rgba(245,242,236,0.55)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           {isEstimatorAvailable
-            ? "Informe os dados da empresa e escolha como prefere pedir: envie o projeto em PDF ou preencha as peças no simulador para receber uma estimativa inicial na hora."
-            : "Informe os dados da empresa e envie o projeto em PDF. Nossa equipe analisa o pedido e responde em até 48 horas."}
+            ? "Escolha como prefere pedir: envie o projeto em PDF ou preencha as peças no simulador para ver uma estimativa inicial na hora e, se quiser, solicitar o orçamento formal."
+            : "Envie o projeto em PDF. Nossa equipe analisa o pedido e responde em até 48 horas."}
         </p>
       </div>
-
-      <section className="border border-[rgba(245,242,236,0.1)] bg-[rgba(23,21,17,0.55)] p-6 md:p-8 mb-8">
-        <SectionTitle>DADOS DA EMPRESA</SectionTitle>
-        <div className="grid md:grid-cols-2 gap-4 mt-5">
-          <Field label="EMPRESA *" error={getCustomerError("companyName")}>
-            <input type="text" value={customer.companyName} maxLength={CUSTOMER_NAME_MAX_LENGTH} onChange={(e) => updateCustomer("companyName", e.target.value)} placeholder="Razão social" className={INPUT_CLASS} />
-          </Field>
-          <Field label="CNPJ *" error={getCustomerError("cnpj")}>
-            <input type="text" inputMode="numeric" value={customer.cnpj} onChange={(e) => updateCustomer("cnpj", e.target.value)} placeholder="00.000.000/0001-00" className={INPUT_CLASS} />
-          </Field>
-          <Field label="RESPONSÁVEL PELO CONTATO" error={getCustomerError("contactName")}>
-            <input type="text" value={customer.contactName} maxLength={CUSTOMER_NAME_MAX_LENGTH} onChange={(e) => updateCustomer("contactName", e.target.value)} placeholder="Nome completo" className={INPUT_CLASS} />
-          </Field>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="TELEFONE (WHATSAPP) *" error={getCustomerError("phone")}>
-              <input type="tel" inputMode="numeric" value={customer.phone} onChange={(e) => updateCustomer("phone", formatPhone(e.target.value))} placeholder="(61) 99999-9999" className={INPUT_CLASS} />
-            </Field>
-            <Field label="E-MAIL COMERCIAL *" error={getCustomerError("email")}>
-              <input type="email" value={customer.email} maxLength={EMAIL_MAX_LENGTH} onChange={(e) => updateCustomer("email", e.target.value)} placeholder="compras@empresa.com.br" className={INPUT_CLASS} />
-            </Field>
-          </div>
-        </div>
-      </section>
 
       <section className="relative overflow-hidden border border-[rgba(233,180,33,0.32)] bg-[#171511] p-7 md:p-10 mb-8">
         <div className="absolute top-0 left-0 h-full w-1 bg-[#e9b421]" />
@@ -215,6 +220,12 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                 <input type="text" value={pdfFields.notes} onChange={(e) => setPdfFields({ ...pdfFields, notes: e.target.value })} placeholder="Algo que a equipe precise saber sobre o projeto" className={INPUT_CLASS} />
               </Field>
             </div>
+            <div className="mt-8">
+              <CompanyFields customer={customer} onChange={updateCustomer} getError={(field) => getFieldError("pdf", field)} />
+            </div>
+            <div className="mt-6">
+              <CaptchaField ref={pdfCaptchaRef} />
+            </div>
             <SubmitError message={submitError?.path === "pdf" ? submitError.message : undefined} />
             <div className="mt-6 flex justify-end">
               <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-2 h-[48px] px-7 rounded-full bg-[#e9b421] text-[#12100d] text-[14px] disabled:opacity-50" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
@@ -240,10 +251,45 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
 
           {isEstimatorOpen && (
             <div className="border-t border-[rgba(245,242,236,0.08)] p-6 md:p-8">
-              {estimatedQuote ? (
-                <EstimateResult quote={estimatedQuote} onAdjust={() => setEstimatedQuote(null)} onRestart={startNewEstimate} />
+              {isQuoteRequested ? (
+                <QuoteRequested onRestart={startNewEstimate} />
+              ) : priceRange ? (
+                <>
+                  <PriceRangeResult priceRange={priceRange} onAdjust={() => setPriceRange(null)} />
+                  <form onSubmit={handleEstimatorSubmit} noValidate>
+                    <div className="mt-10">
+                      <SectionTitle>PRAZO E DETALHES</SectionTitle>
+                      <div className="grid md:grid-cols-[220px_1fr] gap-4 mt-5">
+                        <Field label="PRAZO DESEJADO *" error={getFieldError("estimator", "dueDate")}>
+                          <input type="date" min={today} value={estimatorFields.dueDate} onChange={(e) => setEstimatorFields({ ...estimatorFields, dueDate: e.target.value })} className={`${INPUT_CLASS} [color-scheme:dark]`} />
+                        </Field>
+                        <Field label="COR DESEJADA">
+                          <input type="text" value={estimatorFields.color} onChange={(e) => setEstimatorFields({ ...estimatorFields, color: e.target.value })} placeholder="Ex.: RAL 7016, preto fosco" className={INPUT_CLASS} />
+                        </Field>
+                      </div>
+                      <div className="mt-4">
+                        <Field label="OBSERVAÇÕES" error={getFieldError("estimator", "notes")}>
+                          <textarea value={estimatorFields.notes} onChange={(e) => setEstimatorFields({ ...estimatorFields, notes: e.target.value })} placeholder="Algo que a equipe precise saber sobre o projeto" className={TEXTAREA_CLASS} />
+                        </Field>
+                      </div>
+                    </div>
+
+                    <div className="mt-8">
+                      <CompanyFields customer={customer} onChange={updateCustomer} getError={(field) => getFieldError("estimator", field)} />
+                    </div>
+                    <div className="mt-8">
+                      <CaptchaField ref={estimatorCaptchaRef} />
+                    </div>
+                    <SubmitError message={submitError?.path === "estimator" ? submitError.message : undefined} />
+                    <div className="mt-8 flex justify-end">
+                      <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-2 h-[48px] px-7 rounded-full bg-[#e9b421] text-[#12100d] text-[14px] disabled:opacity-50" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+                        <Send size={16} /> {submittingPath === "estimator" ? "Enviando..." : "Solicitar orçamento formal"}
+                      </button>
+                    </div>
+                  </form>
+                </>
               ) : (
-                <form onSubmit={handleEstimatorSubmit} noValidate>
+                <form onSubmit={handlePriceRangeSubmit} noValidate>
                   <SectionTitle>PEÇAS DO PROJETO</SectionTitle>
                   <div className="flex flex-col gap-5 mt-5">
                     {estimatorFields.items.map((item, index) => (
@@ -257,13 +303,13 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                           )}
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
-                          <Field label="TIPO DE PINTURA *" error={getFieldError("estimator", `items.${index}.paintCatalogItemId`)}>
+                          <Field label="TIPO DE PINTURA *" error={getFieldError("priceRange", `items.${index}.paintCatalogItemId`)}>
                             <select value={item.paintCatalogItemId} onChange={(e) => updateItem(item.key, "paintCatalogItemId", e.target.value)} className={`${INPUT_CLASS} cursor-pointer`}>
                               <option value="">Selecione</option>
                               {paintTypes.map((paintType) => <option key={paintType.catalogItemId} value={paintType.catalogItemId}>{paintType.name}</option>)}
                             </select>
                           </Field>
-                          <Field label="MATERIAL DA PEÇA *" error={getFieldError("estimator", `items.${index}.materialCatalogItemId`)}>
+                          <Field label="MATERIAL DA PEÇA *" error={getFieldError("priceRange", `items.${index}.materialCatalogItemId`)}>
                             <select value={item.materialCatalogItemId} onChange={(e) => updateItem(item.key, "materialCatalogItemId", e.target.value)} className={`${INPUT_CLASS} cursor-pointer`}>
                               <option value="">Selecione</option>
                               {partMaterials.map((partMaterial) => <option key={partMaterial.catalogItemId} value={partMaterial.catalogItemId}>{partMaterial.name}</option>)}
@@ -273,10 +319,10 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                             <input type="text" value={item.description} onChange={(e) => updateItem(item.key, "description", e.target.value)} placeholder="Ex.: chassi de máquina, grade 3m x 2m" className={INPUT_CLASS} />
                           </Field>
                           <div className="grid grid-cols-2 gap-4">
-                            <Field label="ÁREA (m²/peça) *" error={getFieldError("estimator", `items.${index}.areaM2`)}>
+                            <Field label="ÁREA (m²/peça) *" error={getFieldError("priceRange", `items.${index}.areaM2`)}>
                               <input type="text" inputMode="decimal" value={item.areaM2} onChange={(e) => updateItem(item.key, "areaM2", e.target.value)} placeholder="4,5" className={INPUT_CLASS} />
                             </Field>
-                            <Field label="QUANTIDADE *" error={getFieldError("estimator", `items.${index}.quantity`)}>
+                            <Field label="QUANTIDADE *" error={getFieldError("priceRange", `items.${index}.quantity`)}>
                               <input type="number" min="1" step="1" value={item.quantity} onChange={(e) => updateItem(item.key, "quantity", e.target.value)} placeholder="10" className={INPUT_CLASS} />
                             </Field>
                           </div>
@@ -287,28 +333,10 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                       <Plus size={15} /> Adicionar peça
                     </button>
                   </div>
-
-                  <div className="mt-8">
-                    <SectionTitle>PRAZO E DETALHES</SectionTitle>
-                    <div className="grid md:grid-cols-[220px_1fr] gap-4 mt-5">
-                      <Field label="PRAZO DESEJADO *" error={getFieldError("estimator", "dueDate")}>
-                        <input type="date" min={today} value={estimatorFields.dueDate} onChange={(e) => setEstimatorFields({ ...estimatorFields, dueDate: e.target.value })} className={`${INPUT_CLASS} [color-scheme:dark]`} />
-                      </Field>
-                      <Field label="COR DESEJADA">
-                        <input type="text" value={estimatorFields.color} onChange={(e) => setEstimatorFields({ ...estimatorFields, color: e.target.value })} placeholder="Ex.: RAL 7016, preto fosco" className={INPUT_CLASS} />
-                      </Field>
-                    </div>
-                    <div className="mt-4">
-                      <Field label="OBSERVAÇÕES" error={getFieldError("estimator", "notes")}>
-                        <textarea value={estimatorFields.notes} onChange={(e) => setEstimatorFields({ ...estimatorFields, notes: e.target.value })} placeholder="Algo que a equipe precise saber sobre o projeto" className={TEXTAREA_CLASS} />
-                      </Field>
-                    </div>
-                  </div>
-
-                  <SubmitError message={submitError?.path === "estimator" ? submitError.message : undefined} />
+                  <SubmitError message={submitError?.path === "priceRange" ? submitError.message : undefined} />
                   <div className="mt-8 flex justify-end">
                     <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-3 h-[48px] px-7 border border-[rgba(245,242,236,0.2)] text-[rgba(245,242,236,0.78)] text-[14px] hover:border-[#e9b421] hover:text-[#e9b421] transition-colors disabled:opacity-50" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
-                      <Calculator size={16} /> {submittingPath === "estimator" ? "Calculando..." : "Calcular estimativa"}
+                      <Calculator size={16} /> {submittingPath === "priceRange" ? "Calculando..." : "Calcular estimativa"}
                     </button>
                   </div>
                 </form>
@@ -321,29 +349,69 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
   );
 }
 
-function EstimateResult({ quote, onAdjust, onRestart }: { quote: Quote; onAdjust: () => void; onRestart: () => void }) {
+function PriceRangeResult({ priceRange, onAdjust }: { priceRange: PriceRange; onAdjust: () => void }) {
   return (
     <div className="max-w-[780px]" role="status">
       <p className="text-[11px] tracking-[2.4px] text-[#e9b421] mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>FAIXA ESTIMADA</p>
-      {quote.minPrice !== null && quote.maxPrice !== null && (
-        <p className="text-[34px] md:text-[44px] text-[#f5f2ec] leading-tight mb-5" style={{ fontFamily: "'Poppins:Bold', sans-serif" }} data-testid="price-range">
-          Entre {formatMoney(quote.minPrice)} e {formatMoney(quote.maxPrice)}
-        </p>
-      )}
+      <p className="text-[34px] md:text-[44px] text-[#f5f2ec] leading-tight mb-5" style={{ fontFamily: "'Poppins:Bold', sans-serif" }} data-testid="price-range">
+        Entre {formatMoney(priceRange.minPrice)} e {formatMoney(priceRange.maxPrice)}
+      </p>
       <div className="flex gap-3 p-4 border border-amber-400/30 bg-amber-400/5 mb-5">
         <AlertTriangle size={19} className="text-[#e9b421] flex-shrink-0 mt-0.5" />
         <p className="text-[13px] text-[rgba(245,242,236,0.72)] leading-[1.65]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           <strong className="text-[#f5f2ec]">Esta é apenas uma estimativa inicial.</strong> O valor está sujeito à análise e confirmação da Eldo antes da aprovação final do orçamento.
         </p>
       </div>
-      <p className="text-[13px] text-[rgba(245,242,236,0.6)] mb-7" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-        Seu pedido de orçamento foi registrado. Nossa equipe entra em contato para confirmar os valores e combinar os próximos passos.
+      <p className="text-[13px] text-[rgba(245,242,236,0.6)] mb-5" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        Para receber o orçamento da Eldo, informe o prazo e os dados da empresa abaixo e solicite o orçamento formal.
       </p>
-      <div className="flex gap-3 flex-wrap">
-        <button type="button" onClick={onAdjust} className="h-[46px] px-6 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.65)] text-[13px]">Ajustar dados e enviar de novo</button>
-        <button type="button" onClick={onRestart} className="h-[46px] px-6 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.65)] text-[13px]">Nova simulação</button>
+      <button type="button" onClick={onAdjust} className="h-[46px] px-6 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.65)] text-[13px]">Ajustar peças</button>
+    </div>
+  );
+}
+
+function QuoteRequested({ onRestart }: { onRestart: () => void }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-5" role="status">
+      <div className="w-14 h-14 rounded-full bg-[rgba(52,211,153,0.1)] border border-emerald-500/40 flex items-center justify-center flex-shrink-0">
+        <Check size={24} className="text-emerald-400" />
+      </div>
+      <div>
+        <p className="text-[11px] tracking-[2.4px] text-emerald-400 mb-2" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>PEDIDO ENVIADO</p>
+        <h2 className="text-[24px] text-[#f5f2ec] mb-2" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Recebemos seu pedido de orçamento</h2>
+        <p className="text-[14px] text-[rgba(245,242,236,0.62)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          Nossa equipe confere os valores e entra em contato para combinar os próximos passos.
+        </p>
+        <button type="button" onClick={onRestart} className="mt-4 text-[12px] text-[#e9b421] hover:opacity-80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Nova simulação</button>
       </div>
     </div>
+  );
+}
+
+function CompanyFields({ customer, onChange, getError }: { customer: CustomerFields; onChange: (field: keyof CustomerFields, value: string) => void; getError: (field: keyof CustomerFields) => string | undefined }) {
+  return (
+    <>
+      <SectionTitle>DADOS DA EMPRESA</SectionTitle>
+      <div className="grid md:grid-cols-2 gap-4 mt-5">
+        <Field label="EMPRESA *" error={getError("companyName")}>
+          <input type="text" value={customer.companyName} maxLength={CUSTOMER_NAME_MAX_LENGTH} onChange={(e) => onChange("companyName", e.target.value)} placeholder="Razão social" className={INPUT_CLASS} />
+        </Field>
+        <Field label="CNPJ *" error={getError("cnpj")}>
+          <input type="text" inputMode="numeric" value={customer.cnpj} onChange={(e) => onChange("cnpj", e.target.value)} placeholder="00.000.000/0001-00" className={INPUT_CLASS} />
+        </Field>
+        <Field label="RESPONSÁVEL PELO CONTATO" error={getError("contactName")}>
+          <input type="text" value={customer.contactName} maxLength={CUSTOMER_NAME_MAX_LENGTH} onChange={(e) => onChange("contactName", e.target.value)} placeholder="Nome completo" className={INPUT_CLASS} />
+        </Field>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="TELEFONE (WHATSAPP) *" error={getError("phone")}>
+            <input type="tel" inputMode="numeric" value={customer.phone} onChange={(e) => onChange("phone", formatPhone(e.target.value))} placeholder="(61) 99999-9999" className={INPUT_CLASS} />
+          </Field>
+          <Field label="E-MAIL COMERCIAL *" error={getError("email")}>
+            <input type="email" value={customer.email} maxLength={EMAIL_MAX_LENGTH} onChange={(e) => onChange("email", e.target.value)} placeholder="compras@empresa.com.br" className={INPUT_CLASS} />
+          </Field>
+        </div>
+      </div>
+    </>
   );
 }
 

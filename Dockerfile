@@ -19,13 +19,16 @@ CMD ["npm", "run", "dev"]
 # ---- builder: gera o build de produção ----
 FROM base AS builder
 ENV NODE_ENV=production
-# next build writes the /api rewrite and the allowed image host into the
-# build output, so both URLs must be known here, not only when the container
-# runs: docker build --build-arg API_URL=... --build-arg STORAGE_PUBLIC_URL=...
+# next build writes the /api rewrite, the allowed image host and the
+# NEXT_PUBLIC_ variables into the build output, so they must be known here,
+# not only when the container runs: docker build --build-arg API_URL=...
+# --build-arg STORAGE_PUBLIC_URL=... --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=...
 ARG API_URL
 ARG STORAGE_PUBLIC_URL
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV API_URL=$API_URL
 ENV STORAGE_PUBLIC_URL=$STORAGE_PUBLIC_URL
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

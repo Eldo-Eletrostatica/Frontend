@@ -9,6 +9,7 @@ import { buildLoginPath, isInternalAreaPath } from "@/lib/auth/loginRedirect";
 // session cookie goes along (ADR 0007).
 const API_PREFIX = "/api";
 const CSRF_HEADER = "X-CSRF-Token";
+const CAPTCHA_HEADER = "X-Captcha-Token";
 // Writes authenticated by the session cookie must echo the CSRF token.
 const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -23,6 +24,8 @@ interface ApiRequestOptions {
   // When true, does not automatically navigate to login on 401 inside the
   // internal area (useful for initial session bootstrap).
   skipAuthRedirect?: boolean;
+  // Turnstile token required by the Backend on the public forms.
+  captchaToken?: string;
 }
 
 // Sends the request with the CSRF header and, on a 401 inside the internal
@@ -35,6 +38,7 @@ async function fetchFromApi(path: string, options: ApiRequestOptions = {}): Prom
     const csrfToken = readCookie(CSRF_COOKIE);
     if (csrfToken) headers.set(CSRF_HEADER, csrfToken);
   }
+  if (options.captchaToken) headers.set(CAPTCHA_HEADER, options.captchaToken);
 
   let body: BodyInit | undefined;
   if (options.formData) {

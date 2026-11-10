@@ -26,6 +26,16 @@ export interface OrderItem {
   quantity: number;
 }
 
+export interface CalculatePriceRange {
+  items: OrderItem[];
+}
+
+// From the calculated price to that price plus the negotiation margin.
+export interface PriceRange {
+  minPrice: number;
+  maxPrice: number;
+}
+
 export interface CreateEstimatedQuote {
   customer: QuoteCustomer;
   items: OrderItem[];

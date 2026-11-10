@@ -42,6 +42,7 @@ cp .env.example .env
 | --- | --- |
 | `API_URL` | URL do Backend, lida só no servidor do Next. O navegador chama a API pelo proxy `/api` do próprio site (ADR 0007). Com o Docker Compose, `http://host.docker.internal:3001`; sem Docker, `http://localhost:3001` |
 | `STORAGE_PUBLIC_URL` | URL pública do bucket de imagens, liberada para o `next/image`: `http://localhost:8333/eldo` no desenvolvimento e, em produção, a URL pública do Cloudflare R2 (ADR 0006) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Chave do site do Cloudflare Turnstile, o CAPTCHA do contato da página inicial e dos dois envios de `/solicitar-orcamento`. É pública (vai no HTML da página). No desenvolvimento, `1x00000000000000000000AA`, a chave de teste da Cloudflare que sempre passa; em produção, a chave do site cadastrado no painel da Cloudflare, par da chave secreta configurada no Backend |
 
 Se o seu `.env` ainda tem a `NEXT_PUBLIC_API_URL`, copie o `.env.example` de novo: essa variável não é mais usada.
 
@@ -105,12 +106,13 @@ O estágio `prod` do `Dockerfile` gera uma imagem enxuta com o build `standalone
 docker build --target prod \
   --build-arg API_URL=https://<url-do-backend> \
   --build-arg STORAGE_PUBLIC_URL=https://<url-publica-do-r2> \
+  --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=<chave-do-site-turnstile> \
   -t eldo-frontend .
 docker run -p 3000:3000 eldo-frontend
 ```
 
 > [!IMPORTANT]
-> A `API_URL` e a `STORAGE_PUBLIC_URL` valem no **build**: o `next build` grava o repasse do `/api` e o host liberado das imagens no resultado. Mudar as variáveis só no `docker run` não tem efeito.
+> A `API_URL`, a `STORAGE_PUBLIC_URL` e a `NEXT_PUBLIC_TURNSTILE_SITE_KEY` valem no **build**: o `next build` grava o repasse do `/api`, o host liberado das imagens e as variáveis `NEXT_PUBLIC_` no resultado. Mudar as variáveis só no `docker run` não tem efeito.
 
 Para testar o build sem gerar a imagem, rode dentro do container de desenvolvimento com `NODE_ENV=production`, porque o estágio `dev` define `NODE_ENV=development` e o `next build` falha com ele:
 
