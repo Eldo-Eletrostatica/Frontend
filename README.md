@@ -82,7 +82,14 @@ O Frontend usa a porta 3000. Se o Backend também rodar sem Docker, suba ele na 
 
 O site público não tem link para a área interna: os funcionários entram pelo endereço. A `/area-interna` fica fora dos buscadores (`noindex` e `robots.txt`). Cada tela aparece só para os níveis de acesso que podem usá-la, e quem não está logado vai para o login. A proteção de verdade está no login e nos guards do Backend.
 
-O login é autenticado pelo Backend, com a sessão em cookies `HttpOnly` (ADR 0007). Num ambiente novo, a única conta é a do administrador inicial, criada pelo Backend no primeiro login: `admin@eldo.com.br` / `Admin@123` (variáveis `INITIAL_ADMIN_*` do Backend). Os demais funcionários (`admin`, `manager` e `employee`) são gerenciados pelo administrador na tela `/area-interna/funcionarios`.
+O login é autenticado pelo Backend, com a sessão em cookies `HttpOnly` (ADR 0007). Contas para testar no desenvolvimento:
+
+| Login | Senha | Nível de acesso | De onde vem |
+| --- | --- | --- | --- |
+| `admin@eldo.com.br` | `Admin@123` | administrador | Criado pelo Backend no primeiro login, quando ainda não há administrador (variáveis `INITIAL_ADMIN_*`) |
+| `gestor.demo@eldo.com.br` | `Gestor@2026` | gestor | Dados de demonstração: no repositório do Backend, `docker compose exec backend npm run seed:demo` |
+
+O gestor demo vem com pedidos de exemplo dos últimos seis meses, para o Dashboard ter o que mostrar. Os demais funcionários (`admin`, `manager` e `employee`) são gerenciados pelo administrador na tela `/area-interna/funcionarios`.
 
 ## Chamadas à API
 

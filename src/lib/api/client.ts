@@ -1,6 +1,7 @@
 "use client";
 
 import { CSRF_COOKIE, readCookie } from "./cookies";
+import { parseApiError } from "./ApiError";
 import { readJson } from "./response";
 import { buildLoginPath, isInternalAreaPath } from "@/lib/auth/loginRedirect";
 
@@ -24,7 +25,9 @@ interface ApiRequestOptions {
   skipAuthRedirect?: boolean;
 }
 
-export async function sendApiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+// Sends the request with the CSRF header and, on a 401 inside the internal
+// area, takes the employee to the login. Callers read the body their own way.
+async function fetchFromApi(path: string, options: ApiRequestOptions = {}): Promise<Response> {
   const method = options.method ?? "GET";
   const headers = new Headers();
 
@@ -57,5 +60,30 @@ export async function sendApiRequest<T>(path: string, options: ApiRequestOptions
     }
   }
 
-  return readJson<T>(response);
+  return response;
+}
+
+export async function sendApiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  return readJson<T>(await fetchFromApi(path, options));
+}
+
+export interface DownloadedFile {
+  content: Blob;
+  fileName: string;
+}
+
+// The Backend names the file in Content-Disposition, such as
+// attachment; filename="relatorio-estatisticas-2026-10-01-a-2026-10-31.pdf".
+const FILE_NAME_PATTERN = /filename="([^"]+)"/;
+
+// For routes that answer a file instead of JSON. Errors keep the Backend
+// message, like any other request.
+export async function downloadApiFile(path: string, fallbackFileName: string): Promise<DownloadedFile> {
+  const response = await fetchFromApi(path);
+  if (!response.ok) throw await parseApiError(response);
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  return {
+    content: await response.blob(),
+    fileName: FILE_NAME_PATTERN.exec(disposition)?.[1] ?? fallbackFileName,
+  };
 }
