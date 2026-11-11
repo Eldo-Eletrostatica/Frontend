@@ -89,7 +89,7 @@ function onlyDigits(value: string): string {
 }
 
 function formatMoney(value: number): string {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function formatSoldAt(soldAt: string | null): string {
