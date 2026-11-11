@@ -36,6 +36,11 @@ RUN npm run build
 # ---- prod: imagem enxuta, roda o build standalone do Next.js ----
 FROM base AS prod
 ENV NODE_ENV=production
+# The Server Components and the revalidation route fetch the Backend
+# directly by API_URL at runtime, so the value of the build is kept
+# in the final image too. An ARG only exists in its own stage.
+ARG API_URL
+ENV API_URL=$API_URL
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
