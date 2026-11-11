@@ -3,6 +3,7 @@ import { PUBLIC_LINKS } from "./publicLinks";
 import { ROUTES } from "@/lib/routes";
 import type { VisualSettings } from "./publicContent";
 import SiteLogo from "./SiteLogo";
+import { CONTACT_ADDRESS, CONTACT_MAP_URL, CONTACT_WHATSAPP_LABEL, CONTACT_WHATSAPP_URL, SOCIAL_LINKS } from "@/lib/contact";
 
 export default function PublicFooter({ logo }: { logo: VisualSettings["logo"] }) {
   return (
@@ -36,9 +37,14 @@ export default function PublicFooter({ logo }: { logo: VisualSettings["logo"] })
         <div>
           <p className="text-[10px] tracking-[2.5px] text-site-text/35 mb-4" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONTATO</p>
           <div className="flex flex-col gap-2 text-[13px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-            <span>(11) 99999-9999</span>
-            <span>contato@eldo.com.br</span>
+            <a href={CONTACT_WHATSAPP_URL} className="hover:text-site-text/85 transition-colors">WhatsApp {CONTACT_WHATSAPP_LABEL}</a>
+            <a href={CONTACT_MAP_URL} className="hover:text-site-text/85 transition-colors">{CONTACT_ADDRESS}</a>
             <span>Seg–Sex · 07h–17h</span>
+            <div className="flex gap-4 pt-1">
+              {SOCIAL_LINKS.map((link) => (
+                <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="hover:text-site-text/85 transition-colors">{link.label}</a>
+              ))}
+            </div>
           </div>
         </div>
       </div>
