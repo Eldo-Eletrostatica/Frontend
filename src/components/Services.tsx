@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, AlertTriangle, Clock } from "lucide-react";
+import { X, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
-import { listServiceOrders, updateServiceOrderStatus } from "@/lib/serviceOrders/api";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { listOverdueServiceOrders, listServiceOrders, updateServiceOrderStatus } from "@/lib/serviceOrders/api";
 import type { ServiceOrder, ServiceOrderStatus } from "@/lib/serviceOrders/types";
 
 const STATUS_CONFIG: Record<ServiceOrderStatus, { label: string; color: string; bg: string }> = {
@@ -17,7 +18,10 @@ const STATUS_CONFIG: Record<ServiceOrderStatus, { label: string; color: string; 
 const STATUSES: ServiceOrderStatus[] = ["queued", "inProduction", "finishing", "completed"];
 
 const LOAD_ERROR_MESSAGE = "Não foi possível carregar os serviços.";
+const OVERDUE_ERROR_MESSAGE = "Não foi possível carregar os serviços atrasados.";
 const UPDATE_ERROR_MESSAGE = "Não foi possível atualizar o status. Tente novamente.";
+
+type ServicesView = "kanban" | "list" | "overdue";
 
 // dueDate is a date without time ("2030-01-15"): parsing it with new Date()
 // reads it as UTC and shows the previous day in Brazil, so it is handled as text.
@@ -41,16 +45,26 @@ function errorMessageOf(error: unknown, fallback: string): string {
 }
 
 export default function Services() {
+  const { currentEmployee } = useAuth();
+  const canSeeOverduePanel = currentEmployee?.role === "admin" || currentEmployee?.role === "manager";
+
   const [services, setServices] = useState<ServiceOrder[]>([]);
+  const [overdue, setOverdue] = useState<ServiceOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingOverdue, setIsLoadingOverdue] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [overdueError, setOverdueError] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [view, setView] = useState<"kanban" | "list">("kanban");
+  const [view, setView] = useState<ServicesView>("kanban");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [overdueLoaded, setOverdueLoaded] = useState(false);
 
   // The drawer reads the order from the list, so it follows every update.
-  const selected = services.find((s) => s.orderId === selectedId) ?? null;
+  const selected =
+    services.find((s) => s.orderId === selectedId) ??
+    overdue.find((s) => s.orderId === selectedId) ??
+    null;
   const lateCount = services.filter((s) => isLate(s.dueDate, s.status)).length;
 
   function loadServices() {
@@ -60,6 +74,28 @@ export default function Services() {
       .then(setServices)
       .catch((error: unknown) => setLoadError(errorMessageOf(error, LOAD_ERROR_MESSAGE)))
       .finally(() => setIsLoading(false));
+  }
+
+  function loadOverdue() {
+    setIsLoadingOverdue(true);
+    setOverdueError(null);
+    listOverdueServiceOrders()
+      .then((orders) => {
+        setOverdue(orders);
+        setOverdueLoaded(true);
+      })
+      .catch((error: unknown) => {
+        setOverdueError(errorMessageOf(error, OVERDUE_ERROR_MESSAGE));
+        setOverdueLoaded(true);
+      })
+      .finally(() => setIsLoadingOverdue(false));
+  }
+
+  function openView(next: ServicesView) {
+    setView(next);
+    if (next === "overdue" && canSeeOverduePanel && !overdueLoaded && !isLoadingOverdue) {
+      loadOverdue();
+    }
   }
 
   useEffect(() => {
@@ -78,12 +114,22 @@ export default function Services() {
     try {
       const updated = await updateServiceOrderStatus(orderId, status);
       setServices((current) => current.map((s) => (s.orderId === orderId ? { ...s, ...updated } : s)));
+      setOverdue((current) => {
+        if (status === "completed") return current.filter((s) => s.orderId !== orderId);
+        return current.map((s) => (s.orderId === orderId ? { ...s, ...updated } : s));
+      });
     } catch (error) {
       setUpdateError(errorMessageOf(error, UPDATE_ERROR_MESSAGE));
     } finally {
       setUpdatingId(null);
     }
   }
+
+  const viewOptions: { id: ServicesView; label: string; visible: boolean }[] = [
+    { id: "kanban", label: "KANBAN", visible: true },
+    { id: "list", label: "LISTA", visible: true },
+    { id: "overdue", label: "ATRASOS", visible: canSeeOverduePanel },
+  ];
 
   return (
     <div>
@@ -94,31 +140,44 @@ export default function Services() {
           <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Serviços</h1>
         </div>
         <div className="flex gap-2">
-          {(["kanban", "list"] as const).map((v) => (
-            <button key={v} onClick={() => setView(v)}
-              className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${view === v ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)]"}`}
+          {viewOptions.filter((option) => option.visible).map((option) => (
+            <button key={option.id} onClick={() => openView(option.id)}
+              className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${view === option.id ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)]"}`}
               style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
-              {v === "kanban" ? "KANBAN" : "LISTA"}
+              {option.label}
             </button>
           ))}
         </div>
       </div>
 
       {/* Alerts */}
-      {lateCount > 0 && (
-        <div className="flex items-center gap-3 px-5 py-3 mb-6 border border-[rgba(233,180,33,0.4)]">
+      {view !== "overdue" && lateCount > 0 && (
+        <button
+          type="button"
+          onClick={() => canSeeOverduePanel && openView("overdue")}
+          className="flex items-center gap-3 px-5 py-3 mb-6 border border-[rgba(233,180,33,0.4)] w-full text-left hover:bg-[rgba(233,180,33,0.04)] transition-colors"
+        >
           <AlertTriangle size={16} className="text-[#e9b421]" />
           <p className="text-[13px] text-[rgba(245,242,236,0.8)]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
-            <span className="text-[#e9b421] font-bold">{lateCount}</span> {lateCount === 1 ? "serviço atrasado" : "serviços atrasados"} — verifique prazos no painel
+            <span className="text-[#e9b421] font-bold">{lateCount}</span> {lateCount === 1 ? "serviço atrasado" : "serviços atrasados"}
+            {canSeeOverduePanel ? " — abrir painel de atrasos" : " — verifique os prazos no kanban"}
           </p>
-        </div>
+        </button>
       )}
 
       {updateError && !selected && (
         <p role="alert" className="mb-6 px-5 py-3 border border-red-400/40 text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{updateError}</p>
       )}
 
-      {isLoading ? (
+      {view === "overdue" ? (
+        <OverduePanel
+          orders={overdue}
+          isLoading={isLoadingOverdue}
+          error={overdueError}
+          onRetry={loadOverdue}
+          onOpen={setSelectedId}
+        />
+      ) : isLoading ? (
         <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando serviços...</p>
       ) : loadError ? (
         <div className="flex flex-col items-start gap-3">
@@ -262,6 +321,101 @@ export default function Services() {
         </Drawer>,
         document.body
       )}
+    </div>
+  );
+}
+
+function OverduePanel({
+  orders,
+  isLoading,
+  error,
+  onRetry,
+  onOpen,
+}: {
+  orders: ServiceOrder[];
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
+  onOpen: (orderId: string) => void;
+}) {
+  if (isLoading) {
+    return <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando atrasos...</p>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-start gap-3">
+        <p role="alert" className="text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{error}</p>
+        <button onClick={onRetry} className="px-4 py-2 border border-[rgba(245,242,236,0.2)] text-[12px] text-[rgba(245,242,236,0.7)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+          TENTAR NOVAMENTE
+        </button>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="flex items-start gap-3 px-5 py-6 border border-emerald-400/30 bg-emerald-400/5">
+        <CheckCircle2 size={18} className="text-emerald-400 mt-0.5" />
+        <div>
+          <p className="text-[15px] text-emerald-300 mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>Tudo em dia</p>
+          <p className="text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+            Não há serviços com prazo vencido no momento.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 px-5 py-3 mb-6 border border-[rgba(233,180,33,0.4)]">
+        <AlertTriangle size={16} className="text-[#e9b421]" />
+        <p className="text-[13px] text-[rgba(245,242,236,0.8)]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+          <span className="text-[#e9b421] font-bold">{orders.length}</span> {orders.length === 1 ? "serviço atrasado" : "serviços atrasados"} — priorize estas entregas
+        </p>
+      </div>
+
+      <div className="border border-[rgba(233,180,33,0.25)] overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[rgba(245,242,236,0.1)]">
+              {["PROTOCOLO", "CLIENTE", "ESCOPO", "PRAZO", "STATUS", ""].map((h) => (
+                <th key={h} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((s) => {
+              const cfg = STATUS_CONFIG[s.status];
+              return (
+                <tr key={s.orderId} className="border-b border-[rgba(245,242,236,0.06)] bg-[rgba(233,180,33,0.03)] hover:bg-[rgba(233,180,33,0.06)]">
+                  <td className="px-5 py-4 text-[12px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{s.trackingCode}</td>
+                  <td className="px-5 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{s.customer.name}</td>
+                  <td className="px-5 py-4 text-[13px] text-[rgba(245,242,236,0.6)] max-w-[220px] truncate" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.scope}</td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-1 text-[12px] text-[#e9b421]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                      <AlertTriangle size={11} />
+                      {formatDate(s.dueDate)}
+                      <span className="ml-2 text-[10px] tracking-[1.5px] px-2 py-0.5 bg-[rgba(233,180,33,0.15)]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>ATRASADO</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`text-[11px] tracking-[1.5px] px-2 py-1 ${cfg.color} ${cfg.bg}`} style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+                      {cfg.label.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <button onClick={() => onOpen(s.orderId)} className="text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.4)] hover:text-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+                      DETALHES
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

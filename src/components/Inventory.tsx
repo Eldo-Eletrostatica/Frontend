@@ -21,8 +21,10 @@ const LOAD_ERROR_MESSAGE = "Não foi possível carregar o estoque.";
 const SAVE_ERROR_MESSAGE = "Não foi possível cadastrar o item. Tente novamente.";
 const MOVEMENT_ERROR_MESSAGE = "Não foi possível registrar a movimentação. Tente novamente.";
 const HISTORY_ERROR_MESSAGE = "Não foi possível carregar o histórico.";
-// The history endpoint needs a period: the screen shows the last 30 days.
-const HISTORY_DAYS = 30;
+const HISTORY_EMPTY_PERIOD_MESSAGE = "Informe o período completo para consultar.";
+const HISTORY_INVALID_PERIOD_MESSAGE = "A data inicial não pode ser depois da data final.";
+// The history starts on the last 30 days; the employee can change the filter.
+const HISTORY_DEFAULT_DAYS = 30;
 
 interface ItemForm {
   name: string;
@@ -47,9 +49,16 @@ type FieldErrors = Partial<Record<"name" | "category" | "supplierName", string>>
 type MovementErrors = Partial<Record<"quantity" | "reason", string>>;
 
 type HistoryState =
+  | { status: "idle" }
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "loaded"; movements: StockMovement[] };
+
+interface HistoryFilter {
+  inventoryItemId: string;
+  from: string;
+  to: string;
+}
 
 function errorMessageOf(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback;
@@ -80,11 +89,11 @@ function toDateText(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-function historyPeriod(): { from: string; to: string } {
+function defaultHistoryFilter(): HistoryFilter {
   const today = new Date();
   const start = new Date();
-  start.setDate(today.getDate() - HISTORY_DAYS);
-  return { from: toDateText(start), to: toDateText(today) };
+  start.setDate(today.getDate() - HISTORY_DEFAULT_DAYS);
+  return { inventoryItemId: "", from: toDateText(start), to: toDateText(today) };
 }
 
 export default function Inventory() {
@@ -110,7 +119,9 @@ export default function Inventory() {
   const [movementError, setMovementError] = useState<string | null>(null);
   const [isMoving, setIsMoving] = useState(false);
 
-  const [history, setHistory] = useState<HistoryState | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter>(defaultHistoryFilter);
+  const [history, setHistory] = useState<HistoryState>({ status: "idle" });
 
   // The drawer reads the item from the list, so the balance follows every reload.
   const movementItem = items.find((item) => item.inventoryItemId === movementItemId) ?? null;
@@ -223,12 +234,26 @@ export default function Inventory() {
     }
   }
 
-  function openHistory() {
-    const { from, to } = historyPeriod();
+  function consultHistory(filter: HistoryFilter) {
+    if (!filter.from || !filter.to) {
+      setHistory({ status: "error", message: HISTORY_EMPTY_PERIOD_MESSAGE });
+      return;
+    }
+    if (filter.from > filter.to) {
+      setHistory({ status: "error", message: HISTORY_INVALID_PERIOD_MESSAGE });
+      return;
+    }
     setHistory({ status: "loading" });
-    listStockMovements(from, to)
+    listStockMovements(filter.from, filter.to, filter.inventoryItemId || undefined)
       .then((movements) => setHistory({ status: "loaded", movements }))
       .catch((error: unknown) => setHistory({ status: "error", message: errorMessageOf(error, HISTORY_ERROR_MESSAGE) }));
+  }
+
+  function openHistory() {
+    const filter = defaultHistoryFilter();
+    setHistoryFilter(filter);
+    setIsHistoryOpen(true);
+    consultHistory(filter);
   }
 
   return (
@@ -426,8 +451,27 @@ export default function Inventory() {
       )}
 
       {/* History drawer */}
-      {history && createPortal(
-        <Drawer title={`Histórico dos últimos ${HISTORY_DAYS} dias`} onClose={() => setHistory(null)}>
+      {isHistoryOpen && createPortal(
+        <Drawer title="Histórico de movimentações" onClose={() => setIsHistoryOpen(false)}>
+          <div className="flex flex-col gap-5 mb-6">
+            <DF label="ITEM">
+              <select value={historyFilter.inventoryItemId} onChange={(e) => setHistoryFilter({ ...historyFilter, inventoryItemId: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                <option value="">Todos os itens</option>
+                {items.map((item) => <option key={item.inventoryItemId} value={item.inventoryItemId}>{item.name}</option>)}
+              </select>
+            </DF>
+            <div className="grid grid-cols-2 gap-4">
+              <DF label="DE">
+                <input type="date" value={historyFilter.from} onChange={(e) => setHistoryFilter({ ...historyFilter, from: e.target.value })} className="drw-inp [color-scheme:dark]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+              </DF>
+              <DF label="ATÉ">
+                <input type="date" value={historyFilter.to} onChange={(e) => setHistoryFilter({ ...historyFilter, to: e.target.value })} className="drw-inp [color-scheme:dark]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+              </DF>
+            </div>
+            <button type="button" onClick={() => consultHistory(historyFilter)} disabled={history.status === "loading"} className="h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 disabled:opacity-60" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+              {history.status === "loading" ? "Consultando..." : "Consultar período"}
+            </button>
+          </div>
           {history.status === "loading" && (
             <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando histórico...</p>
           )}
