@@ -5,11 +5,12 @@ import { createPortal } from "react-dom";
 import { Plus, AlertTriangle, X, Package, History, ArrowUp, ArrowDown } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { createInventoryItem, createStockMovement, listInventoryItems, listStockMovements } from "@/lib/inventory/api";
+import { createInventoryItem, createStockMovement, listInventoryCategories, listInventoryItems, listStockMovements } from "@/lib/inventory/api";
 import {
   INVENTORY_UNITS,
   isBelowMinimum,
   UNIT_LABELS,
+  type InventoryCategory,
   type InventoryItem,
   type InventoryUnit,
   type StockMovement,
@@ -28,14 +29,14 @@ const HISTORY_DEFAULT_DAYS = 30;
 
 interface ItemForm {
   name: string;
-  category: string;
+  categoryId: string;
   supplierName: string;
   unit: InventoryUnit;
   balance: string;
   minimumStock: string;
 }
 
-const EMPTY_FORM: ItemForm = { name: "", category: "", supplierName: "", unit: "kg", balance: "", minimumStock: "" };
+const EMPTY_FORM: ItemForm = { name: "", categoryId: "", supplierName: "", unit: "kg", balance: "", minimumStock: "" };
 
 interface MovementForm {
   type: StockMovementType;
@@ -45,7 +46,7 @@ interface MovementForm {
 
 const EMPTY_MOVEMENT_FORM: MovementForm = { type: "inbound", quantity: "", reason: "" };
 
-type FieldErrors = Partial<Record<"name" | "category" | "supplierName", string>>;
+type FieldErrors = Partial<Record<"name" | "categoryId" | "supplierName", string>>;
 type MovementErrors = Partial<Record<"quantity" | "reason", string>>;
 
 type HistoryState =
@@ -71,7 +72,7 @@ function normalizeName(name: string): string {
 function validate(form: ItemForm): FieldErrors {
   const errors: FieldErrors = {};
   if (!form.name.trim()) errors.name = "Informe o nome do item.";
-  if (!form.category.trim()) errors.category = "Informe a categoria do item.";
+  if (!form.categoryId) errors.categoryId = "Escolha a categoria do item.";
   if (!form.supplierName.trim()) errors.supplierName = "Informe o fornecedor.";
   return errors;
 }
@@ -100,8 +101,12 @@ export default function Inventory() {
   const { currentEmployee } = useAuth();
   // The Backend only lets managers and administrators read the history.
   const canSeeHistory = currentEmployee?.role === "admin" || currentEmployee?.role === "manager";
+  // And only the administrator manages the categories.
+  const canManageCategories = currentEmployee?.role === "admin";
 
   const [items, setItems] = useState<InventoryItem[]>([]);
+  // What the registration form offers; a removed category is not in it.
+  const [categoryOptions, setCategoryOptions] = useState<InventoryCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
@@ -126,8 +131,8 @@ export default function Inventory() {
   // The drawer reads the item from the list, so the balance follows every reload.
   const movementItem = items.find((item) => item.inventoryItemId === movementItemId) ?? null;
 
-  // Categories are free text typed on the item (glossary), so the list comes
-  // from the items themselves.
+  // The filter shows the categories the items have, removed ones included:
+  // an item keeps showing the category it was registered with.
   const categories = useMemo(
     () => Array.from(new Set(items.map((item) => item.category))).sort((a, b) => a.localeCompare(b, "pt-BR")),
     [items],
@@ -148,6 +153,9 @@ export default function Inventory() {
 
   useEffect(() => {
     let isCancelled = false;
+    listInventoryCategories()
+      .then((list) => { if (!isCancelled) setCategoryOptions(list); })
+      .catch(() => { /* the form shows the empty list; the items load below */ });
     listInventoryItems()
       .then((list) => { if (!isCancelled) setItems(list); })
       .catch((error: unknown) => { if (!isCancelled) setLoadError(errorMessageOf(error, LOAD_ERROR_MESSAGE)); })
@@ -185,7 +193,7 @@ export default function Inventory() {
     try {
       await createInventoryItem({
         name: form.name.trim(),
-        category: form.category.trim(),
+        categoryId: form.categoryId,
         supplierName: form.supplierName.trim(),
         unit: form.unit,
         balance: Number(form.balance) || 0,
@@ -368,11 +376,16 @@ export default function Inventory() {
               <input type="text" value={form.name} onChange={(e) => changeForm({ name: e.target.value })} placeholder="Ex.: Tinta epóxi preta RAL 9005" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
             </DF>
             <div className="grid grid-cols-2 gap-4">
-              <DF label="CATEGORIA" error={fieldErrors.category}>
-                <input type="text" list="inventory-categories" value={form.category} onChange={(e) => changeForm({ category: e.target.value })} placeholder="Ex.: Tintas" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
-                <datalist id="inventory-categories">
-                  {categories.map((c) => <option key={c} value={c} />)}
-                </datalist>
+              <DF label="CATEGORIA" error={fieldErrors.categoryId}>
+                <select value={form.categoryId} onChange={(e) => changeForm({ categoryId: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                  <option value="">{categoryOptions.length === 0 ? "Nenhuma cadastrada" : "Escolha..."}</option>
+                  {categoryOptions.map((c) => <option key={c.inventoryCategoryId} value={c.inventoryCategoryId}>{c.name}</option>)}
+                </select>
+                {categoryOptions.length === 0 && (
+                  <p className="text-[12px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                    {canManageCategories ? 'Cadastre uma categoria em "Categorias".' : "Peça ao administrador para cadastrar as categorias."}
+                  </p>
+                )}
               </DF>
               <DF label="UNIDADE">
                 <select value={form.unit} onChange={(e) => changeForm({ unit: e.target.value as InventoryUnit })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
