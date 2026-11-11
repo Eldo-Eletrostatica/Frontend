@@ -2,9 +2,28 @@ import { sendApiRequest } from "@/lib/api/client";
 import type {
   CreateInventoryItemInput,
   CreateStockMovementInput,
+  InventoryCategory,
   InventoryItem,
   StockMovement,
 } from "./types";
+
+// Any signed-in employee lists the categories; only the administrator changes
+// them. The Backend answers 409 for a name that already exists.
+export function listInventoryCategories() {
+  return sendApiRequest<InventoryCategory[]>("/inventory-categories");
+}
+
+export function createInventoryCategory(name: string) {
+  return sendApiRequest<InventoryCategory>("/inventory-categories", { method: "POST", body: { name } });
+}
+
+export function renameInventoryCategory(inventoryCategoryId: string, name: string) {
+  return sendApiRequest<InventoryCategory>(`/inventory-categories/${inventoryCategoryId}`, { method: "PATCH", body: { name } });
+}
+
+export function removeInventoryCategory(inventoryCategoryId: string) {
+  return sendApiRequest<unknown>(`/inventory-categories/${inventoryCategoryId}`, { method: "DELETE" });
+}
 
 export function listInventoryItems() {
   return sendApiRequest<InventoryItem[]>("/inventory-items");

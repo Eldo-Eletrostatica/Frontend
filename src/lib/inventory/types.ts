@@ -3,9 +3,17 @@
 export type InventoryUnit = "kg" | "liter" | "unit";
 export type StockMovementType = "inbound" | "outbound";
 
+// Managed by the administrator (US13). An item keeps showing a category that
+// was removed afterwards, so `category` is always the name.
+export interface InventoryCategory {
+  inventoryCategoryId: string;
+  name: string;
+}
+
 export interface InventoryItem {
   inventoryItemId: string;
   name: string;
+  categoryId: string;
   category: string;
   supplierName: string;
   unit: InventoryUnit;
@@ -16,7 +24,7 @@ export interface InventoryItem {
 
 export interface CreateInventoryItemInput {
   name: string;
-  category: string;
+  categoryId: string;
   supplierName: string;
   unit: InventoryUnit;
   balance: number;

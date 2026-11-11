@@ -10,6 +10,7 @@ const FIELD_LABELS: Record<string, string> = {
   password: "senha",
   role: "nível de acesso",
   category: "categoria",
+  categoryId: "categoria",
   supplierName: "fornecedor",
   unit: "unidade",
   balance: "quantidade inicial",
