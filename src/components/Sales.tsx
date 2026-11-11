@@ -1,11 +1,16 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, Trash2, Trophy, TrendingUp, X } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { listCatalogOptions, type CatalogItemOption } from "@/lib/catalog/api";
+import { listQuotes } from "@/lib/quotes/api";
+import type { Quote } from "@/lib/quotes/types";
+import { ROUTES } from "@/lib/routes";
 import { launchSale, listSaleOrders, listSellers } from "@/lib/sales/api";
 import {
   SALE_STATUS_LABELS,
@@ -103,11 +108,14 @@ function sellerNameOf(sellers: Seller[], sellerEmployeeId: string | null): strin
 
 export default function Sales() {
   const { currentEmployee } = useAuth();
+  // "Lançar venda" on the quotes screen comes here with the approved quote.
+  const quoteIdFromLink = useSearchParams().get("orderId");
 
   const [sales, setSales] = useState<SaleOrder[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [paints, setPaints] = useState<CatalogItemOption[]>([]);
   const [materials, setMaterials] = useState<CatalogItemOption[]>([]);
+  const [approvedQuotes, setApprovedQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -121,16 +129,25 @@ export default function Sales() {
   useEffect(() => {
     let isCancelled = false;
 
-    Promise.all([listSaleOrders(), listSellers(), listCatalogOptions()])
-      .then(([orders, sellerList, catalog]) => {
+    Promise.all([listSaleOrders(), listSellers(), listCatalogOptions(), listQuotes("approved")])
+      .then(([orders, sellerList, catalog, quotes]) => {
         if (isCancelled) return;
+        setApprovedQuotes(quotes);
         const paintOptions = catalog.filter((item) => item.type === "paintType");
         const materialOptions = catalog.filter((item) => item.type === "partMaterial");
         setSales(orders);
         setSellers(sellerList);
         setPaints(paintOptions);
         setMaterials(materialOptions);
-        setSaleForm(emptySaleForm(currentEmployee?.employeeId ?? sellerList[0]?.employeeId ?? "", paintOptions, materialOptions));
+        const blankForm = emptySaleForm(currentEmployee?.employeeId ?? sellerList[0]?.employeeId ?? "", paintOptions, materialOptions);
+        // The link of an approved quote opens the sale already linked to it.
+        const linkedQuote = quotes.find((quote) => quote.orderId === quoteIdFromLink);
+        if (linkedQuote) {
+          setSaleForm({ ...blankForm, mode: "approved", orderId: linkedQuote.orderId, dueDate: linkedQuote.dueDate ?? "" });
+          setModal("add-sale");
+        } else {
+          setSaleForm(blankForm);
+        }
       })
       .catch((error: unknown) => {
         if (!isCancelled) setLoadError(errorMessageOf(error, LOAD_ERROR_MESSAGE));
@@ -142,7 +159,7 @@ export default function Sales() {
     return () => {
       isCancelled = true;
     };
-  }, [currentEmployee?.employeeId]);
+  }, [currentEmployee?.employeeId, quoteIdFromLink]);
 
   const visibleSales = useMemo(() => {
     if (sellerFilter === "Todos") return sales;
@@ -186,7 +203,7 @@ export default function Sales() {
     if (!saleForm.dueDate) return "Informe o prazo de entrega.";
 
     if (saleForm.mode === "approved") {
-      if (!saleForm.orderId.trim()) return "Informe o ID do orçamento aprovado.";
+      if (!saleForm.orderId.trim()) return "Selecione o orçamento aprovado.";
       return null;
     }
 
@@ -263,8 +280,9 @@ export default function Sales() {
     setSubmitError(null);
     try {
       const launched = await launchSale(payload);
-      const orders = await listSaleOrders();
+      const [orders, quotes] = await Promise.all([listSaleOrders(), listQuotes("approved")]);
       setSales(orders);
+      setApprovedQuotes(quotes);
       setSuccessMessage(`Venda registrada. Protocolo do cliente: ${launched.trackingCode}`);
       setModal(null);
     } catch (error) {
@@ -490,16 +508,27 @@ export default function Sales() {
             </DF>
 
             {saleForm.mode === "approved" ? (
-              <DF label="ID DO ORÇAMENTO APROVADO">
-                <input
-                  type="text"
-                  value={saleForm.orderId}
-                  disabled={isSaving}
-                  onChange={(e) => setSaleForm({ ...saleForm, orderId: e.target.value })}
-                  placeholder="UUID do orçamento"
-                  className="drw-inp"
-                  style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
-                />
+              <DF label="ORÇAMENTO APROVADO">
+                {approvedQuotes.length === 0 ? (
+                  <p className="text-[13px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                    Nenhum orçamento aprovado. Aprove um na tela de <Link href={ROUTES.quotes} className="underline text-[#e9b421]">Orçamentos</Link> ou lance uma venda para cliente novo.
+                  </p>
+                ) : (
+                  <select
+                    value={saleForm.orderId}
+                    disabled={isSaving}
+                    onChange={(e) => setSaleForm({ ...saleForm, orderId: e.target.value })}
+                    className="drw-inp"
+                    style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
+                  >
+                    <option value="">Selecione o orçamento</option>
+                    {approvedQuotes.map((quote) => (
+                      <option key={quote.orderId} value={quote.orderId}>
+                        {quote.customerName}{quote.finalPrice !== null ? ` · ${formatMoney(quote.finalPrice)}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </DF>
             ) : (
               <>
