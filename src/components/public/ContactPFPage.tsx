@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { CONTACT_WHATSAPP_URL } from "@/lib/contact";
 
 export default function ContactPFPage() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", description: "", consent: false });
@@ -73,7 +74,7 @@ export default function ContactPFPage() {
         <div className="bg-[#171511] border-l border-[rgba(245,242,236,0.08)] flex flex-col divide-y divide-[rgba(245,242,236,0.08)]">
           <div className="p-10">
             <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)] mb-4" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>PREFERE FALAR AGORA</p>
-            <a href="https://wa.me/5500000000000" className="flex items-center gap-3 h-[54px] rounded-full px-6 bg-[#25d366] text-[#08210f] text-[15px] hover:opacity-90 transition-opacity" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+            <a href={CONTACT_WHATSAPP_URL} className="flex items-center gap-3 h-[54px] rounded-full px-6 bg-[#25d366] text-[#08210f] text-[15px] hover:opacity-90 transition-opacity" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
               <svg width="20" height="20" viewBox="0 0 21 21" fill="none"><path d="M10.5 1.75C5.67 1.75 1.75 5.67 1.75 10.5c0 1.6.42 3.1 1.15 4.4L1.75 19.25l4.45-1.14c1.27.69 2.73 1.09 4.3 1.09 4.83 0 8.75-3.92 8.75-8.75S15.33 1.75 10.5 1.75zm4.37 12.6c-.19.53-.94.96-1.47 1.08-.39.08-.9.15-2.61-.56-2.19-.9-3.6-3.14-3.71-3.28-.1-.14-.86-1.15-.86-2.19 0-1.04.54-1.55.73-1.76.2-.21.43-.27.57-.27h.42c.14 0 .33-.05.5.39.19.46.64 1.57.7 1.68.06.11.09.24.02.38-.07.14-.1.23-.21.35-.1.12-.22.27-.31.36-.1.1-.2.22-.09.43.12.21.53.87 1.13 1.41.78.7 1.44.91 1.64.99.21.08.33.07.45-.04.12-.12.52-.6.66-.81.14-.21.28-.17.47-.1.19.07 1.2.57 1.41.67.21.1.35.14.4.22.05.07.05.41-.14.93z" fill="#08210F"/></svg>
               Chamar no WhatsApp
             </a>

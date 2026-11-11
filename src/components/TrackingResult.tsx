@@ -10,6 +10,7 @@ import {
 } from "./tracking/types";
 import EldoLogo from "./EldoLogo";
 import ReviewInvite from "./tracking/ReviewInvite";
+import { CONTACT_WHATSAPP_LABEL, CONTACT_WHATSAPP_URL } from "@/lib/contact";
 
 interface Props {
   lookup: TrackingLookup;
@@ -200,8 +201,7 @@ export default function TrackingResult({ lookup, onBack }: Props) {
         <div className="mt-14 p-6 border border-[rgba(245,242,236,0.08)]" style={{ background: "#171511" }}>
           <p className="text-[13px] text-[rgba(245,242,236,0.5)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             Dúvidas sobre seu pedido? Entre em contato pelo WhatsApp
-            {" "}<a href="https://wa.me/5561999999999" className="text-[#e9b421] hover:underline">(61) 99999-9999</a>{" "}
-            ou pelo e-mail <a href="mailto:atendimento@eldo.com.br" className="text-[#e9b421] hover:underline">atendimento@eldo.com.br</a>.
+            {" "}<a href={CONTACT_WHATSAPP_URL} className="text-[#e9b421] hover:underline">{CONTACT_WHATSAPP_LABEL}</a>.
           </p>
         </div>
       </main>
