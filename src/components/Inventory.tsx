@@ -2,10 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, AlertTriangle, X, Package, History, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, AlertTriangle, X, Package, History, ArrowUp, ArrowDown, Tag } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { createInventoryItem, createStockMovement, listInventoryCategories, listInventoryItems, listStockMovements } from "@/lib/inventory/api";
+import {
+  createInventoryCategory,
+  createInventoryItem,
+  createStockMovement,
+  listInventoryCategories,
+  listInventoryItems,
+  listStockMovements,
+  removeInventoryCategory,
+  renameInventoryCategory,
+} from "@/lib/inventory/api";
 import {
   INVENTORY_UNITS,
   isBelowMinimum,
@@ -112,6 +121,7 @@ export default function Inventory() {
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
   const [showAlertsOnly, setShowAlertsOnly] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [form, setForm] = useState<ItemForm>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -141,6 +151,13 @@ export default function Inventory() {
   const visible = items
     .filter((item) => categoryFilter === ALL_CATEGORIES || item.category === categoryFilter)
     .filter((item) => !showAlertsOnly || isBelowMinimum(item));
+
+  // After the administrator changes a category: the form options and the
+  // items (a rename changes the name they show) are read again.
+  function reloadCategoriesAndItems() {
+    listInventoryCategories().then(setCategoryOptions).catch(() => { /* keeps the list on screen */ });
+    loadItems(false);
+  }
 
   function loadItems(showLoading = true) {
     if (showLoading) setIsLoading(true);
@@ -273,6 +290,11 @@ export default function Inventory() {
           <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Estoque</h1>
         </div>
         <div className="flex gap-2">
+          {canManageCategories && (
+            <button onClick={() => setIsCategoriesOpen(true)} className="flex items-center gap-2 px-4 py-2.5 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] text-[12px] hover:border-[rgba(245,242,236,0.4)] transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+              <Tag size={14} /> Categorias
+            </button>
+          )}
           {canSeeHistory && (
             <button onClick={openHistory} className="flex items-center gap-2 px-4 py-2.5 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] text-[12px] hover:border-[rgba(245,242,236,0.4)] transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
               <History size={14} /> Histórico
@@ -420,6 +442,14 @@ export default function Inventory() {
         document.body
       )}
 
+      {/* Categories drawer (administrator) */}
+      {isCategoriesOpen && createPortal(
+        <Drawer title="Categorias de estoque" onClose={() => setIsCategoriesOpen(false)}>
+          <CategoriesManager categories={categoryOptions} onChanged={reloadCategoriesAndItems} />
+        </Drawer>,
+        document.body
+      )}
+
       {/* Movement drawer */}
       {movementItem && createPortal(
         <Drawer title={`Movimentar: ${movementItem.name}`} onClose={() => setMovementItemId(null)}>
@@ -521,6 +551,90 @@ export default function Inventory() {
       )}
 
       <style>{`.drw-inp { width:100%; height:46px; padding:0 14px; background:#12100d; border:1px solid rgba(245,242,236,0.18); color:#f5f2ec; font-size:14px; outline:none; transition:border-color .15s; } .drw-inp:focus { border-color:#e9b421; } .drw-inp option { background:#1a1713; }`}</style>
+    </div>
+  );
+}
+
+const CATEGORY_SAVE_ERROR = "Não foi possível salvar a categoria. Tente novamente.";
+const CATEGORY_REMOVE_ERROR = "Não foi possível remover a categoria. Tente novamente.";
+
+// Create, rename and remove. Removing only takes the category off the form's
+// list: the items that use it keep showing it, which the screen says.
+function CategoriesManager({ categories, onChanged }: { categories: InventoryCategory[]; onChanged: () => void }) {
+  const [newName, setNewName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isBusy, setIsBusy] = useState(false);
+
+  function run(action: () => Promise<unknown>, fallback: string, after: () => void) {
+    setIsBusy(true);
+    setError(null);
+    action()
+      .then(() => { after(); onChanged(); })
+      .catch((caught: unknown) => setError(errorMessageOf(caught, fallback)))
+      .finally(() => setIsBusy(false));
+  }
+
+  function add() {
+    if (!newName.trim()) { setError("Informe o nome da categoria."); return; }
+    run(() => createInventoryCategory(newName.trim()), CATEGORY_SAVE_ERROR, () => setNewName(""));
+  }
+
+  function saveRename(inventoryCategoryId: string) {
+    if (!editingName.trim()) { setError("Informe o nome da categoria."); return; }
+    run(() => renameInventoryCategory(inventoryCategoryId, editingName.trim()), CATEGORY_SAVE_ERROR, () => setEditingId(null));
+  }
+
+  function remove(inventoryCategoryId: string) {
+    run(() => removeInventoryCategory(inventoryCategoryId), CATEGORY_REMOVE_ERROR, () => setRemovingId(null));
+  }
+
+  const smallButton = "px-3 py-1.5 border border-[rgba(245,242,236,0.18)] text-[11px] text-[rgba(245,242,236,0.65)] hover:border-[#e9b421] hover:text-[#e9b421] transition-all disabled:opacity-50";
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex gap-2 items-end">
+        <div className="flex-1">
+          <DF label="NOVA CATEGORIA">
+            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex.: Solventes" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+          </DF>
+        </div>
+        <button onClick={add} disabled={isBusy} className="h-[46px] px-5 bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 disabled:opacity-60" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>Adicionar</button>
+      </div>
+      {error && <p role="alert" className="text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{error}</p>}
+
+      <div className="border border-[rgba(245,242,236,0.08)]">
+        {categories.length === 0 && (
+          <p className="p-6 text-center text-[14px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhuma categoria cadastrada.</p>
+        )}
+        {categories.map((category) => (
+          <div key={category.inventoryCategoryId} className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(245,242,236,0.06)] last:border-b-0">
+            {editingId === category.inventoryCategoryId ? (
+              <>
+                <input aria-label="Novo nome da categoria" type="text" value={editingName} onChange={(e) => setEditingName(e.target.value)} className="drw-inp flex-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                <button onClick={() => saveRename(category.inventoryCategoryId)} disabled={isBusy} className={smallButton}>Salvar</button>
+                <button onClick={() => setEditingId(null)} disabled={isBusy} className={smallButton}>Cancelar</button>
+              </>
+            ) : removingId === category.inventoryCategoryId ? (
+              <>
+                <p className="flex-1 text-[12px] text-[rgba(245,242,236,0.7)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                  Remover &quot;{category.name}&quot;? Os itens dela continuam mostrando esse nome.
+                </p>
+                <button onClick={() => remove(category.inventoryCategoryId)} disabled={isBusy} className={smallButton}>Remover</button>
+                <button onClick={() => setRemovingId(null)} disabled={isBusy} className={smallButton}>Cancelar</button>
+              </>
+            ) : (
+              <>
+                <p className="flex-1 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{category.name}</p>
+                <button onClick={() => { setEditingId(category.inventoryCategoryId); setEditingName(category.name); setRemovingId(null); setError(null); }} className={smallButton}>Renomear</button>
+                <button onClick={() => { setRemovingId(category.inventoryCategoryId); setEditingId(null); setError(null); }} className={smallButton}>Remover</button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
