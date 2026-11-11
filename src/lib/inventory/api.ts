@@ -22,7 +22,7 @@ export function renameInventoryCategory(inventoryCategoryId: string, name: strin
 }
 
 export function removeInventoryCategory(inventoryCategoryId: string) {
-  return sendApiRequest<unknown>(`/inventory-categories/${inventoryCategoryId}`, { method: "DELETE" });
+  return sendApiRequest<void>(`/inventory-categories/${inventoryCategoryId}`, { method: "DELETE" });
 }
 
 export function listInventoryItems() {
