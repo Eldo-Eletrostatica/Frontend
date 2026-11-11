@@ -26,3 +26,8 @@ export function listStockMovements(from: string, to: string, inventoryItemId?: s
   if (inventoryItemId) query.set("inventoryItemId", inventoryItemId);
   return sendApiRequest<StockMovement[]>(`/stock-movements?${query.toString()}`);
 }
+
+// Items at or below the minimum stock. Any signed-in employee can read it.
+export function countLowStockItems() {
+  return sendApiRequest<{ count: number }>("/inventory-items/low-stock/count");
+}
