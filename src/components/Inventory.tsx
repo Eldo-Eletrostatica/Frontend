@@ -2,20 +2,27 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, AlertTriangle, X } from "lucide-react";
+import { Plus, AlertTriangle, X, Package, History, ArrowUp, ArrowDown } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
-import { createInventoryItem, listInventoryItems } from "@/lib/inventory/api";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { createInventoryItem, createStockMovement, listInventoryItems, listStockMovements } from "@/lib/inventory/api";
 import {
   INVENTORY_UNITS,
   isBelowMinimum,
   UNIT_LABELS,
   type InventoryItem,
   type InventoryUnit,
+  type StockMovement,
+  type StockMovementType,
 } from "@/lib/inventory/types";
 
 const ALL_CATEGORIES = "Todos";
 const LOAD_ERROR_MESSAGE = "Não foi possível carregar o estoque.";
 const SAVE_ERROR_MESSAGE = "Não foi possível cadastrar o item. Tente novamente.";
+const MOVEMENT_ERROR_MESSAGE = "Não foi possível registrar a movimentação. Tente novamente.";
+const HISTORY_ERROR_MESSAGE = "Não foi possível carregar o histórico.";
+// The history endpoint needs a period: the screen shows the last 30 days.
+const HISTORY_DAYS = 30;
 
 interface ItemForm {
   name: string;
@@ -28,7 +35,21 @@ interface ItemForm {
 
 const EMPTY_FORM: ItemForm = { name: "", category: "", supplierName: "", unit: "kg", balance: "", minimumStock: "" };
 
+interface MovementForm {
+  type: StockMovementType;
+  quantity: string;
+  reason: string;
+}
+
+const EMPTY_MOVEMENT_FORM: MovementForm = { type: "inbound", quantity: "", reason: "" };
+
 type FieldErrors = Partial<Record<"name" | "category" | "supplierName", string>>;
+type MovementErrors = Partial<Record<"quantity" | "reason", string>>;
+
+type HistoryState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "loaded"; movements: StockMovement[] };
 
 function errorMessageOf(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback;
@@ -46,7 +67,31 @@ function validate(form: ItemForm): FieldErrors {
   return errors;
 }
 
+function validateMovement(form: MovementForm): MovementErrors {
+  const errors: MovementErrors = {};
+  if (!(Number(form.quantity) > 0)) errors.quantity = "Informe uma quantidade maior que zero.";
+  if (!form.reason.trim()) errors.reason = "Informe o motivo da movimentação.";
+  return errors;
+}
+
+function toDateText(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function historyPeriod(): { from: string; to: string } {
+  const today = new Date();
+  const start = new Date();
+  start.setDate(today.getDate() - HISTORY_DAYS);
+  return { from: toDateText(start), to: toDateText(today) };
+}
+
 export default function Inventory() {
+  const { currentEmployee } = useAuth();
+  // The Backend only lets managers and administrators read the history.
+  const canSeeHistory = currentEmployee?.role === "admin" || currentEmployee?.role === "manager";
+
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -59,6 +104,17 @@ export default function Inventory() {
   const [duplicateOf, setDuplicateOf] = useState<InventoryItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [movementItemId, setMovementItemId] = useState<string | null>(null);
+  const [movementForm, setMovementForm] = useState<MovementForm>(EMPTY_MOVEMENT_FORM);
+  const [movementErrors, setMovementErrors] = useState<MovementErrors>({});
+  const [movementError, setMovementError] = useState<string | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
+
+  const [history, setHistory] = useState<HistoryState | null>(null);
+
+  // The drawer reads the item from the list, so the balance follows every reload.
+  const movementItem = items.find((item) => item.inventoryItemId === movementItemId) ?? null;
+
   // Categories are free text typed on the item (glossary), so the list comes
   // from the items themselves.
   const categories = useMemo(
@@ -70,8 +126,8 @@ export default function Inventory() {
     .filter((item) => categoryFilter === ALL_CATEGORIES || item.category === categoryFilter)
     .filter((item) => !showAlertsOnly || isBelowMinimum(item));
 
-  function loadItems() {
-    setIsLoading(true);
+  function loadItems(showLoading = true) {
+    if (showLoading) setIsLoading(true);
     setLoadError(null);
     listInventoryItems()
       .then(setItems)
@@ -133,6 +189,48 @@ export default function Inventory() {
     }
   }
 
+  function openMovement(item: InventoryItem) {
+    setMovementForm(EMPTY_MOVEMENT_FORM);
+    setMovementErrors({});
+    setMovementError(null);
+    setMovementItemId(item.inventoryItemId);
+  }
+
+  // The balance on screen only changes with what the Backend holds: on a 409
+  // (insufficient balance) nothing is touched and the message is shown.
+  async function registerMovement() {
+    if (!movementItem || !currentEmployee) return;
+    const errors = validateMovement(movementForm);
+    setMovementErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setIsMoving(true);
+    setMovementError(null);
+    try {
+      await createStockMovement({
+        inventoryItemId: movementItem.inventoryItemId,
+        employeeId: currentEmployee.employeeId,
+        type: movementForm.type,
+        quantity: Number(movementForm.quantity),
+        reason: movementForm.reason.trim(),
+      });
+      setMovementItemId(null);
+      loadItems(false);
+    } catch (error) {
+      setMovementError(errorMessageOf(error, MOVEMENT_ERROR_MESSAGE));
+    } finally {
+      setIsMoving(false);
+    }
+  }
+
+  function openHistory() {
+    const { from, to } = historyPeriod();
+    setHistory({ status: "loading" });
+    listStockMovements(from, to)
+      .then((movements) => setHistory({ status: "loaded", movements }))
+      .catch((error: unknown) => setHistory({ status: "error", message: errorMessageOf(error, HISTORY_ERROR_MESSAGE) }));
+  }
+
   return (
     <div>
       {/* Header */}
@@ -141,9 +239,16 @@ export default function Inventory() {
           <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONTROLE DE ESTOQUE</p>
           <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Estoque</h1>
         </div>
-        <button onClick={openForm} className="flex items-center gap-2 px-5 py-2.5 bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 transition-opacity" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
-          <Plus size={16} /> Novo item
-        </button>
+        <div className="flex gap-2">
+          {canSeeHistory && (
+            <button onClick={openHistory} className="flex items-center gap-2 px-4 py-2.5 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] text-[12px] hover:border-[rgba(245,242,236,0.4)] transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+              <History size={14} /> Histórico
+            </button>
+          )}
+          <button onClick={openForm} className="flex items-center gap-2 px-5 py-2.5 bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 transition-opacity" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+            <Plus size={16} /> Novo item
+          </button>
+        </div>
       </div>
 
       {/* Alerts banner */}
@@ -174,7 +279,7 @@ export default function Inventory() {
       ) : loadError ? (
         <div className="flex flex-col items-start gap-3">
           <p role="alert" className="text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{loadError}</p>
-          <button onClick={loadItems} className="px-4 py-2 border border-[rgba(245,242,236,0.2)] text-[12px] text-[rgba(245,242,236,0.7)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+          <button onClick={() => loadItems()} className="px-4 py-2 border border-[rgba(245,242,236,0.2)] text-[12px] text-[rgba(245,242,236,0.7)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
             TENTAR NOVAMENTE
           </button>
         </div>
@@ -187,7 +292,7 @@ export default function Inventory() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-[rgba(245,242,236,0.1)]">
-                {["ITEM", "CATEGORIA", "FORNECEDOR", "SALDO", "MÍN.", "ATUALIZADO"].map((h) => (
+                {["ITEM", "CATEGORIA", "FORNECEDOR", "SALDO", "MÍN.", "ATUALIZADO", ""].map((h) => (
                   <th key={h} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
                 ))}
               </tr>
@@ -215,6 +320,13 @@ export default function Inventory() {
                     </td>
                     <td className="px-5 py-4 text-[13px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{item.minimumStock} {unit}</td>
                     <td className="px-5 py-4 text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{new Date(item.updatedAt).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-5 py-4">
+                      <button onClick={() => openMovement(item)}
+                        className="flex items-center gap-1 px-3 py-1.5 border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.6)] text-[11px] hover:border-[#e9b421] hover:text-[#e9b421] transition-all"
+                        style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+                        <Package size={11} /> Movimentar
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -266,6 +378,87 @@ export default function Inventory() {
             confirmLabel={isSaving ? "Salvando..." : duplicateOf ? "Cadastrar mesmo assim" : "Cadastrar item"}
             isBusy={isSaving}
           />
+        </Drawer>,
+        document.body
+      )}
+
+      {/* Movement drawer */}
+      {movementItem && createPortal(
+        <Drawer title={`Movimentar: ${movementItem.name}`} onClose={() => setMovementItemId(null)}>
+          <div className="flex flex-col gap-5">
+            <div className="p-4 border border-[rgba(245,242,236,0.1)] flex items-center justify-between">
+              <span className="text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Saldo atual</span>
+              <span className="text-[20px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{movementItem.balance} {UNIT_LABELS[movementItem.unit]}</span>
+            </div>
+
+            <DF label="TIPO DE MOVIMENTAÇÃO">
+              <div className="grid grid-cols-2 gap-2">
+                {(["inbound", "outbound"] as const).map((t) => (
+                  <button key={t} type="button" onClick={() => setMovementForm({ ...movementForm, type: t })}
+                    className={`h-[44px] flex items-center justify-center gap-2 text-[13px] border transition-all ${movementForm.type === t ? "border-[#e9b421] bg-[rgba(233,180,33,0.1)] text-[#e9b421]" : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)]"}`}
+                    style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+                    {t === "inbound" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+                    {t === "inbound" ? "Entrada" : "Saída"}
+                  </button>
+                ))}
+              </div>
+            </DF>
+
+            <DF label={`QUANTIDADE (${UNIT_LABELS[movementItem.unit]})`} error={movementErrors.quantity}>
+              <input type="number" min="0" step="any" value={movementForm.quantity} onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })} placeholder="0" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+            </DF>
+            <DF label="MOTIVO / REFERÊNCIA" error={movementErrors.reason}>
+              <input type="text" value={movementForm.reason} onChange={(e) => setMovementForm({ ...movementForm, reason: e.target.value })} placeholder="Ex.: OS #0092, Compra PO-2250" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+            </DF>
+
+            {movementError && (
+              <p role="alert" className="px-4 py-3 border border-red-400/40 text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{movementError}</p>
+            )}
+          </div>
+          <DrawerFooter
+            onCancel={() => setMovementItemId(null)}
+            onConfirm={registerMovement}
+            confirmLabel={isMoving ? "Registrando..." : "Registrar movimentação"}
+            isBusy={isMoving}
+          />
+        </Drawer>,
+        document.body
+      )}
+
+      {/* History drawer */}
+      {history && createPortal(
+        <Drawer title={`Histórico dos últimos ${HISTORY_DAYS} dias`} onClose={() => setHistory(null)}>
+          {history.status === "loading" && (
+            <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando histórico...</p>
+          )}
+          {history.status === "error" && (
+            <p role="alert" className="text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{history.message}</p>
+          )}
+          {history.status === "loaded" && (
+            <div className="flex flex-col gap-px bg-[rgba(245,242,236,0.06)]">
+              {history.movements.map((m) => (
+                <div key={m.stockMovementId} className="bg-[#171511] px-4 py-4 flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      {m.type === "inbound" ? <ArrowUp size={13} className="text-[#e9b421]" /> : <ArrowDown size={13} className="text-red-400" />}
+                      <span className={`text-[12px] tracking-[1.5px] ${m.type === "inbound" ? "text-[#e9b421]" : "text-red-400"}`} style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{m.type === "inbound" ? "ENTRADA" : "SAÍDA"}</span>
+                    </div>
+                    <p className="text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{m.inventoryItem.name}</p>
+                    <p className="text-[12px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{m.reason} · {m.employee.name}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-4">
+                    <p className={`text-[18px] ${m.type === "inbound" ? "text-[#e9b421]" : "text-[rgba(245,242,236,0.6)]"}`} style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+                      {m.type === "inbound" ? "+" : "−"}{m.quantity} {UNIT_LABELS[m.inventoryItem.unit]}
+                    </p>
+                    <p className="text-[11px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{new Date(m.movedAt).toLocaleString("pt-BR")}</p>
+                  </div>
+                </div>
+              ))}
+              {history.movements.length === 0 && (
+                <p className="p-8 text-center text-[rgba(245,242,236,0.35)] text-[14px]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhuma movimentação no período.</p>
+              )}
+            </div>
+          )}
         </Drawer>,
         document.body
       )}
