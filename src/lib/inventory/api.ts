@@ -19,8 +19,10 @@ export function createStockMovement(input: CreateStockMovementInput) {
   return sendApiRequest<unknown>("/stock-movements", { method: "POST", body: input });
 }
 
-// Dates as YYYY-MM-DD. Only managers and administrators can read the history.
-export function listStockMovements(from: string, to: string) {
+// Dates as YYYY-MM-DD; the item filter is optional. Only managers and
+// administrators can read the history.
+export function listStockMovements(from: string, to: string, inventoryItemId?: string) {
   const query = new URLSearchParams({ from, to });
+  if (inventoryItemId) query.set("inventoryItemId", inventoryItemId);
   return sendApiRequest<StockMovement[]>(`/stock-movements?${query.toString()}`);
 }

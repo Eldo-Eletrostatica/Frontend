@@ -1,22 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, X, Trophy, TrendingUp } from "lucide-react";
+import { Plus, Trash2, Trophy, TrendingUp, X } from "lucide-react";
+import { ApiError } from "@/lib/api/ApiError";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { listCatalogOptions, type CatalogItemOption } from "@/lib/catalog/api";
 import { usePricing, calcEstimate, type PricingConfig } from "../lib/pricingContext";
-import { useServices } from "../lib/servicesContext";
-
-interface Sale {
-  id: number;
-  code: string;
-  client: string;
-  service: string;
-  value: number;
-  seller: string;
-  date: string;
-  status: "pendente" | "pago";
-  commission: number;
-}
+import { launchSale, listSaleOrders, listSellers } from "@/lib/sales/api";
+import {
+  SALE_STATUS_LABELS,
+  type CustomerType,
+  type LaunchSaleInput,
+  type SaleOrder,
+  type SaleStatus,
+  type Seller,
+} from "@/lib/sales/types";
 
 interface CommissionRule {
   id: number;
@@ -27,110 +26,324 @@ interface CommissionRule {
 }
 
 const RULES_INIT: CommissionRule[] = [
-  { id: 1, seller: "Carlos Andrade",  serviceType: "Todos",              rateType: "percentual", rate: 3.5 },
-  { id: 2, seller: "Fernanda Lopes",  serviceType: "Máquinas industriais", rateType: "percentual", rate: 4.0 },
-  { id: 3, seller: "Ricardo Melo",    serviceType: "Todos",              rateType: "fixo",        rate: 80 },
-];
-
-function calcCommission(value: number, seller: string, rules: CommissionRule[]): number {
-  const rule = rules.find((r) => r.seller === seller) ?? rules[0];
-  if (!rule) return 0;
-  return rule.rateType === "percentual" ? Math.round(value * rule.rate / 100) : rule.rate;
-}
-
-const SELLERS = ["Carlos Andrade", "Fernanda Lopes", "Ricardo Melo", "Thiago Pires"];
-
-const SALES_INIT: Sale[] = [
-  { id: 1, code: "VD-0041", client: "Metalúrgica Prata",    service: "Pintura estrutura", value: 4800, seller: "Carlos Andrade", date: "2025-09-08", status: "pago",    commission: 168 },
-  { id: 2, code: "VD-0042", client: "Construmetal SP",       service: "Pintura cobertura", value: 12400, seller: "Fernanda Lopes", date: "2025-09-09", status: "pendente", commission: 496 },
-  { id: 3, code: "VD-0043", client: "João Pedro Silva",      service: "Portão residencial", value: 920,  seller: "Ricardo Melo",   date: "2025-09-10", status: "pago",    commission: 80 },
-  { id: 4, code: "VD-0044", client: "Agropecuária Horizonte",service: "Pintura chassi",    value: 7300,  seller: "Carlos Andrade", date: "2025-09-11", status: "pago",    commission: 255 },
-  { id: 5, code: "VD-0045", client: "Datacenter Nuvem",      service: "Racks condutivos",  value: 18600, seller: "Fernanda Lopes", date: "2025-09-12", status: "pendente", commission: 744 },
+  { id: 1, seller: "Carlos Andrade", serviceType: "Todos", rateType: "percentual", rate: 3.5 },
+  { id: 2, seller: "Fernanda Lopes", serviceType: "Máquinas industriais", rateType: "percentual", rate: 4.0 },
+  { id: 3, seller: "Ricardo Melo", serviceType: "Todos", rateType: "fixo", rate: 80 },
 ];
 
 const TABS = ["Vendas", "Comissões", "Regras de comissão", "Tabela de orçamento"] as const;
-type Tab = typeof TABS[number];
+type Tab = (typeof TABS)[number];
+type SaleMode = "direct" | "approved";
+
+interface ItemFormRow {
+  key: string;
+  paintCatalogItemId: string;
+  materialCatalogItemId: string;
+  areaM2: string;
+  quantity: string;
+}
+
+interface SaleFormState {
+  mode: SaleMode;
+  sellerEmployeeId: string;
+  scope: string;
+  dueDate: string;
+  orderId: string;
+  customerType: CustomerType;
+  name: string;
+  document: string;
+  email: string;
+  phone: string;
+  finalPrice: string;
+  items: ItemFormRow[];
+}
+
+const LOAD_ERROR_MESSAGE = "Não foi possível carregar as vendas.";
+const LAUNCH_ERROR_MESSAGE = "Não foi possível registrar a venda. Tente novamente.";
+const STATUS_STYLE: Record<SaleStatus, string> = {
+  queued: "text-[rgba(245,242,236,0.55)] bg-[rgba(245,242,236,0.08)]",
+  inProduction: "text-[#e9b421] bg-[rgba(233,180,33,0.15)]",
+  finishing: "text-blue-300 bg-[rgba(147,197,253,0.12)]",
+  completed: "text-emerald-400 bg-[rgba(52,211,153,0.1)]",
+};
+
+function emptyItem(paints: CatalogItemOption[], materials: CatalogItemOption[]): ItemFormRow {
+  return {
+    key: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    paintCatalogItemId: paints[0]?.catalogItemId ?? "",
+    materialCatalogItemId: materials[0]?.catalogItemId ?? "",
+    areaM2: "",
+    quantity: "1",
+  };
+}
+
+function emptySaleForm(sellerEmployeeId: string, paints: CatalogItemOption[], materials: CatalogItemOption[]): SaleFormState {
+  return {
+    mode: "direct",
+    sellerEmployeeId,
+    scope: "",
+    dueDate: "",
+    orderId: "",
+    customerType: "individual",
+    name: "",
+    document: "",
+    email: "",
+    phone: "",
+    finalPrice: "",
+    items: [emptyItem(paints, materials)],
+  };
+}
+
+function onlyDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function formatMoney(value: number): string {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });
+}
+
+function formatSoldAt(soldAt: string | null): string {
+  if (!soldAt) return "—";
+  return new Date(soldAt).toLocaleDateString("pt-BR");
+}
+
+function errorMessageOf(error: unknown, fallback: string): string {
+  return error instanceof ApiError ? error.message : fallback;
+}
+
+function sellerNameOf(sellers: Seller[], sellerEmployeeId: string | null): string {
+  if (!sellerEmployeeId) return "—";
+  return sellers.find((seller) => seller.employeeId === sellerEmployeeId)?.name ?? "—";
+}
 
 export default function Sales() {
   const { config, setConfig } = usePricing();
-  const { addOrder } = useServices();
-  const [sales, setSales] = useState<Sale[]>(SALES_INIT);
+  const { currentEmployee } = useAuth();
+
+  const [sales, setSales] = useState<SaleOrder[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [paints, setPaints] = useState<CatalogItemOption[]>([]);
+  const [materials, setMaterials] = useState<CatalogItemOption[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const [rules, setRules] = useState<CommissionRule[]>(RULES_INIT);
   const [tab, setTab] = useState<Tab>("Vendas");
   const [modal, setModal] = useState<"add-sale" | "add-rule" | null>(null);
   const [sellerFilter, setSellerFilter] = useState("Todos");
+  const [saleForm, setSaleForm] = useState<SaleFormState>(() => emptySaleForm("", [], []));
+  const [ruleForm, setRuleForm] = useState({
+    seller: RULES_INIT[0].seller,
+    serviceType: "Todos",
+    rateType: "percentual" as "percentual" | "fixo",
+    rate: "",
+  });
 
-  const [saleForm, setSaleForm] = useState({ client: "", cnpj: "", service: "", scope: "", deadline: "", responsible: "", value: "", seller: SELLERS[0], date: "" });
-  const [ruleForm, setRuleForm] = useState({ seller: SELLERS[0], serviceType: "Todos", rateType: "percentual" as "percentual" | "fixo", rate: "" });
+  useEffect(() => {
+    let isCancelled = false;
 
-  function addSale() {
-    if (!saleForm.client || !saleForm.value) return;
-    const value = parseFloat(saleForm.value);
-    const commission = calcCommission(value, saleForm.seller, rules);
-    const saleId = Date.now();
-    const saleCode = `VD-${String(saleId).slice(-4)}`;
-    setSales((prev) => [{ id: saleId, code: saleCode, client: saleForm.client, service: saleForm.service, value, seller: saleForm.seller, date: saleForm.date || new Date().toISOString().split("T")[0], status: "pendente", commission }, ...prev]);
-    addOrder({
-      client: saleForm.client,
-      cnpj: saleForm.cnpj,
-      scope: saleForm.scope || saleForm.service,
-      deadline: saleForm.deadline || "",
-      createdAt: new Date().toISOString().split("T")[0],
-      status: "fila",
-      responsible: saleForm.responsible || saleForm.seller,
-      notes: "",
-      saleCode,
-    });
-    setSaleForm({ client: "", cnpj: "", service: "", scope: "", deadline: "", responsible: "", value: "", seller: SELLERS[0], date: "" });
-    setModal(null);
+    Promise.all([listSaleOrders(), listSellers(), listCatalogOptions()])
+      .then(([orders, sellerList, catalog]) => {
+        if (isCancelled) return;
+        const paintOptions = catalog.filter((item) => item.type === "paintType");
+        const materialOptions = catalog.filter((item) => item.type === "partMaterial");
+        setSales(orders);
+        setSellers(sellerList);
+        setPaints(paintOptions);
+        setMaterials(materialOptions);
+        setSaleForm(emptySaleForm(currentEmployee?.employeeId ?? sellerList[0]?.employeeId ?? "", paintOptions, materialOptions));
+      })
+      .catch((error: unknown) => {
+        if (!isCancelled) setLoadError(errorMessageOf(error, LOAD_ERROR_MESSAGE));
+      })
+      .finally(() => {
+        if (!isCancelled) setIsLoading(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentEmployee?.employeeId]);
+
+  const visibleSales = useMemo(() => {
+    if (sellerFilter === "Todos") return sales;
+    return sales.filter((sale) => sale.sellerEmployeeId === sellerFilter);
+  }, [sales, sellerFilter]);
+
+  const ranking = useMemo(() => {
+    return sellers
+      .map((seller) => {
+        const sellerSales = sales.filter((sale) => sale.sellerEmployeeId === seller.employeeId);
+        return {
+          seller: seller.name,
+          total: sellerSales.reduce((sum, sale) => sum + (sale.finalPrice ?? 0), 0),
+          commission: sellerSales.reduce((sum, sale) => sum + (sale.commission ?? 0), 0),
+          count: sellerSales.length,
+        };
+      })
+      .sort((a, b) => b.total - a.total);
+  }, [sales, sellers]);
+
+  const totalSales = sales.reduce((sum, sale) => sum + (sale.finalPrice ?? 0), 0);
+  const totalCommission = sales.reduce((sum, sale) => sum + (sale.commission ?? 0), 0);
+  const ticketAverage = sales.length > 0 ? Math.round(totalSales / sales.length) : 0;
+
+  function openSaleModal() {
+    setSubmitError(null);
+    setSaleForm(emptySaleForm(currentEmployee?.employeeId ?? sellers[0]?.employeeId ?? "", paints, materials));
+    setModal("add-sale");
+  }
+
+  function updateItem(key: string, patch: Partial<ItemFormRow>) {
+    setSaleForm((current) => ({
+      ...current,
+      items: current.items.map((item) => (item.key === key ? { ...item, ...patch } : item)),
+    }));
+  }
+
+  function validateSaleForm(): string | null {
+    if (!saleForm.sellerEmployeeId) return "Selecione o vendedor.";
+    if (!saleForm.scope.trim()) return "Informe o escopo do serviço.";
+    if (!saleForm.dueDate) return "Informe o prazo de entrega.";
+
+    if (saleForm.mode === "approved") {
+      if (!saleForm.orderId.trim()) return "Informe o ID do orçamento aprovado.";
+      return null;
+    }
+
+    const document = onlyDigits(saleForm.document);
+    if (!saleForm.name.trim()) return "Informe o nome do cliente.";
+    if (!saleForm.email.trim()) return "Informe o e-mail do cliente.";
+    if (!saleForm.phone.trim()) return "Informe o telefone do cliente.";
+    if (saleForm.customerType === "business" && document.length !== 14) {
+      return "Informe um CNPJ válido (14 dígitos).";
+    }
+    if (document && document.length !== 11 && document.length !== 14) {
+      return "Documento deve ter 11 (CPF) ou 14 (CNPJ) dígitos.";
+    }
+
+    if (
+      saleForm.items.length === 0 ||
+      saleForm.items.some(
+        (item) =>
+          !item.paintCatalogItemId ||
+          !item.materialCatalogItemId ||
+          !(Number(item.areaM2) > 0) ||
+          !Number.isInteger(Number(item.quantity)) ||
+          !(Number(item.quantity) > 0),
+      )
+    ) {
+      return "Preencha todos os itens com pintura, material, área e quantidade.";
+    }
+
+    if (!(Number(saleForm.finalPrice) > 0)) return "Informe o valor final da venda.";
+    return null;
+  }
+
+  function buildLaunchPayload(): LaunchSaleInput {
+    if (saleForm.mode === "approved") {
+      return {
+        sellerEmployeeId: saleForm.sellerEmployeeId,
+        scope: saleForm.scope.trim(),
+        dueDate: saleForm.dueDate,
+        orderId: saleForm.orderId.trim(),
+      };
+    }
+
+    const document = onlyDigits(saleForm.document);
+    return {
+      sellerEmployeeId: saleForm.sellerEmployeeId,
+      scope: saleForm.scope.trim(),
+      dueDate: saleForm.dueDate,
+      customer: {
+        type: saleForm.customerType,
+        name: saleForm.name.trim(),
+        email: saleForm.email.trim(),
+        phone: saleForm.phone.trim(),
+        ...(document ? { document } : {}),
+      },
+      items: saleForm.items.map((item) => ({
+        paintCatalogItemId: item.paintCatalogItemId,
+        materialCatalogItemId: item.materialCatalogItemId,
+        areaM2: Number(item.areaM2),
+        quantity: Number(item.quantity),
+      })),
+      finalPrice: Number(saleForm.finalPrice),
+    };
+  }
+
+  async function submitSale() {
+    const validationError = validateSaleForm();
+    if (validationError) {
+      setSubmitError(validationError);
+      return;
+    }
+    const payload = buildLaunchPayload();
+
+    setIsSaving(true);
+    setSubmitError(null);
+    try {
+      const launched = await launchSale(payload);
+      const orders = await listSaleOrders();
+      setSales(orders);
+      setSuccessMessage(`Venda registrada. Protocolo do cliente: ${launched.trackingCode}`);
+      setModal(null);
+    } catch (error) {
+      setSubmitError(errorMessageOf(error, LAUNCH_ERROR_MESSAGE));
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function addRule() {
     if (!ruleForm.rate) return;
-    setRules((prev) => [...prev, { id: Date.now(), seller: ruleForm.seller, serviceType: ruleForm.serviceType, rateType: ruleForm.rateType, rate: parseFloat(ruleForm.rate) }]);
-    setRuleForm({ seller: SELLERS[0], serviceType: "Todos", rateType: "percentual", rate: "" });
+    setRules((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        seller: ruleForm.seller,
+        serviceType: ruleForm.serviceType,
+        rateType: ruleForm.rateType,
+        rate: parseFloat(ruleForm.rate),
+      },
+    ]);
+    setRuleForm({ seller: RULES_INIT[0].seller, serviceType: "Todos", rateType: "percentual", rate: "" });
     setModal(null);
   }
 
-  const visibleSales = sellerFilter === "Todos" ? sales : sales.filter((s) => s.seller === sellerFilter);
-
-  // Ranking
-  const ranking = SELLERS.map((seller) => ({
-    seller,
-    total: sales.filter((s) => s.seller === seller).reduce((a, s) => a + s.value, 0),
-    commission: sales.filter((s) => s.seller === seller).reduce((a, s) => a + s.commission, 0),
-    count: sales.filter((s) => s.seller === seller).length,
-  })).sort((a, b) => b.total - a.total);
-
-  const totalSales = sales.reduce((a, s) => a + s.value, 0);
-  const totalCommission = sales.reduce((a, s) => a + s.commission, 0);
-
-  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });
-
   return (
     <div>
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
           <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>LANÇAMENTO DE VENDAS</p>
           <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Vendas</h1>
         </div>
         {tab !== "Tabela de orçamento" && (
-          <button onClick={() => setModal(tab === "Regras de comissão" ? "add-rule" : "add-sale")}
+          <button
+            onClick={() => (tab === "Regras de comissão" ? setModal("add-rule") : openSaleModal())}
             className="flex items-center gap-2 px-5 py-2.5 bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 transition-opacity"
-            style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+            style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
+          >
             <Plus size={16} /> {tab === "Regras de comissão" ? "Nova regra" : "Nova venda"}
           </button>
         )}
       </div>
 
-      {/* KPIs */}
+      {successMessage && (
+        <p role="status" className="mb-6 px-5 py-3 border border-emerald-400/40 text-[13px] text-emerald-300" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+          {successMessage}
+        </p>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-[rgba(245,242,236,0.08)] mb-px">
         {[
-          { label: "TOTAL VENDIDO", value: fmt(totalSales) },
-          { label: "TOTAL COMISSÕES", value: fmt(totalCommission) },
+          { label: "TOTAL VENDIDO", value: formatMoney(totalSales) },
+          { label: "TOTAL COMISSÕES", value: formatMoney(totalCommission) },
           { label: "VENDAS NO PERÍODO", value: String(sales.length) },
-          { label: "TICKET MÉDIO", value: fmt(Math.round(totalSales / sales.length)) },
+          { label: "TICKET MÉDIO", value: formatMoney(ticketAverage) },
         ].map((k) => (
           <div key={k.label} className="bg-[#12100d] px-6 py-5">
             <p className="text-[28px] text-[#f5f2ec] leading-tight mb-1" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{k.value}</p>
@@ -139,12 +352,14 @@ export default function Sales() {
         ))}
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-0 mb-6 mt-6 border-b border-[rgba(245,242,236,0.1)]">
         {TABS.map((t) => (
-          <button key={t} onClick={() => setTab(t)}
+          <button
+            key={t}
+            onClick={() => setTab(t)}
             className={`px-6 py-3 text-[13px] border-b-2 transition-all ${tab === t ? "border-[#e9b421] text-[#e9b421]" : "border-transparent text-[rgba(245,242,236,0.5)] hover:text-[rgba(245,242,236,0.8)]"}`}
-            style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+            style={{ fontFamily: "'Barlow:Medium', sans-serif" }}
+          >
             {t}
           </button>
         ))}
@@ -152,51 +367,86 @@ export default function Sales() {
 
       {tab === "Vendas" && (
         <>
-          {/* Seller filter */}
           <div className="flex flex-wrap gap-2 mb-5">
-            {["Todos", ...SELLERS].map((s) => (
-              <button key={s} onClick={() => setSellerFilter(s)}
-                className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${sellerFilter === s ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)]"}`}
-                style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
-                {s.toUpperCase().split(" ")[0]}
+            <button
+              onClick={() => setSellerFilter("Todos")}
+              className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${sellerFilter === "Todos" ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)]"}`}
+              style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
+            >
+              TODOS
+            </button>
+            {sellers.map((seller) => (
+              <button
+                key={seller.employeeId}
+                onClick={() => setSellerFilter(seller.employeeId)}
+                className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${sellerFilter === seller.employeeId ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)]"}`}
+                style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
+              >
+                {seller.name.toUpperCase().split(" ")[0]}
               </button>
             ))}
           </div>
 
-          <div className="border border-[rgba(245,242,236,0.08)] overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[rgba(245,242,236,0.1)]">
-                  {["CÓD.", "CLIENTE", "SERVIÇO", "VALOR", "VENDEDOR", "COMISSÃO", "DATA", "STATUS"].map((h) => (
-                    <th key={h} className="px-4 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visibleSales.map((s) => (
-                  <tr key={s.id} className="border-b border-[rgba(245,242,236,0.06)] hover:bg-[rgba(245,242,236,0.02)]">
-                    <td className="px-4 py-4 text-[11px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{s.code}</td>
-                    <td className="px-4 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{s.client}</td>
-                    <td className="px-4 py-4 text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.service}</td>
-                    <td className="px-4 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{fmt(s.value)}</td>
-                    <td className="px-4 py-4 text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.seller.split(" ")[0]}</td>
-                    <td className="px-4 py-4 text-[14px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{fmt(s.commission)}</td>
-                    <td className="px-4 py-4 text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{new Date(s.date).toLocaleDateString("pt-BR")}</td>
-                    <td className="px-4 py-4">
-                      <span className={`text-[10px] tracking-[1.5px] px-2 py-1 ${s.status === "pago" ? "text-emerald-400 bg-[rgba(52,211,153,0.1)]" : "text-[rgba(245,242,236,0.55)] bg-[rgba(245,242,236,0.08)]"}`} style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
-                        {s.status.toUpperCase()}
-                      </span>
-                    </td>
+          {isLoading && (
+            <p className="px-5 py-10 text-center text-[14px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+              Carregando vendas…
+            </p>
+          )}
+
+          {loadError && (
+            <p role="alert" className="px-5 py-10 text-center border border-red-400/40 text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+              {loadError}
+            </p>
+          )}
+
+          {!isLoading && !loadError && (
+            <div className="border border-[rgba(245,242,236,0.08)] overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[rgba(245,242,236,0.1)]">
+                    {["PROTOCOLO", "CLIENTE", "ESCOPO", "VALOR", "VENDEDOR", "COMISSÃO", "DATA", "STATUS"].map((h) => (
+                      <th key={h} className="px-4 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {visibleSales.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-10 text-center text-[14px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                        Nenhuma venda lançada ainda.
+                      </td>
+                    </tr>
+                  )}
+                  {visibleSales.map((sale) => (
+                    <tr key={sale.orderId} className="border-b border-[rgba(245,242,236,0.06)] hover:bg-[rgba(245,242,236,0.02)]">
+                      <td className="px-4 py-4 text-[11px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{sale.trackingCode ?? "—"}</td>
+                      <td className="px-4 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{sale.customer.name}</td>
+                      <td className="px-4 py-4 text-[13px] text-[rgba(245,242,236,0.6)] max-w-[220px] truncate" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{sale.scope ?? "—"}</td>
+                      <td className="px-4 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{sale.finalPrice == null ? "—" : formatMoney(sale.finalPrice)}</td>
+                      <td className="px-4 py-4 text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{sellerNameOf(sellers, sale.sellerEmployeeId).split(" ")[0]}</td>
+                      <td className="px-4 py-4 text-[14px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{sale.commission == null ? "—" : formatMoney(sale.commission)}</td>
+                      <td className="px-4 py-4 text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{formatSoldAt(sale.soldAt)}</td>
+                      <td className="px-4 py-4">
+                        <span className={`text-[10px] tracking-[1.5px] px-2 py-1 ${STATUS_STYLE[sale.status]}`} style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+                          {SALE_STATUS_LABELS[sale.status].toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
 
       {tab === "Comissões" && (
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px bg-[rgba(245,242,236,0.08)]">
+          {ranking.length === 0 && (
+            <div className="bg-[#12100d] p-6 col-span-full">
+              <p className="text-[14px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Sem vendedores para rankear.</p>
+            </div>
+          )}
           {ranking.map((r, i) => (
             <div key={r.seller} className="bg-[#12100d] p-6">
               <div className="flex items-center justify-between mb-4">
@@ -205,10 +455,10 @@ export default function Sales() {
                 {i === 1 && <TrendingUp size={16} className="text-[rgba(245,242,236,0.4)]" />}
               </div>
               <p className="text-[15px] text-[#f5f2ec] mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{r.seller.split(" ")[0]}</p>
-              <p className="text-[28px] text-[#e9b421] leading-tight mb-1" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{fmt(r.commission)}</p>
+              <p className="text-[28px] text-[#e9b421] leading-tight mb-1" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{formatMoney(r.commission)}</p>
               <p className="text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>em comissão</p>
               <div className="mt-4 pt-4 border-t border-[rgba(245,242,236,0.08)]">
-                <p className="text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{fmt(r.total)} vendido · {r.count} venda(s)</p>
+                <p className="text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{formatMoney(r.total)} vendido · {r.count} venda(s)</p>
               </div>
             </div>
           ))}
@@ -236,7 +486,7 @@ export default function Sales() {
                     </span>
                   </td>
                   <td className="px-5 py-4 text-[14px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
-                    {r.rateType === "percentual" ? `${r.rate}%` : fmt(r.rate)}
+                    {r.rateType === "percentual" ? `${r.rate}%` : formatMoney(r.rate)}
                   </td>
                 </tr>
               ))}
@@ -249,69 +499,215 @@ export default function Sales() {
         <PricingRulesEditor config={config} setConfig={setConfig} />
       )}
 
-      {/* Add sale modal */}
       {modal === "add-sale" && createPortal(
-        <Drawer title="Nova venda" onClose={() => setModal(null)}>
+        <Drawer title="Nova venda" onClose={() => !isSaving && setModal(null)}>
           <div className="flex flex-col gap-5">
             <div className="px-4 py-3 border-l-2 border-[#e9b421]" style={{ background: "rgba(233,180,33,0.04)" }}>
               <p className="text-[11px] text-[rgba(245,242,236,0.55)] leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-                Ao registrar a venda, uma OS é criada automaticamente e o cliente pode acompanhá-la pela área do cliente.
+                Ao registrar a venda, uma OS é criada automaticamente e o cliente recebe um protocolo para acompanhar o status.
               </p>
             </div>
 
-            <p className="text-[10px] tracking-[2.5px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>DADOS DO CLIENTE</p>
-            <DF label="CLIENTE / EMPRESA"><input type="text" value={saleForm.client} onChange={(e) => setSaleForm({ ...saleForm, client: e.target.value })} placeholder="Nome ou razão social" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
-            <DF label="CNPJ (opcional — habilita área do cliente PJ)"><input type="text" value={saleForm.cnpj} onChange={(e) => setSaleForm({ ...saleForm, cnpj: e.target.value })} placeholder="00.000.000/0001-00" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
+            <DF label="TIPO DE LANÇAMENTO">
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["direct", "CLIENTE NOVO"],
+                  ["approved", "ORÇAMENTO APROVADO"],
+                ] as const).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    disabled={isSaving}
+                    onClick={() => setSaleForm((current) => ({ ...current, mode }))}
+                    className={`h-[44px] border text-[12px] tracking-[1px] transition-all ${saleForm.mode === mode ? "border-[#e9b421] bg-[rgba(233,180,33,0.1)] text-[#e9b421]" : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)]"}`}
+                    style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </DF>
 
-            <p className="text-[10px] tracking-[2.5px] text-[rgba(245,242,236,0.35)] mt-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>VENDA</p>
-            <DF label="SERVIÇO VENDIDO"><input type="text" value={saleForm.service} onChange={(e) => setSaleForm({ ...saleForm, service: e.target.value })} placeholder="Ex.: Pintura estrutura industrial" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
-            <div className="grid grid-cols-2 gap-4">
-              <DF label="VALOR (R$)"><input type="number" min="0" step="0.01" value={saleForm.value} onChange={(e) => setSaleForm({ ...saleForm, value: e.target.value })} placeholder="0,00" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
-              <DF label="DATA"><input type="date" value={saleForm.date} onChange={(e) => setSaleForm({ ...saleForm, date: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
-            </div>
             <DF label="VENDEDOR">
-              <select value={saleForm.seller} onChange={(e) => setSaleForm({ ...saleForm, seller: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-                {SELLERS.map((s) => <option key={s}>{s}</option>)}
+              <select
+                value={saleForm.sellerEmployeeId}
+                disabled={isSaving}
+                onChange={(e) => setSaleForm({ ...saleForm, sellerEmployeeId: e.target.value })}
+                className="drw-inp"
+                style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
+              >
+                {sellers.map((seller) => (
+                  <option key={seller.employeeId} value={seller.employeeId}>{seller.name}</option>
+                ))}
               </select>
             </DF>
 
-            <p className="text-[10px] tracking-[2.5px] text-[rgba(245,242,236,0.35)] mt-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ORDEM DE SERVIÇO (gerada automaticamente)</p>
-            <DF label="ESCOPO TÉCNICO"><textarea value={saleForm.scope} onChange={(e) => setSaleForm({ ...saleForm, scope: e.target.value })} rows={2} placeholder="Peças, processo, acabamento… (deixe em branco para usar o nome do serviço)" className="w-full px-4 py-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] placeholder-[rgba(245,242,236,0.3)] outline-none focus:border-[#e9b421] resize-none transition-colors" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
-            <div className="grid grid-cols-2 gap-4">
-              <DF label="PRAZO DE ENTREGA"><input type="date" value={saleForm.deadline} onChange={(e) => setSaleForm({ ...saleForm, deadline: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
-              <DF label="RESPONSÁVEL TÉCNICO"><input type="text" value={saleForm.responsible} onChange={(e) => setSaleForm({ ...saleForm, responsible: e.target.value })} placeholder="Nome (padrão: vendedor)" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
-            </div>
+            <DF label="ESCOPO TÉCNICO">
+              <textarea
+                value={saleForm.scope}
+                disabled={isSaving}
+                onChange={(e) => setSaleForm({ ...saleForm, scope: e.target.value })}
+                rows={2}
+                placeholder="Peças, processo, acabamento…"
+                className="w-full px-4 py-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] placeholder-[rgba(245,242,236,0.3)] outline-none focus:border-[#e9b421] resize-none transition-colors"
+                style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
+              />
+            </DF>
 
-            {saleForm.value && (
-              <div className="p-4 border border-[rgba(245,242,236,0.1)]">
-                <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>COMISSÃO ESTIMADA</p>
-                <p className="text-[22px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
-                  {fmt(calcCommission(parseFloat(saleForm.value) || 0, saleForm.seller, rules))}
-                </p>
-              </div>
+            <DF label="PRAZO DE ENTREGA">
+              <input
+                type="date"
+                value={saleForm.dueDate}
+                disabled={isSaving}
+                onChange={(e) => setSaleForm({ ...saleForm, dueDate: e.target.value })}
+                className="drw-inp"
+                style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
+              />
+            </DF>
+
+            {saleForm.mode === "approved" ? (
+              <DF label="ID DO ORÇAMENTO APROVADO">
+                <input
+                  type="text"
+                  value={saleForm.orderId}
+                  disabled={isSaving}
+                  onChange={(e) => setSaleForm({ ...saleForm, orderId: e.target.value })}
+                  placeholder="UUID do orçamento"
+                  className="drw-inp"
+                  style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
+                />
+              </DF>
+            ) : (
+              <>
+                <p className="text-[10px] tracking-[2.5px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>DADOS DO CLIENTE</p>
+
+                <DF label="TIPO DE CLIENTE">
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      ["individual", "PESSOA FÍSICA"],
+                      ["business", "PESSOA JURÍDICA"],
+                    ] as const).map(([type, label]) => (
+                      <button
+                        key={type}
+                        type="button"
+                        disabled={isSaving}
+                        onClick={() => setSaleForm({ ...saleForm, customerType: type })}
+                        className={`h-[44px] border text-[12px] tracking-[1px] transition-all ${saleForm.customerType === type ? "border-[#e9b421] bg-[rgba(233,180,33,0.1)] text-[#e9b421]" : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)]"}`}
+                        style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </DF>
+
+                <DF label="NOME / RAZÃO SOCIAL">
+                  <input type="text" value={saleForm.name} disabled={isSaving} onChange={(e) => setSaleForm({ ...saleForm, name: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                </DF>
+                <DF label={saleForm.customerType === "business" ? "CNPJ (obrigatório)" : "CPF (opcional)"}>
+                  <input type="text" value={saleForm.document} disabled={isSaving} onChange={(e) => setSaleForm({ ...saleForm, document: e.target.value })} placeholder={saleForm.customerType === "business" ? "00.000.000/0001-00" : "000.000.000-00"} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                </DF>
+                <div className="grid grid-cols-2 gap-4">
+                  <DF label="E-MAIL">
+                    <input type="email" value={saleForm.email} disabled={isSaving} onChange={(e) => setSaleForm({ ...saleForm, email: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                  </DF>
+                  <DF label="TELEFONE">
+                    <input type="tel" value={saleForm.phone} disabled={isSaving} onChange={(e) => setSaleForm({ ...saleForm, phone: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                  </DF>
+                </div>
+
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-[10px] tracking-[2.5px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ITENS</p>
+                  <button
+                    type="button"
+                    disabled={isSaving || paints.length === 0 || materials.length === 0}
+                    onClick={() => setSaleForm((current) => ({ ...current, items: [...current.items, emptyItem(paints, materials)] }))}
+                    className="flex items-center gap-1.5 text-[11px] text-[#e9b421] disabled:opacity-40"
+                    style={{ fontFamily: "'Barlow:Medium', sans-serif" }}
+                  >
+                    <Plus size={12} /> Adicionar item
+                  </button>
+                </div>
+
+                {(paints.length === 0 || materials.length === 0) && (
+                  <p role="alert" className="text-[12px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                    Cadastre tipos de pintura e materiais no catálogo antes de lançar uma venda direta.
+                  </p>
+                )}
+
+                {saleForm.items.map((item, index) => (
+                  <div key={item.key} className="p-4 border border-[rgba(245,242,236,0.1)] flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[12px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Item {index + 1}</p>
+                      {saleForm.items.length > 1 && (
+                        <button type="button" disabled={isSaving} onClick={() => setSaleForm((current) => ({ ...current, items: current.items.filter((row) => row.key !== item.key) }))} className="text-[rgba(245,242,236,0.35)] hover:text-red-300 transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <DF label="TIPO DE PINTURA">
+                      <select value={item.paintCatalogItemId} disabled={isSaving} onChange={(e) => updateItem(item.key, { paintCatalogItemId: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                        {paints.map((paint) => <option key={paint.catalogItemId} value={paint.catalogItemId}>{paint.name}</option>)}
+                      </select>
+                    </DF>
+                    <DF label="MATERIAL">
+                      <select value={item.materialCatalogItemId} disabled={isSaving} onChange={(e) => updateItem(item.key, { materialCatalogItemId: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                        {materials.map((material) => <option key={material.catalogItemId} value={material.catalogItemId}>{material.name}</option>)}
+                      </select>
+                    </DF>
+                    <div className="grid grid-cols-2 gap-4">
+                      <DF label="ÁREA (m²)">
+                        <input type="number" min="0.001" step="0.001" value={item.areaM2} disabled={isSaving} onChange={(e) => updateItem(item.key, { areaM2: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                      </DF>
+                      <DF label="QUANTIDADE">
+                        <input type="number" min="1" step="1" value={item.quantity} disabled={isSaving} onChange={(e) => updateItem(item.key, { quantity: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                      </DF>
+                    </div>
+                  </div>
+                ))}
+
+                <DF label="VALOR FINAL (R$)">
+                  <input type="number" min="0.01" step="0.01" value={saleForm.finalPrice} disabled={isSaving} onChange={(e) => setSaleForm({ ...saleForm, finalPrice: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                </DF>
+              </>
+            )}
+
+            {submitError && (
+              <p role="alert" className="text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{submitError}</p>
             )}
           </div>
-          <DrawerFooter onCancel={() => setModal(null)} onConfirm={addSale} confirmLabel="Registrar venda e criar OS" />
+          <DrawerFooter
+            onCancel={() => setModal(null)}
+            onConfirm={submitSale}
+            confirmLabel={isSaving ? "Registrando…" : "Registrar venda e criar OS"}
+            disabled={isSaving}
+          />
         </Drawer>,
-        document.body
+        document.body,
       )}
 
-      {/* Add rule modal */}
       {modal === "add-rule" && createPortal(
         <Drawer title="Nova regra de comissão" onClose={() => setModal(null)}>
           <div className="flex flex-col gap-5">
             <DF label="VENDEDOR">
               <select value={ruleForm.seller} onChange={(e) => setRuleForm({ ...ruleForm, seller: e.target.value })} className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-                {SELLERS.map((s) => <option key={s}>{s}</option>)}
+                {sellers.map((seller) => <option key={seller.employeeId}>{seller.name}</option>)}
+                {sellers.length === 0 && RULES_INIT.map((rule) => <option key={rule.id}>{rule.seller}</option>)}
               </select>
             </DF>
-            <DF label="TIPO DE SERVIÇO"><input type="text" value={ruleForm.serviceType} onChange={(e) => setRuleForm({ ...ruleForm, serviceType: e.target.value })} placeholder="Ex.: Máquinas industriais, ou Todos" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} /></DF>
+            <DF label="TIPO DE SERVIÇO">
+              <input type="text" value={ruleForm.serviceType} onChange={(e) => setRuleForm({ ...ruleForm, serviceType: e.target.value })} placeholder="Ex.: Máquinas industriais, ou Todos" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+            </DF>
             <DF label="TIPO DE COMISSÃO">
               <div className="grid grid-cols-2 gap-2">
-                {(["percentual","fixo"] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => setRuleForm({ ...ruleForm, rateType: t })}
+                {(["percentual", "fixo"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setRuleForm({ ...ruleForm, rateType: t })}
                     className={`h-[44px] border text-[12px] tracking-[1px] transition-all ${ruleForm.rateType === t ? "border-[#e9b421] bg-[rgba(233,180,33,0.1)] text-[#e9b421]" : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)]"}`}
-                    style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+                    style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
+                  >
                     {t === "percentual" ? "PERCENTUAL (%)" : "VALOR FIXO (R$)"}
                   </button>
                 ))}
@@ -323,10 +719,10 @@ export default function Sales() {
           </div>
           <DrawerFooter onCancel={() => setModal(null)} onConfirm={addRule} confirmLabel="Salvar regra" />
         </Drawer>,
-        document.body
+        document.body,
       )}
 
-      <style>{`.drw-inp { width:100%; height:46px; padding:0 14px; background:#12100d; border:1px solid rgba(245,242,236,0.18); color:#f5f2ec; font-size:14px; outline:none; transition:border-color .15s; } .drw-inp:focus { border-color:#e9b421; } .drw-inp option { background:#1a1713; }`}</style>
+      <style>{`.drw-inp { width:100%; height:46px; padding:0 14px; background:#12100d; border:1px solid rgba(245,242,236,0.18); color:#f5f2ec; font-size:14px; outline:none; transition:border-color .15s; } .drw-inp:focus { border-color:#e9b421; } .drw-inp option { background:#1a1713; } .drw-inp:disabled { opacity:0.55; }`}</style>
     </div>
   );
 }
@@ -346,11 +742,35 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
   );
 }
 
-function DrawerFooter({ onCancel, onConfirm, confirmLabel }: { onCancel: () => void; onConfirm: () => void; confirmLabel: string }) {
+function DrawerFooter({
+  onCancel,
+  onConfirm,
+  confirmLabel,
+  disabled = false,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+  confirmLabel: string;
+  disabled?: boolean;
+}) {
   return (
     <div className="flex gap-3 mt-8">
-      <button onClick={onCancel} className="flex-1 h-[48px] border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.6)] text-[13px]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Cancelar</button>
-      <button onClick={onConfirm} className="flex-1 h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{confirmLabel}</button>
+      <button
+        onClick={onCancel}
+        disabled={disabled}
+        className="flex-1 h-[48px] border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.6)] text-[13px] disabled:opacity-50"
+        style={{ fontFamily: "'Barlow:Medium', sans-serif" }}
+      >
+        Cancelar
+      </button>
+      <button
+        onClick={onConfirm}
+        disabled={disabled}
+        className="flex-1 h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 disabled:opacity-60"
+        style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
+      >
+        {confirmLabel}
+      </button>
     </div>
   );
 }
@@ -410,7 +830,6 @@ function PricingRulesEditor({ config, setConfig }: { config: PricingConfig; setC
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Info banner */}
       <div className="flex items-start gap-3 px-5 py-4 border border-[rgba(233,180,33,0.2)] bg-[rgba(233,180,33,0.04)]">
         <div className="w-1.5 h-1.5 rounded-full bg-[#e9b421] flex-shrink-0 mt-1.5" />
         <p className="text-[13px] text-[rgba(245,242,236,0.65)] leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
@@ -419,7 +838,6 @@ function PricingRulesEditor({ config, setConfig }: { config: PricingConfig; setC
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Service prices */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -440,17 +858,8 @@ function PricingRulesEditor({ config, setConfig }: { config: PricingConfig; setC
             {config.serviceRules.map((r) => (
               <div key={r.id} className={`grid grid-cols-[1fr_100px_44px] items-center border-b border-[rgba(245,242,236,0.06)] last:border-0 px-4 py-2 ${!r.active ? "opacity-40" : ""}`}>
                 <span className="text-[13px] text-[#f5f2ec] truncate pr-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{r.name}</span>
-                <input
-                  type="number" min="1" step="0.5"
-                  value={r.pricePerM2}
-                  onChange={(e) => updateServicePrice(r.id, e.target.value)}
-                  disabled={!r.active}
-                  className={inpCls}
-                  style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
-                />
-                <button onClick={() => toggleService(r.id)}
-                  className={`ml-2 w-8 h-5 rounded-full transition-colors flex-shrink-0 relative ${r.active ? "bg-[#e9b421]" : "bg-[rgba(245,242,236,0.15)]"}`}
-                  title={r.active ? "Desativar" : "Ativar"}>
+                <input type="number" min="1" step="0.5" value={r.pricePerM2} onChange={(e) => updateServicePrice(r.id, e.target.value)} disabled={!r.active} className={inpCls} style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }} />
+                <button onClick={() => toggleService(r.id)} className={`ml-2 w-8 h-5 rounded-full transition-colors flex-shrink-0 relative ${r.active ? "bg-[#e9b421]" : "bg-[rgba(245,242,236,0.15)]"}`} title={r.active ? "Desativar" : "Ativar"}>
                   <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${r.active ? "translate-x-3" : "translate-x-0.5"}`} />
                 </button>
               </div>
@@ -458,7 +867,6 @@ function PricingRulesEditor({ config, setConfig }: { config: PricingConfig; setC
           </div>
         </div>
 
-        {/* Material multipliers */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -479,17 +887,8 @@ function PricingRulesEditor({ config, setConfig }: { config: PricingConfig; setC
             {config.materialRules.map((r) => (
               <div key={r.id} className={`grid grid-cols-[1fr_100px_44px] items-center border-b border-[rgba(245,242,236,0.06)] last:border-0 px-4 py-2 ${!r.active ? "opacity-40" : ""}`}>
                 <span className="text-[13px] text-[#f5f2ec] truncate pr-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{r.name}</span>
-                <input
-                  type="number" min="0.1" step="0.01"
-                  value={r.multiplier}
-                  onChange={(e) => updateMultiplier(r.id, e.target.value)}
-                  disabled={!r.active}
-                  className={inpCls}
-                  style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
-                />
-                <button onClick={() => toggleMaterial(r.id)}
-                  className={`ml-2 w-8 h-5 rounded-full transition-colors flex-shrink-0 relative ${r.active ? "bg-[#e9b421]" : "bg-[rgba(245,242,236,0.15)]"}`}
-                  title={r.active ? "Desativar" : "Ativar"}>
+                <input type="number" min="0.1" step="0.01" value={r.multiplier} onChange={(e) => updateMultiplier(r.id, e.target.value)} disabled={!r.active} className={inpCls} style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }} />
+                <button onClick={() => toggleMaterial(r.id)} className={`ml-2 w-8 h-5 rounded-full transition-colors flex-shrink-0 relative ${r.active ? "bg-[#e9b421]" : "bg-[rgba(245,242,236,0.15)]"}`} title={r.active ? "Desativar" : "Ativar"}>
                   <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${r.active ? "translate-x-3" : "translate-x-0.5"}`} />
                 </button>
               </div>
@@ -498,30 +897,20 @@ function PricingRulesEditor({ config, setConfig }: { config: PricingConfig; setC
         </div>
       </div>
 
-      {/* Global settings */}
       <div className="grid md:grid-cols-2 gap-6 border-t border-[rgba(245,242,236,0.08)] pt-8">
         <DF label="ÁREA MÍNIMA (m²)">
-          <input type="number" min="0.1" step="0.1" value={config.minArea}
-            onChange={(e) => setConfig({ ...config, minArea: parseFloat(e.target.value) || 0.5 })}
-            className="w-full h-[46px] px-4 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] outline-none focus:border-[#e9b421] transition-colors"
-            style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+          <input type="number" min="0.1" step="0.1" value={config.minArea} onChange={(e) => setConfig({ ...config, minArea: parseFloat(e.target.value) || 0.5 })} className="w-full h-[46px] px-4 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] outline-none focus:border-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
           <p className="text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Área mínima aceita no formulário público.</p>
         </DF>
         <DF label="AVISO EXIBIDO AO CLIENTE">
-          <textarea value={config.disclaimer} rows={3}
-            onChange={(e) => setConfig({ ...config, disclaimer: e.target.value })}
-            className="w-full px-4 py-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] outline-none focus:border-[#e9b421] transition-colors resize-none"
-            style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+          <textarea value={config.disclaimer} rows={3} onChange={(e) => setConfig({ ...config, disclaimer: e.target.value })} className="w-full px-4 py-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] outline-none focus:border-[#e9b421] transition-colors resize-none" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </DF>
       </div>
 
-      {/* Simulator */}
       <SimulatorPreview config={config} />
 
-      {/* Save */}
       <div className="flex justify-end">
-        <button onClick={save} className={`flex items-center gap-2 px-8 py-3 text-[14px] transition-all ${saved ? "bg-emerald-500 text-white" : "bg-[#e9b421] text-[#12100d] hover:opacity-90"}`}
-          style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+        <button onClick={save} className={`flex items-center gap-2 px-8 py-3 text-[14px] transition-all ${saved ? "bg-emerald-500 text-white" : "bg-[#e9b421] text-[#12100d] hover:opacity-90"}`} style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
           {saved ? "✓ Regras salvas" : "Salvar e publicar regras"}
         </button>
       </div>
@@ -538,40 +927,31 @@ function SimulatorPreview({ config }: { config: PricingConfig }) {
   const [qty, setQty] = useState("5");
 
   const result = calcEstimate(config, svc, mat, parseFloat(area) || 0, parseInt(qty) || 1);
-  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });
 
   return (
     <div className="border border-[rgba(245,242,236,0.1)] p-6" style={{ background: "#171511" }}>
       <p className="text-[11px] tracking-[2.5px] text-[rgba(245,242,236,0.4)] mb-5" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>SIMULADOR — PRÉVIA DO CÁLCULO</p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <DF label="SERVIÇO">
-          <select value={svc} onChange={(e) => setSvc(e.target.value)}
-            className="w-full h-[42px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors"
-            style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <select value={svc} onChange={(e) => setSvc(e.target.value)} className="w-full h-[42px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             {active.map((r) => <option key={r.id}>{r.name}</option>)}
           </select>
         </DF>
         <DF label="MATERIAL">
-          <select value={mat} onChange={(e) => setMat(e.target.value)}
-            className="w-full h-[42px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors"
-            style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <select value={mat} onChange={(e) => setMat(e.target.value)} className="w-full h-[42px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             {activeMat.map((r) => <option key={r.id}>{r.name}</option>)}
           </select>
         </DF>
         <DF label="ÁREA (m²/peça)">
-          <input type="number" min="0.1" step="0.5" value={area} onChange={(e) => setArea(e.target.value)}
-            className="w-full h-[42px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors"
-            style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+          <input type="number" min="0.1" step="0.5" value={area} onChange={(e) => setArea(e.target.value)} className="w-full h-[42px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </DF>
         <DF label="QUANTIDADE">
-          <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)}
-            className="w-full h-[42px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors"
-            style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+          <input type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} className="w-full h-[42px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
         </DF>
       </div>
       <div className="flex items-center gap-4">
         <span className="text-[13px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Estimativa gerada:</span>
-        <span className="text-[28px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{fmt(result)}</span>
+        <span className="text-[28px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{formatMoney(result)}</span>
       </div>
     </div>
   );

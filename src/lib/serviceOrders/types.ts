@@ -1,4 +1,4 @@
-    export type ServiceOrderStatus = "queued" | "inProduction" | "finishing" | "completed";
+export type ServiceOrderStatus = "queued" | "inProduction" | "finishing" | "completed";
 
 // Mirrors GET /service-orders. The Backend sends no seller name, only its id.
 export interface ServiceOrder {
