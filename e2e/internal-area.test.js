@@ -17,6 +17,7 @@ const {
   clickByText,
   login,
   openScreen,
+  pageContains,
   selectOptions,
   waitForText,
 } = require("./support/browser");
@@ -100,5 +101,20 @@ describe("área interna", () => {
     );
     const sellers = await selectOptions(driver, sellerSelect);
     assert.ok(sellers.length > 1, "A lista de vendedores deveria vir do Backend");
+  });
+
+  test("a tela de orçamentos lista os pedidos do site e filtra por status (US21)", async () => {
+    await login(driver, MANAGER_CREDENTIALS);
+    await openScreen(driver, "/area-interna/orcamentos");
+    await waitForText(driver, "ATENDIMENTO PESSOA JURÍDICA");
+    await clickByText(driver, "button", "APROVADOS");
+    // With or without approved quotes, the screen answers: a list or the empty message.
+    await driver.wait(
+      async () =>
+        (await pageContains(driver, "Lançar venda")) ||
+        (await pageContains(driver, "Nenhum orçamento aprovado esperando a venda.")),
+      60000,
+      "A lista de aprovados não apareceu",
+    );
   });
 });

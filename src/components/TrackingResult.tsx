@@ -9,6 +9,7 @@ import {
   type TrackingLookup,
 } from "./tracking/types";
 import EldoLogo from "./EldoLogo";
+import ReviewInvite from "./tracking/ReviewInvite";
 
 interface Props {
   lookup: TrackingLookup;
@@ -137,6 +138,8 @@ function ServiceOrderCard({ serviceOrder, position }: { serviceOrder: ServiceOrd
           <p className="text-[10px] tracking-[2px] text-[rgba(245,242,236,0.35)] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>PRAZO</p>
           <p className={`text-[14px] ${isServiceOrderLate ? "text-red-400" : "text-[#f5f2ec]"}`} style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{formatDate(serviceOrder.dueDate)}</p>
         </div>
+
+        {serviceOrder.status === "completed" && <ReviewInvite />}
       </div>
     </article>
   );
