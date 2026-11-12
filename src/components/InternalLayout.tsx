@@ -124,7 +124,7 @@ export default function InternalLayout({ children }: { children: React.ReactNode
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile topbar */}
         <header className="lg:hidden flex items-center justify-between px-5 py-4 border-b border-[rgba(245,242,236,0.07)]">
-          <button onClick={() => setMenuOpen(true)} className="text-[rgba(245,242,236,0.7)]"><Menu size={20} /></button>
+          <button onClick={() => setMenuOpen(true)} aria-label="Abrir menu" className="text-[rgba(245,242,236,0.7)]"><Menu size={20} /></button>
           <EldoLogo imageClassName="w-[32px] h-[32px]" subtitle="ÁREA INTERNA" />
           <button onClick={handleLogout} className="text-[rgba(245,242,236,0.4)]"><X size={20} /></button>
         </header>

@@ -55,6 +55,15 @@ async function buildDriver(window = DESKTOP_WINDOW) {
   return new Builder().forBrowser("chrome").setChromeOptions(options).build();
 }
 
+// Chrome with the screen of a phone (390 px wide), for the mobile flows.
+async function buildMobileDriver() {
+  const options = new chrome.Options();
+  if (IS_HEADLESS) options.addArguments("--headless=new");
+  options.addArguments("--window-size=480,960", "--lang=pt-BR");
+  options.setMobileEmulation({ deviceName: "iPhone 12 Pro" });
+  return new Builder().forBrowser("chrome").setChromeOptions(options).build();
+}
+
 // Logs the step and waits, so the video shows one action at a time.
 async function step(driver, description) {
   console.log(`  - ${description}`);
@@ -302,6 +311,7 @@ module.exports = {
   EMPLOYEE_CREDENTIALS,
   MANAGER_CREDENTIALS,
   buildDriver,
+  buildMobileDriver,
   clearDownloads,
   click,
   clickByTestId,
