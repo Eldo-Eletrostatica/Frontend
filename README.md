@@ -131,26 +131,52 @@ docker compose run --rm -e NODE_ENV=production frontend npm run build
 | `npm run start` | Inicia o build de produção |
 | `npm run lint` | Executa o linter. Rode antes de dar uma tarefa por pronta |
 | `npm run typecheck` | Gera os tipos das rotas (`next typegen`) e checa os tipos com o `tsc`. Funciona num checkout limpo, sem precisar de um build antes |
-| `npm run test:e2e` | Roda a suíte de ponta a ponta com Selenium, no Chrome sem tela |
+| `npm run test:e2e` | Roda a suíte de ponta a ponta com Selenium, com o Chrome aberto e uma pausa entre os passos |
+| `npm run e2e:check-driver` | Confere se o Selenium abre o Chrome e mostra as versões do navegador e do ChromeDriver |
 
 ## Testes de ponta a ponta
 
-A suíte em `e2e/` abre o navegador de verdade contra o Frontend e o Backend, então os dois precisam estar rodando:
+A suíte em `e2e/` usa Selenium. Ela roda na máquina de quem testa: abre o Chrome dessa máquina e visita o site no endereço de `E2E_BASE_URL`, que pode ser o localhost ou o site em produção. Nada roda no servidor. O Selenium Manager, que vem com o `selenium-webdriver`, baixa o ChromeDriver compatível com o Chrome instalado.
+
+Cada arquivo cobre uma visão, com um teste por fluxo. Um fluxo que falha não para os outros e salva um print em `e2e/screenshots/`:
+
+| Arquivo | Fluxos |
+| --- | --- |
+| `01-visitante-vitrine` | Portfólio e filtro (US01), detalhe do projeto (US02), eventos (US03), avaliações do Google (US05) |
+| `02-visitante-contato` | Contato de pessoa física (US06), orçamento pelo simulador e por PDF (US07) |
+| `03-cliente-consulta-os` | Consulta da OS pelo protocolo e pelo CNPJ, protocolo inexistente (US19) |
+| `04-administrador` | Login (US09), funcionários e permissões (US10), tabela de orçamento (US08), identidade visual (US25, US26), portfólio (US27) |
+| `05-estoque` | Categorias e itens (US13), entradas e saídas (US14), alerta de mínimo (US15), histórico (US16) |
+| `06-servicos` | OS criada pela venda (US17), status da OS (US18), painel de atrasos (US20) |
+| `07-vendas-comissoes` | Orçamento até a venda e venda direta (US21), regra de comissão (US22), comissões do funcionário (US23) |
+| `08-gestor` | Dashboard (US11), exportação (US12), relatórios e ranking (US24) |
+| `09-celular` | Site e área interna numa tela de 390 px, sem rolagem lateral |
+
+Os testes preparam pela API o que cada fluxo precisa (a conta do gestor e a do funcionário da suíte, o catálogo, vendas e itens). Tudo o que criam leva o prefixo `E2E`. Itens, categorias, projetos e o funcionário cadastrado no teste são removidos no fim, e as OS criadas ficam concluídas. As contas do gestor e do funcionário da suíte ficam, para as próximas execuções. Vendas e pedidos não têm exclusão e continuam no histórico. A identidade visual só vai até o rascunho, que é descartado, e os arquivos exportados vão para `e2e/downloads/`.
+
+Para rodar contra o ambiente local, com o Backend e o Frontend de pé:
 
 ```bash
-# no Backend, com o banco de dados de pé
-docker compose exec backend npm run seed:demo   # cria o gestor de demonstração
-
-# no Frontend
 npm run dev -- -p 3001
-npm run test:e2e
+npm run e2e:check-driver
+npm run test:e2e                              # tudo, em sequência
+node --test --test-reporter=spec e2e/05-estoque.test.js    # só um arquivo
 ```
 
-O endereço e as credenciais vêm do ambiente:
+Para rodar contra produção, troque o endereço e informe as credenciais e o token do CAPTCHA de produção:
+
+```bash
+E2E_BASE_URL=https://<site> E2E_ADMIN_PASSWORD=<senha> E2E_CAPTCHA_TOKEN=<token> npm run test:e2e
+```
+
+**CAPTCHA:** a Cloudflare não deixa navegador automatizado passar no desafio do Turnstile de produção. A suíte grava no navegador o `E2E_CAPTCHA_TOKEN` do Backend, e os formulários públicos mandam esse token no lugar do widget. Um visitante de verdade não tem esse valor e vê o CAPTCHA normal; um token errado é recusado pela API.
 
 | Variável | Padrão |
 | --- | --- |
 | `E2E_BASE_URL` | `http://localhost:3001` |
 | `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | `admin@eldo.com.br` / `Admin@123` |
-| `E2E_MANAGER_EMAIL` / `E2E_MANAGER_PASSWORD` | `gestor.demo@eldo.com.br` / `Gestor@2026` |
-| `E2E_HEADLESS` | `true`; com `false` o navegador abre com a tela visível |
+| `E2E_MANAGER_EMAIL` / `E2E_MANAGER_PASSWORD` | `e2e.gestor@eldo.test` / `E2eGestor@2026`, criado pela suíte se não existir |
+| `E2E_EMPLOYEE_EMAIL` / `E2E_EMPLOYEE_PASSWORD` | `e2e.funcionario@eldo.test` / `E2eFuncionario@2026`, criado pela suíte se não existir |
+| `E2E_CAPTCHA_TOKEN` | O valor de desenvolvimento do Backend; em produção, o mesmo `E2E_CAPTCHA_TOKEN` configurado no Backend |
+| `E2E_STEP_DELAY_MS` | `1000`, a pausa entre os passos para quem assiste; `0` roda direto |
+| `E2E_HEADLESS` | `false`, com o navegador aberto na tela; `true` roda sem tela |
