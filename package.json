@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test:e2e": "node --test \"e2e/**/*.test.js\""
+    "test:e2e": "node --test --test-concurrency=1 --test-reporter=spec \"e2e/**/*.test.js\"",
+    "e2e:check-driver": "node e2e/check-driver.js"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.6.2",
