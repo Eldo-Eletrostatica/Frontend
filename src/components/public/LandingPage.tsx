@@ -5,7 +5,7 @@ import { ROUTES } from "@/lib/routes";
 import ContactRequestForm from "./ContactRequestForm";
 import GoogleReviewsSection from "./GoogleReviewsSection";
 import PortfolioGallery from "./PortfolioGallery";
-import { CONTACT_ADDRESS, CONTACT_MAP_URL, CONTACT_WHATSAPP_LABEL, CONTACT_WHATSAPP_URL, SOCIAL_LINKS } from "@/lib/contact";
+import { BUSINESS_HOURS, CONTACT_ADDRESS, CONTACT_EMAIL, CONTACT_MAP_URL, CONTACT_WHATSAPP_LABEL, CONTACT_WHATSAPP_URL, SOCIAL_LINKS } from "@/lib/contact";
 import type { PortfolioProject, VisualSettings } from "./publicContent";
 
 const COMPANY_STATS = [
@@ -115,7 +115,8 @@ export default function LandingPage({ visualSettings, portfolioProjects }: Landi
 
             <div className="flex flex-col gap-4">
               {[
-                { label: "HORÁRIO DE ATENDIMENTO", value: "Seg a Sex, das 07h às 17h" },
+                { label: "HORÁRIO DE ATENDIMENTO", value: <span className="flex flex-col">{BUSINESS_HOURS.map((period) => <span key={period.days}>{period.days}: {period.hours}</span>)}</span> },
+                { label: "E-MAIL", value: <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-site-accent transition-colors break-all">{CONTACT_EMAIL}</a> },
                 { label: "ENDEREÇO", value: <a href={CONTACT_MAP_URL} target="_blank" rel="noopener noreferrer" className="hover:text-site-accent transition-colors">{CONTACT_ADDRESS} (ver no mapa)</a> },
                 { label: "REDES SOCIAIS", value: <span className="flex gap-4">{SOCIAL_LINKS.map((link) => <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="hover:text-site-accent transition-colors">{link.label}</a>)}</span> },
               ].map((field) => (

@@ -3,7 +3,7 @@ import { PUBLIC_LINKS } from "./publicLinks";
 import { ROUTES } from "@/lib/routes";
 import type { VisualSettings } from "./publicContent";
 import SiteLogo from "./SiteLogo";
-import { CONTACT_ADDRESS, CONTACT_MAP_URL, CONTACT_WHATSAPP_LABEL, CONTACT_WHATSAPP_URL, SOCIAL_LINKS } from "@/lib/contact";
+import { BUSINESS_HOURS, COMPANY_CNPJ, CONTACT_ADDRESS, CONTACT_EMAIL, CONTACT_MAP_URL, CONTACT_WHATSAPP_LABEL, CONTACT_WHATSAPP_URL, SOCIAL_LINKS } from "@/lib/contact";
 
 export default function PublicFooter({ logo }: { logo: VisualSettings["logo"] }) {
   return (
@@ -38,8 +38,11 @@ export default function PublicFooter({ logo }: { logo: VisualSettings["logo"] })
           <p className="text-[10px] tracking-[2.5px] text-site-text/35 mb-4" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONTATO</p>
           <div className="flex flex-col gap-2 text-[13px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             <a href={CONTACT_WHATSAPP_URL} className="hover:text-site-text/85 transition-colors">WhatsApp {CONTACT_WHATSAPP_LABEL}</a>
+            <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-site-text/85 transition-colors break-all">{CONTACT_EMAIL}</a>
             <a href={CONTACT_MAP_URL} className="hover:text-site-text/85 transition-colors">{CONTACT_ADDRESS}</a>
-            <span>Seg–Sex · 07h–17h</span>
+            {BUSINESS_HOURS.map((period) => (
+              <span key={period.days}>{period.days} · {period.hours}</span>
+            ))}
             <div className="flex gap-4 pt-1">
               {SOCIAL_LINKS.map((link) => (
                 <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="hover:text-site-text/85 transition-colors">{link.label}</a>
@@ -48,9 +51,10 @@ export default function PublicFooter({ logo }: { logo: VisualSettings["logo"] })
           </div>
         </div>
       </div>
-      <div className="border-t border-site-text/5 px-6 py-5 max-w-[1240px] mx-auto">
+      {/* Right padding keeps the text clear of the floating back-to-top button */}
+      <div className="border-t border-site-text/5 pl-6 pr-20 py-5 max-w-[1240px] mx-auto">
         <p className="text-[10px] tracking-[1.5px] text-site-text/20" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
-          © {new Date().getFullYear()} {logo.text.toUpperCase()} PINTURA ELETROSTÁTICA · TODOS OS DIREITOS RESERVADOS
+          © {new Date().getFullYear()} {logo.text.toUpperCase()} PINTURA ELETROSTÁTICA · CNPJ {COMPANY_CNPJ} · TODOS OS DIREITOS RESERVADOS
         </p>
       </div>
     </footer>
