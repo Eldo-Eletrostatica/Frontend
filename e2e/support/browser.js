@@ -1,93 +1,229 @@
-// Helpers of the end-to-end suite: browser, login and waits.
-//
-// The suite runs against a real Backend and a real Frontend, so the
-// credentials and the address come from the environment:
-//
-//   E2E_BASE_URL          address of the Frontend (default http://localhost:3001)
-//   E2E_ADMIN_EMAIL       e-mail of the administrator
-//   E2E_ADMIN_PASSWORD    password of the administrator
-//   E2E_MANAGER_EMAIL     e-mail of the manager
-//   E2E_MANAGER_PASSWORD  password of the manager
-//   E2E_HEADLESS          "false" opens the browser with the screen visible
+// Helpers of the end-to-end suite: browser, steps with a pause, login and
+// explicit waits. The suite opens Chrome on the machine that runs it and visits
+// the site at E2E_BASE_URL, so the same tests run against localhost and
+// against production. The variables are listed in the README.
 //
 //   npm run test:e2e
 
-const { Builder, By, until } = require("selenium-webdriver");
+const { mkdirSync } = require("node:fs");
+const { writeFile } = require("node:fs/promises");
+const path = require("node:path");
+const { Builder, By, Key } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
 
-const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3001";
+const BASE_URL = (process.env.E2E_BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
 const ADMIN_CREDENTIALS = {
   email: process.env.E2E_ADMIN_EMAIL ?? "admin@eldo.com.br",
   password: process.env.E2E_ADMIN_PASSWORD ?? "Admin@123",
 };
+// The suite creates these accounts when they do not exist (see api.js).
 const MANAGER_CREDENTIALS = {
-  email: process.env.E2E_MANAGER_EMAIL ?? "gestor.demo@eldo.com.br",
-  password: process.env.E2E_MANAGER_PASSWORD ?? "Gestor@2026",
+  email: process.env.E2E_MANAGER_EMAIL ?? "e2e.gestor@eldo.test",
+  password: process.env.E2E_MANAGER_PASSWORD ?? "E2eGestor@2026",
 };
+const EMPLOYEE_CREDENTIALS = {
+  email: process.env.E2E_EMPLOYEE_EMAIL ?? "e2e.funcionario@eldo.test",
+  password: process.env.E2E_EMPLOYEE_PASSWORD ?? "E2eFuncionario@2026",
+};
+// The Backend's E2E_CAPTCHA_TOKEN; the default is the development value of
+// docker-compose.yml and .env.example in the Backend.
+const CAPTCHA_TOKEN = process.env.E2E_CAPTCHA_TOKEN ?? "eldo-dev-e2e-captcha-token-local";
+const CAPTCHA_TOKEN_STORAGE_KEY = "eldo-e2e-captcha-token";
 
-// The first visit to a screen makes the development server compile it, so the
-// wait is generous.
+// The pause between steps lets whoever watches follow the test. 0 runs fast.
+const STEP_DELAY_MS = Number(process.env.E2E_STEP_DELAY_MS ?? 1000);
+// The browser opens on screen unless E2E_HEADLESS=true.
+const IS_HEADLESS = process.env.E2E_HEADLESS === "true";
+// A cold server or the first compilation of a screen in development is slow.
 const DEFAULT_TIMEOUT = 60000;
+const DESKTOP_WINDOW = { width: 1440, height: 1000 };
+const SCREENSHOTS_DIRECTORY = path.join(__dirname, "..", "screenshots");
 
-// Opens a browser for the suite.
-async function buildDriver() {
+// Opens Chrome. Selenium Manager downloads the ChromeDriver that matches the
+// installed Chrome, so no driver is configured here.
+async function buildDriver(window = DESKTOP_WINDOW) {
   const options = new chrome.Options();
-  if ((process.env.E2E_HEADLESS ?? "true") !== "false") {
-    options.addArguments("--headless=new");
-  }
-  options.addArguments("--window-size=1440,1000", "--no-sandbox");
+  if (IS_HEADLESS) options.addArguments("--headless=new");
+  options.addArguments(`--window-size=${window.width},${window.height}`, "--lang=pt-BR");
   return new Builder().forBrowser("chrome").setChromeOptions(options).build();
 }
 
-// XPath of an element whose text contains the given phrase.
-function textXPath(tagName, text) {
-  return `//${tagName}[contains(normalize-space(.), ${JSON.stringify(text)})]`;
+// Logs the step and waits, so the video shows one action at a time.
+async function step(driver, description) {
+  console.log(`  - ${description}`);
+  if (STEP_DELAY_MS > 0) await driver.sleep(STEP_DELAY_MS);
 }
 
-// True when the visible text of the page contains the phrase.
+// Runs a flow and, when it fails, saves a screenshot named after it.
+async function runFlow(driver, name, flow) {
+  try {
+    await flow();
+  } catch (error) {
+    await saveScreenshot(driver, name);
+    throw error;
+  }
+}
+
+async function saveScreenshot(driver, name) {
+  try {
+    mkdirSync(SCREENSHOTS_DIRECTORY, { recursive: true });
+    const fileName = `${name.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "")}.png`;
+    await writeFile(path.join(SCREENSHOTS_DIRECTORY, fileName), await driver.takeScreenshot(), "base64");
+  } catch {
+    // A browser that already closed has nothing to show; the error that
+    // matters is the one of the flow.
+  }
+}
+
+// XPath literal that also works when the text has quotes.
+function xpathLiteral(text) {
+  if (!text.includes("'")) return `'${text}'`;
+  if (!text.includes('"')) return `"${text}"`;
+  return `concat('${text.replace(/'/g, `', "'", '`)}')`;
+}
+
+// XPath of an element whose visible text contains the phrase.
+function textXPath(tagName, text) {
+  return `//${tagName}[contains(normalize-space(.), ${xpathLiteral(text)})]`;
+}
+
+// XPath of the input (or other field) inside the label with the given text.
+function fieldXPath(labelText, fieldTag = "input") {
+  return `//label[contains(normalize-space(.), ${xpathLiteral(labelText)})]//${fieldTag}`;
+}
+
 async function pageContains(driver, text) {
   return driver.executeScript("return document.body.innerText.includes(arguments[0]);", text);
 }
 
-// Waits for the first element with the text and clicks it.
-async function clickByText(driver, tagName, text) {
-  const element = await driver.wait(
-    until.elementLocated(By.xpath(textXPath(tagName, text))),
+async function waitForText(driver, text, timeout = DEFAULT_TIMEOUT) {
+  await driver.wait(() => pageContains(driver, text), timeout, `O texto "${text}" não apareceu`);
+}
+
+async function waitForTextToDisappear(driver, text, timeout = DEFAULT_TIMEOUT) {
+  await driver.wait(async () => !(await pageContains(driver, text)), timeout, `O texto "${text}" não sumiu`);
+}
+
+// Waits until the address is the given path, after a click on a link.
+async function waitForPath(driver, routePath) {
+  await driver.wait(
+    async () => new URL(await driver.getCurrentUrl()).pathname === routePath,
     DEFAULT_TIMEOUT,
-    `O elemento "${text}" não apareceu`,
+    `A página ${routePath} não abriu`,
   );
+}
+
+// Visible text of the first element that matches the CSS selector, read in the
+// page itself, so a re-render between finding and reading does not break it.
+async function readText(driver, cssSelector) {
+  return driver.wait(
+    () => driver.executeScript("return document.querySelector(arguments[0])?.innerText.trim() || null;", cssSelector),
+    DEFAULT_TIMEOUT,
+    `O elemento ${cssSelector} não apareceu`,
+  );
+}
+
+// Waits for a visible and enabled element. Without a scope it searches the
+// whole page; with one, only inside it.
+async function waitForElement(driver, locator, scope = null, description = String(locator)) {
+  return driver.wait(async () => {
+    const candidates = await (scope ?? driver).findElements(locator);
+    for (const candidate of candidates) {
+      if ((await candidate.isDisplayed()) && (await candidate.isEnabled())) return candidate;
+    }
+    return null;
+  }, DEFAULT_TIMEOUT, `O elemento ${description} não apareceu`);
+}
+
+// Scrolls to the element so the video shows it before the click.
+async function scrollIntoView(driver, element) {
+  await driver.executeScript("arguments[0].scrollIntoView({ block: 'center' });", element);
+}
+
+async function click(driver, locator, description, scope = null) {
+  const element = await waitForElement(driver, locator, scope, description);
+  await scrollIntoView(driver, element);
+  await step(driver, `clica em ${description}`);
   await element.click();
   return element;
 }
 
-// True when the page shows the text somewhere.
-async function hasText(driver, text) {
-  return pageContains(driver, text);
+async function clickByText(driver, tagName, text, scope = null) {
+  const locator = By.xpath(scope ? `.${textXPath(tagName, text)}` : textXPath(tagName, text));
+  return click(driver, locator, `"${text}"`, scope);
 }
 
-// Waits until the page shows the text.
-async function waitForText(driver, text) {
-  await driver.wait(
-    () => pageContains(driver, text),
-    DEFAULT_TIMEOUT,
-    `O texto "${text}" não apareceu`,
+async function clickByTestId(driver, testId, scope = null) {
+  return click(driver, By.css(`[data-testid="${testId}"]`), testId, scope);
+}
+
+// Clears the field and types the text, the way a person would.
+async function typeInto(driver, locator, text, description, scope = null) {
+  const element = await waitForElement(driver, locator, scope, description);
+  await scrollIntoView(driver, element);
+  await step(driver, `preenche ${description}`);
+  await element.click();
+  await element.sendKeys(Key.chord(process.platform === "darwin" ? Key.COMMAND : Key.CONTROL, "a"), Key.BACK_SPACE);
+  await element.sendKeys(text);
+  return element;
+}
+
+async function typeIntoField(driver, labelText, text, scope = null, fieldTag = "input") {
+  const xpath = fieldXPath(labelText, fieldTag);
+  return typeInto(driver, By.xpath(scope ? `.${xpath}` : xpath), text, labelText, scope);
+}
+
+// Chooses an option of a select by its visible text.
+async function selectOption(driver, selectLocator, optionText, description, scope = null) {
+  const select = await waitForElement(driver, selectLocator, scope, description);
+  await scrollIntoView(driver, select);
+  await step(driver, `escolhe "${optionText}" em ${description}`);
+  // The options may come from the API after the select appears.
+  const option = await driver.wait(async () => {
+    const options = await select.findElements(By.xpath(`.//option[normalize-space(.)=${xpathLiteral(optionText)}]`));
+    return options[0] ?? null;
+  }, DEFAULT_TIMEOUT, `A opção "${optionText}" não apareceu em ${description}`);
+  await option.click();
+  return select;
+}
+
+// Date inputs follow the browser's locale when typed, so the value is set the
+// way React expects: through the native setter, then the input event.
+async function setDateInput(driver, element, isoDate) {
+  await scrollIntoView(driver, element);
+  await step(driver, `informa a data ${isoDate}`);
+  await driver.executeScript(
+    `const input = arguments[0];
+     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+     setter.call(input, arguments[1]);
+     input.dispatchEvent(new Event("input", { bubbles: true }));
+     input.dispatchEvent(new Event("change", { bubbles: true }));`,
+    element,
+    isoDate,
   );
 }
 
-// Signs in with the given credentials and waits for the internal area.
+async function selectOptions(driver, selectElement) {
+  const options = await selectElement.findElements(By.css("option"));
+  const texts = [];
+  for (const option of options) texts.push(await option.getText());
+  return texts;
+}
+
+async function open(driver, routePath, description = routePath) {
+  await step(driver, `abre ${description}`);
+  await driver.get(`${BASE_URL}${routePath}`);
+}
+
+// Signs in through the login screen and waits for the internal area.
 async function login(driver, credentials) {
-  // A session already open sends the login screen away, so every test starts
+  // A session already open sends the login screen away, so every flow starts
   // signed out.
-  await driver.manage().deleteAllCookies();
   await driver.get(`${BASE_URL}/area-interna/login`);
-  const emailField = await driver.wait(
-    until.elementLocated(By.css('input[type="email"]')),
-    DEFAULT_TIMEOUT,
-    "A tela de login não carregou",
-  );
-  await emailField.sendKeys(credentials.email);
-  const passwordField = await driver.findElement(By.css('input[type="password"]'));
-  await passwordField.sendKeys(credentials.password);
+  await driver.manage().deleteAllCookies();
+  await open(driver, "/area-interna/login", "a tela de login");
+  await typeInto(driver, By.css('input[type="email"]'), credentials.email, "o e-mail");
+  await typeInto(driver, By.css('input[type="password"]'), credentials.password, "a senha");
   await clickByText(driver, "button", "Entrar");
   // The login screen also lives under /area-interna, so the wait looks for the
   // screen the employee was sent to.
@@ -98,37 +234,60 @@ async function login(driver, credentials) {
   );
 }
 
-// Opens a screen of the internal area.
-async function openScreen(driver, path) {
-  await driver.get(`${BASE_URL}${path}`);
-  await driver.wait(
-    until.elementLocated(By.css("h1")),
-    DEFAULT_TIMEOUT,
-    `A tela ${path} não carregou`,
+// Opens a screen of the internal area through the side menu.
+async function openFromMenu(driver, label) {
+  await clickByText(driver, "nav//a", label);
+  await waitForElement(driver, By.css("main h1"), null, `o título da tela ${label}`);
+}
+
+// Turns on the CAPTCHA replacement of the suite for this site (see the
+// CaptchaField component): localStorage is per site, so the page opens first.
+async function enableCaptchaToken(driver) {
+  await driver.get(`${BASE_URL}/`);
+  await driver.executeScript(
+    "window.localStorage.setItem(arguments[0], arguments[1]);",
+    CAPTCHA_TOKEN_STORAGE_KEY,
+    CAPTCHA_TOKEN,
   );
 }
 
-// Options of a select, by their visible text.
-async function selectOptions(driver, selectLocator) {
-  const options = await selectLocator.findElements(By.css("option"));
-  const texts = [];
-  for (const option of options) {
-    texts.push(await option.getText());
-  }
-  return texts;
+// True when the page is wider than the window, which a phone shows as a
+// horizontal scroll.
+async function hasHorizontalScroll(driver) {
+  return driver.executeScript(
+    "return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;",
+  );
 }
 
 module.exports = {
   ADMIN_CREDENTIALS,
   BASE_URL,
   DEFAULT_TIMEOUT,
+  EMPLOYEE_CREDENTIALS,
   MANAGER_CREDENTIALS,
   buildDriver,
+  click,
+  clickByTestId,
   clickByText,
-  hasText,
+  enableCaptchaToken,
+  fieldXPath,
+  hasHorizontalScroll,
   login,
-  openScreen,
+  open,
+  openFromMenu,
   pageContains,
+  readText,
+  runFlow,
+  scrollIntoView,
+  selectOption,
   selectOptions,
+  setDateInput,
+  step,
+  textXPath,
+  typeInto,
+  typeIntoField,
+  waitForElement,
+  waitForPath,
   waitForText,
+  waitForTextToDisappear,
 };
