@@ -5,7 +5,7 @@
 //
 //   npm run test:e2e
 
-const { mkdirSync } = require("node:fs");
+const { mkdirSync, readdirSync, rmSync } = require("node:fs");
 const { writeFile } = require("node:fs/promises");
 const path = require("node:path");
 const { Builder, By, Key, until } = require("selenium-webdriver");
@@ -38,6 +38,8 @@ const IS_HEADLESS = process.env.E2E_HEADLESS === "true";
 const DEFAULT_TIMEOUT = 60000;
 const DESKTOP_WINDOW = { width: 1440, height: 1000 };
 const SCREENSHOTS_DIRECTORY = path.join(__dirname, "..", "screenshots");
+// The exports go here, not to the Downloads folder of whoever runs the suite.
+const DOWNLOADS_DIRECTORY = path.join(__dirname, "..", "downloads");
 
 // Opens Chrome. Selenium Manager downloads the ChromeDriver that matches the
 // installed Chrome, so no driver is configured here.
@@ -45,6 +47,11 @@ async function buildDriver(window = DESKTOP_WINDOW) {
   const options = new chrome.Options();
   if (IS_HEADLESS) options.addArguments("--headless=new");
   options.addArguments(`--window-size=${window.width},${window.height}`, "--lang=pt-BR");
+  mkdirSync(DOWNLOADS_DIRECTORY, { recursive: true });
+  options.setUserPreferences({
+    "download.default_directory": DOWNLOADS_DIRECTORY,
+    "download.prompt_for_download": false,
+  });
   return new Builder().forBrowser("chrome").setChromeOptions(options).build();
 }
 
@@ -263,6 +270,21 @@ async function enableCaptchaToken(driver) {
   );
 }
 
+// Empties the downloads folder, so a test only sees the files it exported.
+function clearDownloads() {
+  rmSync(DOWNLOADS_DIRECTORY, { recursive: true, force: true });
+  mkdirSync(DOWNLOADS_DIRECTORY, { recursive: true });
+}
+
+// Waits for a finished download with the extension (Chrome writes
+// .crdownload while it is still saving) and returns its name.
+async function waitForDownload(driver, extension) {
+  return driver.wait(() => {
+    const files = readdirSync(DOWNLOADS_DIRECTORY);
+    return files.find((file) => file.endsWith(extension)) ?? null;
+  }, DEFAULT_TIMEOUT, `Nenhum arquivo ${extension} foi baixado`);
+}
+
 // True when the page is wider than the window, which a phone shows as a
 // horizontal scroll.
 async function hasHorizontalScroll(driver) {
@@ -280,6 +302,7 @@ module.exports = {
   EMPLOYEE_CREDENTIALS,
   MANAGER_CREDENTIALS,
   buildDriver,
+  clearDownloads,
   click,
   clickByTestId,
   clickByText,
@@ -300,6 +323,7 @@ module.exports = {
   textXPath,
   typeInto,
   typeIntoField,
+  waitForDownload,
   waitForElement,
   waitForPath,
   waitForText,
