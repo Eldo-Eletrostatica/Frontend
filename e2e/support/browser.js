@@ -8,7 +8,7 @@
 const { mkdirSync } = require("node:fs");
 const { writeFile } = require("node:fs/promises");
 const path = require("node:path");
-const { Builder, By, Key } = require("selenium-webdriver");
+const { Builder, By, Key, until } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
 
 const BASE_URL = (process.env.E2E_BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -234,10 +234,22 @@ async function login(driver, credentials) {
   );
 }
 
-// Opens a screen of the internal area through the side menu.
+// Opens a screen of the internal area through the side menu and waits for the
+// address to change, so the title found is the one of the new screen.
 async function openFromMenu(driver, label) {
-  await clickByText(driver, "nav//a", label);
+  const locator = By.xpath(textXPath("nav//a", label));
+  const link = await waitForElement(driver, locator, null, `"${label}" no menu`);
+  const targetPath = new URL(await link.getAttribute("href"), BASE_URL).pathname;
+  await click(driver, locator, `"${label}" no menu`);
+  await waitForPath(driver, targetPath);
   await waitForElement(driver, By.css("main h1"), null, `o título da tela ${label}`);
+}
+
+// Accepts the browser confirmation (window.confirm) that a removal opens.
+async function acceptConfirmation(driver) {
+  await driver.wait(until.alertIsPresent(), DEFAULT_TIMEOUT, "A confirmação não apareceu");
+  await step(driver, "confirma");
+  await driver.switchTo().alert().accept();
 }
 
 // Turns on the CAPTCHA replacement of the suite for this site (see the
@@ -261,6 +273,7 @@ async function hasHorizontalScroll(driver) {
 
 module.exports = {
   ADMIN_CREDENTIALS,
+  acceptConfirmation,
   BASE_URL,
   DEFAULT_TIMEOUT,
   EMPLOYEE_CREDENTIALS,
