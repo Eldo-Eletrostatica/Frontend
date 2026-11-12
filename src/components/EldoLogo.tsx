@@ -1,4 +1,4 @@
-import logoImg from "@/imports/image.png";
+import logoImg from "@/imports/eldo-logo.png";
 
 interface Props {
   className?: string;
@@ -11,7 +11,7 @@ export default function EldoLogo({ className = "", imageClassName = "w-[38px] h-
   const content = (
     <>
       <div className={`${imageClassName} overflow-hidden flex-shrink-0`}>
-        <img src={logoImg.src} alt="Eldo Pintura Eletrostática" className="w-full h-full object-contain" style={{ filter: "invert(1)", mixBlendMode: "screen" }} />
+        <img src={logoImg.src} alt="Eldo Pintura Eletrostática" className="w-full h-full object-contain" />
       </div>
       <div>
         <p className="text-[#f5f2ec] text-[13px] tracking-[2.1px] leading-tight" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>ELDO</p>

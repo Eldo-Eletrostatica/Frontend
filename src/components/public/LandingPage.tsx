@@ -1,8 +1,6 @@
-import Image from "next/image";
 import BucketImage from "./BucketImage";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import bundledLogo from "@/imports/image.png";
 import { ROUTES } from "@/lib/routes";
 import ContactRequestForm from "./ContactRequestForm";
 import GoogleReviewsSection from "./GoogleReviewsSection";
@@ -36,7 +34,7 @@ export default function LandingPage({ visualSettings, portfolioProjects }: Landi
           style={{ backgroundImage: "repeating-linear-gradient(0deg, var(--site-text) 0px, var(--site-text) 1px, transparent 1px, transparent 60px), repeating-linear-gradient(90deg, var(--site-text) 0px, var(--site-text) 1px, transparent 1px, transparent 60px)" }} />
 
         <div className="relative max-w-[1240px] mx-auto px-6 pt-16 pb-20 md:pt-24 md:pb-28">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className={`grid gap-12 items-center ${banner.imageUrl ? "md:grid-cols-2" : ""}`}>
             {/* Text */}
             <div>
               <p className="text-[11px] tracking-[3px] text-site-accent mb-6" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
@@ -62,23 +60,19 @@ export default function LandingPage({ visualSettings, portfolioProjects }: Landi
               </div>
             </div>
 
-            {/* Banner image, or the bundled logo when none is published */}
-            <div className="flex items-center justify-center md:justify-end">
-              <div className="relative">
-                <div className="relative w-[220px] h-[220px] md:w-[280px] md:h-[280px] flex items-center justify-center overflow-hidden bg-site-accent/6 border border-site-accent/15">
-                  {banner.imageUrl ? (
+            {/* Banner image: without a published one the text takes the full width */}
+            {banner.imageUrl && (
+              <div className="flex items-center justify-center md:justify-end">
+                <div className="relative">
+                  <div className="relative w-[220px] h-[220px] md:w-[280px] md:h-[280px] flex items-center justify-center overflow-hidden bg-site-accent/6 border border-site-accent/15">
                     <BucketImage src={banner.imageUrl} alt={`${banner.title} ${banner.highlight}`} fill priority
                       sizes="(min-width: 768px) 280px, 220px" className="object-cover" />
-                  ) : (
-                    <Image src={bundledLogo} alt={`Logotipo ${visualSettings.logo.text}`} priority
-                      sizes="(min-width: 768px) 196px, 154px" className="w-[70%] h-[70%] object-contain"
-                      style={{ filter: "invert(1)", mixBlendMode: "screen" }} />
-                  )}
+                  </div>
+                  {/* Decorative accent line */}
+                  <div className="absolute -bottom-4 -right-4 w-full h-full border border-site-accent/12" style={{ zIndex: -1 }} />
                 </div>
-                {/* Decorative accent line */}
-                <div className="absolute -bottom-4 -right-4 w-full h-full border border-site-accent/12" style={{ zIndex: -1 }} />
               </div>
-            </div>
+            )}
           </div>
 
           {/* Stats bar */}

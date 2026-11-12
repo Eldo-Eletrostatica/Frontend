@@ -1,6 +1,6 @@
 import Image from "next/image";
 import BucketImage from "./BucketImage";
-import bundledLogo from "@/imports/image.png";
+import bundledLogo from "@/imports/eldo-logo.png";
 import type { VisualSettings } from "./publicContent";
 
 interface SiteLogoProps {
@@ -11,8 +11,7 @@ interface SiteLogoProps {
   taglineClassName: string;
 }
 
-// Without a published image the site shows the logo bundled in the Frontend,
-// which is black on transparent and needs inverting on the dark background.
+// Without a published image the site shows the logo bundled in the Frontend.
 export default function SiteLogo({ logo, size, textClassName, taglineClassName }: SiteLogoProps) {
   return (
     <>
@@ -26,7 +25,6 @@ export default function SiteLogo({ logo, size, textClassName, taglineClassName }
             fill
             sizes={`${size}px`}
             className="object-contain"
-            style={{ filter: "invert(1)", mixBlendMode: "screen" }}
           />
         )}
       </div>
