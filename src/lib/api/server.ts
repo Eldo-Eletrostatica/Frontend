@@ -1,8 +1,9 @@
+import { resolveApiUrl } from "./apiUrl";
 import { readJson } from "./response";
 
 // Server Components call the Backend directly by API_URL, without the /api
 // proxy. Only for public data: these requests carry no visitor cookie.
-export const API_URL = process.env.API_URL ?? "http://localhost:3001";
+export const API_URL = resolveApiUrl();
 
 // Tags of the public data the internal area changes; after a change, the
 // internal area revalidates the tag so the site shows it at once.

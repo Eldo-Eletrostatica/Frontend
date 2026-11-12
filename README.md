@@ -115,6 +115,8 @@ docker run -p 3000:3000 eldo-frontend
 > A `API_URL`, a `STORAGE_PUBLIC_URL` e a `NEXT_PUBLIC_TURNSTILE_SITE_KEY` valem no **build**: o `next build` grava o repasse do `/api`, o host liberado das imagens e as variáveis `NEXT_PUBLIC_` no resultado. Para trocar qualquer uma delas, gere a imagem de novo.
 >
 > A `API_URL` também é usada quando o site roda: as páginas montadas no servidor (portfólio, eventos e opções do simulador) buscam os dados direto no Backend. O estágio `prod` guarda na imagem o valor passado no build, então não é preciso repetir a variável no `docker run`.
+>
+> No Render, o Blueprint do Backend não preenche a `API_URL`, e sim a `API_HOSTPORT`: o `host:porta` da API na rede privada, que só existe depois de a API ser criada. Sem `API_URL`, o site usa `http://<API_HOSTPORT>`.
 
 Para testar o build sem gerar a imagem, rode dentro do container de desenvolvimento com `NODE_ENV=production`, porque o estágio `dev` define `NODE_ENV=development` e o `next build` falha com ele:
 

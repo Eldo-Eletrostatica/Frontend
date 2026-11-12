@@ -23,10 +23,14 @@ ENV NODE_ENV=production
 # NEXT_PUBLIC_ variables into the build output, so they must be known here,
 # not only when the container runs: docker build --build-arg API_URL=...
 # --build-arg STORAGE_PUBLIC_URL=... --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=...
+# On Render, API_HOSTPORT (the API's private-network host:port) may stand in
+# for API_URL.
 ARG API_URL
+ARG API_HOSTPORT
 ARG STORAGE_PUBLIC_URL
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV API_URL=$API_URL
+ENV API_HOSTPORT=$API_HOSTPORT
 ENV STORAGE_PUBLIC_URL=$STORAGE_PUBLIC_URL
 ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 COPY --from=deps /app/node_modules ./node_modules
@@ -40,7 +44,9 @@ ENV NODE_ENV=production
 # directly by API_URL at runtime, so the value of the build is kept
 # in the final image too. An ARG only exists in its own stage.
 ARG API_URL
+ARG API_HOSTPORT
 ENV API_URL=$API_URL
+ENV API_HOSTPORT=$API_HOSTPORT
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
