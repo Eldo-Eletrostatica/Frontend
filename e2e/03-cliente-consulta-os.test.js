@@ -16,6 +16,7 @@ const {
   waitForText,
 } = require("./support/browser");
 const {
+  completeServiceOrders,
   ensureSuiteAccounts,
   findEmployeeId,
   generateCnpj,
@@ -31,10 +32,12 @@ const UNKNOWN_TRACKING_CODE = "ZZZZZZZZ";
 describe("Cliente: consulta da OS", () => {
   let driver;
   const cnpj = generateCnpj();
+  let adminToken;
+  let orderId;
   let trackingCode;
 
   before(async () => {
-    const adminToken = await ensureSuiteAccounts();
+    adminToken = await ensureSuiteAccounts();
     const sale = await launchDirectSale(adminToken, {
       sellerEmployeeId: await findEmployeeId(adminToken, EMPLOYEE_CREDENTIALS.email),
       customer: {
@@ -49,11 +52,14 @@ describe("Cliente: consulta da OS", () => {
       scope: "Pintura de 4 grades em preto fosco",
     });
     trackingCode = sale.trackingCode;
+    orderId = sale.orderId;
     driver = await buildDriver();
   });
 
+  // The OS stays completed, so the consultation leaves nothing in progress.
   after(async () => {
     if (driver) await driver.quit();
+    if (orderId) await completeServiceOrders(adminToken, [orderId]);
   });
 
   test("o cliente consulta a OS pelo protocolo (US19)", () => runFlow(driver, "consulta-protocolo", async () => {
