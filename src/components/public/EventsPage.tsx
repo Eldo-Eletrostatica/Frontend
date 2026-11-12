@@ -77,7 +77,7 @@ export default function EventsPage({ eventsHeader, companyEvents }: EventsPagePr
             <div className="hidden md:block absolute left-[106px] top-12 w-[9px] h-[9px] rounded-full bg-site-accent" />
             <div className="flex-1 flex flex-col md:flex-row gap-6 py-10 md:pl-6 min-w-0">
               <div className="relative w-full md:w-[360px] flex-shrink-0 overflow-hidden h-[220px] bg-site-text/5">
-                <BucketImage src={companyEvent.imageUrl} alt={companyEvent.title} fill sizes="(min-width: 768px) 360px, 100vw" className="object-cover grayscale hover:grayscale-0 transition-all duration-500" />
+                <BucketImage src={companyEvent.imageUrl} alt={companyEvent.title} fill sizes="(min-width: 768px) 360px, 100vw" className="object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="md:hidden flex items-center gap-3 mb-4">
