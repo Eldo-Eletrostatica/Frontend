@@ -11,7 +11,7 @@ const path = require("node:path");
 const { Builder, By, Key, until } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
 
-const BASE_URL = (process.env.E2E_BASE_URL ?? "http://localhost:3001").replace(/\/$/, "");
+const BASE_URL = (process.env.E2E_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 const ADMIN_CREDENTIALS = {
   email: process.env.E2E_ADMIN_EMAIL ?? "admin@eldo.com.br",
   password: process.env.E2E_ADMIN_PASSWORD ?? "Admin@123",
