@@ -64,11 +64,11 @@ export default function PortfolioGallery({ title, portfolioProjects }: Portfolio
               <button key={portfolioProject.showcaseItemId} type="button" onClick={() => setSelectedPortfolioProject(portfolioProject)}
                 className="relative group overflow-hidden text-left bg-site-card">
                 {/* The tinted box is the placeholder while the image loads. */}
-                <div className="relative h-[220px] overflow-hidden bg-site-text/5">
+                <div className="relative aspect-[4/3] overflow-hidden bg-site-text/5">
                   <BucketImage src={portfolioProject.imageUrl} alt={portfolioProject.title} fill
                     sizes="(min-width: 1024px) 413px, (min-width: 640px) 50vw, 100vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-site-page/85 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-site-card/70 to-transparent" />
                   <span className="absolute top-3 left-3 text-[10px] tracking-[2px] px-2 py-1 bg-site-page/70 text-site-text/70"
                     style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
                     {portfolioProject.category.toUpperCase()}
@@ -128,7 +128,7 @@ function PortfolioProjectDetail({ portfolioProject, onClose }: { portfolioProjec
     <>
       <div className="fixed inset-0 z-50 bg-black/75" onClick={onClose} />
       <div role="dialog" aria-modal="true" aria-labelledby="project-detail-title"
-        className="fixed inset-y-0 right-0 z-50 w-full max-w-[560px] flex flex-col border-l border-site-text/10 overflow-y-auto bg-site-card">
+        className="fixed inset-y-0 right-0 z-50 w-full max-w-[720px] flex flex-col border-l border-site-text/10 overflow-y-auto bg-site-card">
         <div className="flex items-center justify-between px-7 py-5 border-b border-site-text/8 sticky top-0 z-10 bg-site-card">
           <div>
             <p className="text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{portfolioProject.category.toUpperCase()}</p>
@@ -137,20 +137,11 @@ function PortfolioProjectDetail({ portfolioProject, onClose }: { portfolioProjec
           <button type="button" onClick={onClose} aria-label="Fechar" className="text-site-text/40 hover:text-site-text/90"><X size={20} /></button>
         </div>
 
-        <div className="relative h-[300px] flex-shrink-0 bg-site-text/5">
-          <BucketImage key={photo.url} src={photo.url} alt={`${portfolioProject.title}: ${photo.label.toLowerCase()}`} fill sizes="560px" className="object-cover" />
-          {photos.length > 1 && (
-            <div className="absolute inset-0 flex items-end p-4 gap-2">
-              {photos.map((item, index) => (
-                <button key={item.label} type="button" onClick={() => setPhotoIndex(index)}
-                  aria-pressed={index === photoIndex}
-                  className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${index === photoIndex ? "bg-site-accent text-site-page" : "bg-site-page/70 text-site-text/70"}`}
-                  style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
-                  {item.label.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          )}
+        {/* object-contain shows the whole photo: most of them are taken upright
+            on a phone, and a fixed crop cut the piece itself. */}
+        <div className="relative h-[min(65vh,560px)] flex-shrink-0 bg-site-page">
+          <BucketImage key={photo.url} src={photo.url} alt={`${portfolioProject.title}: ${photo.label.toLowerCase()}`} fill
+            sizes="(min-width: 720px) 720px, 100vw" className="object-contain" />
           {photos.length === 1 && photo.label !== "Capa" && (
             <span className="absolute left-4 bottom-4 px-4 py-1.5 text-[11px] tracking-[1.5px] bg-site-page/70 text-site-text/70"
               style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
@@ -158,6 +149,19 @@ function PortfolioProjectDetail({ portfolioProject, onClose }: { portfolioProjec
             </span>
           )}
         </div>
+        {/* Below the photo, so the switch never covers the piece. */}
+        {photos.length > 1 && (
+          <div className="flex gap-2 px-7 pt-5">
+            {photos.map((item, index) => (
+              <button key={item.label} type="button" onClick={() => setPhotoIndex(index)}
+                aria-pressed={index === photoIndex}
+                className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${index === photoIndex ? "bg-site-accent text-site-page" : "border border-site-text/15 text-site-text/70 hover:border-site-text/35"}`}
+                style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+                {item.label.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="px-7 py-7 flex flex-col gap-5">
           <p className="text-[14px] text-site-text/75 leading-[1.7] whitespace-pre-line" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{portfolioProject.description}</p>
