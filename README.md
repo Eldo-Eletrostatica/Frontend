@@ -154,10 +154,10 @@ Cada arquivo cobre uma visão, com um teste por fluxo. Um fluxo que falha não p
 
 Os testes preparam pela API o que cada fluxo precisa (a conta do gestor e a do funcionário da suíte, o catálogo, vendas e itens). Tudo o que criam leva o prefixo `E2E`. Itens, categorias, projetos e o funcionário cadastrado no teste são removidos no fim, e as OS criadas ficam concluídas. As contas do gestor e do funcionário da suíte ficam, para as próximas execuções. Vendas e pedidos não têm exclusão e continuam no histórico. A identidade visual só vai até o rascunho, que é descartado, e os arquivos exportados vão para `e2e/downloads/`.
 
-Para rodar contra o ambiente local, com o Backend e o Frontend de pé:
+Para rodar contra o ambiente local, com o Backend de pé pelo `docker compose` dele (porta 3001) e o Frontend na porta 3000:
 
 ```bash
-npm run dev -- -p 3001
+npm run dev
 npm run e2e:check-driver
 npm run test:e2e                              # tudo, em sequência
 node --test --test-reporter=spec e2e/05-estoque.test.js    # só um arquivo
@@ -173,7 +173,7 @@ E2E_BASE_URL=https://<site> E2E_ADMIN_PASSWORD=<senha> E2E_CAPTCHA_TOKEN=<token>
 
 | Variável | Padrão |
 | --- | --- |
-| `E2E_BASE_URL` | `http://localhost:3001` |
+| `E2E_BASE_URL` | `http://localhost:3000`, o Frontend local |
 | `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | `admin@eldo.com.br` / `Admin@123` |
 | `E2E_MANAGER_EMAIL` / `E2E_MANAGER_PASSWORD` | `e2e.gestor@eldo.test` / `E2eGestor@2026`, criado pela suíte se não existir |
 | `E2E_EMPLOYEE_EMAIL` / `E2E_EMPLOYEE_PASSWORD` | `e2e.funcionario@eldo.test` / `E2eFuncionario@2026`, criado pela suíte se não existir |
