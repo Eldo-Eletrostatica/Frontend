@@ -5,6 +5,7 @@
 const {
   ADMIN_CREDENTIALS,
   BASE_URL,
+  CAPTCHA_TOKEN,
   EMPLOYEE_CREDENTIALS,
   MANAGER_CREDENTIALS,
 } = require("./browser");
@@ -110,6 +111,40 @@ async function launchDirectSale(adminToken, { sellerEmployeeId, customer, finalP
   }), "Lançar a venda");
 }
 
+// A quote sent by a company through the site, the way the PDF form does.
+// The PDF path works whether the simulator is on or off.
+async function requestPdfQuote(customerName, cnpj) {
+  const form = new FormData();
+  form.append("name", customerName);
+  form.append("cnpj", cnpj);
+  form.append("email", "orcamento.e2e@empresa.test");
+  form.append("phone", "61992702881");
+  form.append("message", "Pedido criado pela suíte de testes.");
+  form.append("file", new Blob(["%PDF-1.4\n%%EOF\n"], { type: "application/pdf" }), "projeto-e2e.pdf");
+  const response = await fetch(`${BASE_URL}/api/quotes/pdf`, {
+    method: "POST",
+    headers: { "X-Captcha-Token": CAPTCHA_TOKEN },
+    body: form,
+  });
+  if (!response.ok) {
+    throw new Error(`Enviar o orçamento falhou com ${response.status}: ${await response.text()}`);
+  }
+  return response.json();
+}
+
+async function setCommissionRule(adminToken, employeeId, commissionType, commissionValue) {
+  return expectOk(callApi(adminToken, "PATCH", `/employees/${employeeId}/commission-rule`, {
+    commissionType, commissionValue,
+  }), "Configurar a regra de comissão");
+}
+
+// Leaves the service orders of the suite completed, so none stays open or late.
+async function completeServiceOrders(adminToken, orderIds) {
+  for (const orderId of orderIds) {
+    await callApi(adminToken, "PATCH", `/service-orders/${orderId}/status`, { status: "completed" });
+  }
+}
+
 // A CNPJ with valid check digits, different on every run.
 function generateCnpj() {
   const base = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).concat([0, 0, 0, 1]);
@@ -138,6 +173,7 @@ function runLabel() {
 
 module.exports = {
   callApi,
+  completeServiceOrders,
   ensureCatalog,
   ensureSuiteAccounts,
   expectOk,
@@ -145,6 +181,8 @@ module.exports = {
   generateCnpj,
   isoDateFromToday,
   launchDirectSale,
+  requestPdfQuote,
   runLabel,
+  setCommissionRule,
   signIn,
 };

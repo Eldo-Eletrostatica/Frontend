@@ -273,6 +273,7 @@ async function hasHorizontalScroll(driver) {
 
 module.exports = {
   ADMIN_CREDENTIALS,
+  CAPTCHA_TOKEN,
   acceptConfirmation,
   BASE_URL,
   DEFAULT_TIMEOUT,

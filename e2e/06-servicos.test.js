@@ -20,7 +20,7 @@ const {
   waitForText,
 } = require("./support/browser");
 const {
-  callApi,
+  completeServiceOrders,
   ensureSuiteAccounts,
   findEmployeeId,
   generateCnpj,
@@ -62,9 +62,7 @@ describe("Serviços", () => {
 
   after(async () => {
     if (driver) await driver.quit();
-    for (const orderId of createdOrderIds) {
-      await callApi(adminToken, "PATCH", `/service-orders/${orderId}/status`, { status: "completed" });
-    }
+    await completeServiceOrders(adminToken, createdOrderIds);
   });
 
   test("a OS nasce da venda e aparece no kanban e na lista (US17)", () => runFlow(driver, "servicos-cadastro", async () => {
