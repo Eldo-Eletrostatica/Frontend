@@ -142,47 +142,76 @@ Todo PR para a `main` ou para a `producao` e todo push nelas rodam o workflow `.
 
 ## Testes de ponta a ponta
 
-A suíte em `e2e/` usa Selenium. Ela roda na máquina de quem testa: abre o Chrome dessa máquina e visita o site no endereço de `E2E_BASE_URL`, que pode ser o localhost ou o site em produção. Nada roda no servidor. O Selenium Manager, que vem com o `selenium-webdriver`, baixa o ChromeDriver compatível com o Chrome instalado.
+A suíte em `e2e/` usa Selenium. Ela abre o Chrome da máquina que roda e visita o site no endereço de `E2E_BASE_URL`: o localhost ou a **homologação**, nunca a produção, porque a suíte cria contatos, orçamentos, vendas e funcionários de teste (ADR 0009). O Selenium Manager, que vem com o `selenium-webdriver`, baixa o ChromeDriver compatível com o Chrome instalado. Precisa do Node 22 e do Docker, que roda o cliente do PostgreSQL.
 
-Cada arquivo cobre uma visão, com um teste por fluxo. Um fluxo que falha não para os outros e salva um print em `e2e/screenshots/`:
+### Fluxos
 
-| Arquivo | Fluxos |
-| --- | --- |
-| `01-visitante-vitrine` | Portfólio e filtro (US01), detalhe do projeto (US02), eventos (US03), avaliações do Google (US05) |
-| `02-visitante-contato` | Contato de pessoa física (US06), orçamento pelo simulador e por PDF (US07) |
-| `03-cliente-consulta-os` | Consulta da OS pelo protocolo e pelo CNPJ, protocolo inexistente (US19) |
-| `04-administrador` | Login (US09), funcionários e permissões (US10), tabela de orçamento (US08), identidade visual (US25, US26), portfólio (US27) |
-| `05-estoque` | Categorias e itens (US13), entradas e saídas (US14), alerta de mínimo (US15), histórico (US16) |
-| `06-servicos` | OS criada pela venda (US17), status da OS (US18), painel de atrasos (US20) |
-| `07-vendas-comissoes` | Orçamento até a venda e venda direta (US21), regra de comissão (US22), comissões do funcionário (US23) |
-| `08-gestor` | Dashboard (US11), exportação (US12), relatórios e ranking (US24) |
-| `09-celular` | Site e área interna numa tela de 390 px, sem rolagem lateral |
+A suíte roda por fluxo de interação, uma jornada que pode passar por várias pessoas (visitante, funcionário, gestor, cliente):
 
-Os testes preparam pela API o que cada fluxo precisa (a conta do gestor e a do funcionário da suíte, o catálogo, vendas e itens). Tudo o que criam leva o prefixo `E2E`. Itens, categorias, projetos e o funcionário cadastrado no teste são removidos no fim, e as OS criadas ficam concluídas. As contas do gestor e do funcionário da suíte ficam, para as próximas execuções. Vendas e pedidos não têm exclusão e continuam no histórico. A identidade visual só vai até o rascunho, que é descartado, e os arquivos exportados vão para `e2e/downloads/`.
-
-Para rodar contra o ambiente local, com o Backend de pé pelo `docker compose` dele (porta 3001) e o Frontend na porta 3000:
+| Fluxo | O que cobre | Arquivos e USs |
+| --- | --- | --- |
+| `vitrine` | Visitante navega pelo portfólio, pelos eventos e pelas avaliações | `01` (US01, US02, US03, US05) |
+| `contato` | Visitante envia um contato e pede orçamento pelo simulador e por PDF | `02` (US06, US07) |
+| `venda` | Orçamento até a venda, OS, status, atraso e consulta pelo cliente | `07`, `06` e `03` (US21, US17, US18, US20, US19) |
+| `comissoes` | Regra de comissão, comissão do funcionário e relatório do gestor | `07` e `08` (US22, US23, US24) |
+| `estoque` | Categoria, item, entrada e saída, alerta de mínimo e histórico | `05` (US13 a US16) |
+| `gestao` | Dashboard e exportação do período | `08` (US11, US12) |
+| `administracao` | Login, funcionários, permissões, tabela de orçamento, identidade visual, portfólio e eventos | `04` (US08, US09, US10, US25, US26, US27) |
+| `celular` | Site e área interna numa tela de 390 px, sem rolagem lateral | `09` |
+| `fumaca` | Um teste de cada fluxo, para conferir um deploy em poucos minutos | |
 
 ```bash
-npm run dev
+npm run test:e2e                     # todos os fluxos, na ordem da tabela
+npm run test:e2e -- venda estoque    # só esses
+npm run test:e2e -- fumaca           # checagem rápida
+```
+
+Antes de abrir o Chrome, o `e2e/run.js` confere as variáveis e acorda o site e a API, que na homologação dormem depois de 15 minutos sem acesso. Um teste que falha não para os outros e salva um print em `e2e/screenshots/`; os arquivos exportados vão para `e2e/downloads/`.
+
+### O banco volta ao estado de antes
+
+Com `E2E_DATABASE_URL`, o script tira uma cópia do banco antes dos fluxos (`pg_dump`, pelo Docker) e a carrega de volta no fim (`pg_restore`, numa transação só). Isso vale também quando um teste falha ou quando alguém aperta Ctrl+C: o teste em andamento para, os fluxos seguintes não rodam, e o banco é restaurado antes de o script sair. Se a restauração falhar, o script mostra onde ficou a cópia, para carregar à mão.
+
+Enquanto roda, a suíte marca o banco como em uso, no comentário do banco. Uma segunda execução contra o mesmo banco recusa começar, para uma não restaurar o banco no meio da outra. Uma marca com mais de 1 hora é de uma execução que morreu e é ignorada.
+
+Sem a variável, o que a suíte cria fica no banco, com o prefixo `E2E`.
+
+### Rodando na sua máquina
+
+Contra o ambiente local, com o Backend de pé pelo `docker compose` dele (porta 3001) e o Frontend na porta 3000:
+
+```bash
 npm run e2e:check-driver
-npm run test:e2e                              # tudo, em sequência
-node --test --test-reporter=spec e2e/05-estoque.test.js    # só um arquivo
+E2E_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres npm run test:e2e
 ```
 
-Para rodar contra o site no ar, use a **homologação**, nunca a produção: a suíte cria contatos, orçamentos e funcionários de teste, que na produção apareceriam para a Eldo. Troque o endereço e informe as credenciais e o token do CAPTCHA da homologação:
+Contra a homologação, com os valores do painel do Render (`eldo-api-homolog`) e do Neon (projeto `eldo-homolog`, conexão direta):
 
 ```bash
-E2E_BASE_URL=https://<site> E2E_ADMIN_PASSWORD=<senha> E2E_CAPTCHA_TOKEN=<token> npm run test:e2e
+E2E_BASE_URL=https://eldo-site-homolog.onrender.com \
+E2E_ADMIN_EMAIL=<admin da homologação> E2E_ADMIN_PASSWORD=<senha> \
+E2E_CAPTCHA_TOKEN=<E2E_CAPTCHA_TOKEN da eldo-api-homolog> \
+E2E_DATABASE_URL='postgresql://<usuário>:<senha>@<host>/<banco>?sslmode=require' \
+npm run test:e2e -- venda
 ```
 
-**CAPTCHA:** a Cloudflare não deixa navegador automatizado passar no desafio do Turnstile. A suíte grava no navegador o `E2E_CAPTCHA_TOKEN` do Backend, e os formulários públicos mandam esse token no lugar do widget. Um visitante de verdade não tem esse valor e vê o CAPTCHA normal; um token errado é recusado pela API.
+**CAPTCHA:** a Cloudflare não deixa navegador automatizado passar no desafio do Turnstile. A suíte grava no navegador o `E2E_CAPTCHA_TOKEN` do Backend, e os formulários públicos mandam esse token no lugar do widget. Um visitante de verdade não tem esse valor e vê o CAPTCHA normal; um token errado é recusado pela API, o que os testes do Backend cobrem.
 
 | Variável | Padrão |
 | --- | --- |
 | `E2E_BASE_URL` | `http://localhost:3000`, o Frontend local |
-| `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | `admin@eldo.com.br` / `Admin@123` |
+| `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | `admin@eldo.com.br` / `Admin@123`; fora do localhost a senha é obrigatória |
 | `E2E_MANAGER_EMAIL` / `E2E_MANAGER_PASSWORD` | `e2e.gestor@eldo.test` / `E2eGestor@2026`, criado pela suíte se não existir |
 | `E2E_EMPLOYEE_EMAIL` / `E2E_EMPLOYEE_PASSWORD` | `e2e.funcionario@eldo.test` / `E2eFuncionario@2026`, criado pela suíte se não existir |
-| `E2E_CAPTCHA_TOKEN` | O valor de desenvolvimento do Backend; na homologação, o `E2E_CAPTCHA_TOKEN` gerado pelo Render na `eldo-api-homolog`. A produção não tem esse token |
+| `E2E_CAPTCHA_TOKEN` | O valor de desenvolvimento do Backend; na homologação, o gerado pelo Render na `eldo-api-homolog`, obrigatório. A produção não tem esse token |
+| `E2E_DATABASE_URL` | Sem valor, o banco não é restaurado. Na homologação, a conexão direta do Neon, com `?sslmode=require` |
 | `E2E_STEP_DELAY_MS` | `1000`, a pausa entre os passos para quem assiste; `0` roda direto |
 | `E2E_HEADLESS` | `false`, com o navegador aberto na tela; `true` roda sem tela |
+
+### No GitHub Actions
+
+O workflow `.github/workflows/e2e-homologacao.yml` roda o fluxo `fumaca` sem tela depois de cada commit na `main`. Ele espera o CI passar e o Render publicar o commit na homologação (a rota `/versao` do site devolve o commit no ar) e só então abre o Chrome. Se falhar, os prints ficam como artefato da execução, e a mudança não deve ser promovida para a `producao`.
+
+Para rodar outros fluxos, ou depois de uma mudança no Backend, use **Actions → Selenium na homologação → Run workflow** e informe os fluxos.
+
+O workflow usa estes segredos do repositório (Settings → Secrets and variables → Actions): `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_CAPTCHA_TOKEN` e `E2E_DATABASE_URL`, com os mesmos valores da homologação acima.
