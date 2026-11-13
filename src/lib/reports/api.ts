@@ -1,5 +1,5 @@
 import { downloadApiFile, sendApiRequest } from "@/lib/api/client";
-import { saveFile } from "@/lib/files";
+import { saveFile, transcodeCsvToWindows1252 } from "@/lib/files";
 import type { PeriodQuery } from "./types";
 
 export type CommissionType = "percentage" | "fixed";
@@ -61,7 +61,7 @@ export function fetchSalesRanking(period: PeriodQuery, orderBy: RankingOrderBy) 
 export async function downloadCommissionReport(period: PeriodQuery): Promise<void> {
   const fallback = `relatorio-comissoes-${period.startDate}-a-${period.endDate}.csv`;
   const { content, fileName } = await downloadApiFile(`/commissions/report/export?${toQuery(period)}`, fallback);
-  saveFile(content, fileName);
+  saveFile(await transcodeCsvToWindows1252(content), fileName);
 }
 
 export async function downloadSalesRanking(period: PeriodQuery, orderBy: RankingOrderBy): Promise<void> {
@@ -70,5 +70,5 @@ export async function downloadSalesRanking(period: PeriodQuery, orderBy: Ranking
     `/sales-rankings/export?${toQuery(period)}&orderBy=${orderBy}`,
     fallback,
   );
-  saveFile(content, fileName);
+  saveFile(await transcodeCsvToWindows1252(content), fileName);
 }
