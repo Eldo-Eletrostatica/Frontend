@@ -93,11 +93,13 @@ describe("Visitante: contato e orçamento", () => {
     await waitForText(driver, "Mensagem enviada.");
   }));
 
-  test("o visitante pessoa jurídica pede o orçamento pelo simulador (US07)", () => runFlow(driver, "orcamento-simulador", async () => {
+  test("o visitante pessoa jurídica pede o orçamento pelo simulador (US07)", (context) => runFlow(driver, "orcamento-simulador", async () => {
     await open(driver, "/solicitar-orcamento", "a página de orçamento");
     await waitForText(driver, "Orçamento para");
+    // The catalog exists (see before), so a missing simulator means the
+    // administrator turned it off; the report shows the test as skipped.
     if (!(await pageContains(driver, ESTIMATOR_TOGGLE))) {
-      console.log("  - o simulador está desativado: só o envio de PDF está disponível");
+      context.skip("o simulador está desativado na tabela de orçamento");
       return;
     }
 
