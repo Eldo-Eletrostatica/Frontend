@@ -52,8 +52,9 @@ export default function PublicNav() {
           {/* Right area */}
           <div className="flex items-center gap-2">
             <Link href={ROUTES.tracking}
-              className="flex items-center gap-1.5 px-3 py-2 border border-site-text/18 text-site-text/70 text-[11px] hover:border-site-accent hover:text-site-accent transition-all"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 border border-site-text/18 text-site-text/70 text-[11px] whitespace-nowrap hover:border-site-accent hover:text-site-accent transition-all"
               style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+              <span className="sm:hidden">Acompanhar OS</span>
               <span className="hidden sm:inline">Acompanhar serviço</span>
             </Link>
 
