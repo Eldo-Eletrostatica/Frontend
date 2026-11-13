@@ -26,6 +26,8 @@ permissions:
 
 env:
   E2E_BASE_URL: https://eldo-site-homolog.onrender.com
+  # Woken directly: a request from the site does not wake a sleeping API.
+  E2E_API_URL: https://eldo-api-homolog.onrender.com
   # Building, deploying and waking a free instance up takes a while.
   DEPLOY_TIMEOUT_MINUTES: 25
 
