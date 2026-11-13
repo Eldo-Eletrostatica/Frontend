@@ -68,7 +68,21 @@ async function ensureSuiteAccounts() {
   return adminToken;
 }
 
-// A sale needs one active paint type and one active part material.
+// The site caches the public data (catalog, portfolio, events, visual
+// identity) until the internal area revalidates it. What the suite changes
+// through the API, and the database restore, skip the internal area, so the
+// suite clears that cache itself.
+async function clearSiteCache(adminToken) {
+  const token = adminToken ?? (await signIn(ADMIN_CREDENTIALS));
+  const response = await fetch(`${BASE_URL}/limpar-cache`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(`Limpar o cache do site falhou com ${response.status}`);
+}
+
+// A sale and the quote simulator need one active paint type and one active
+// part material.
 async function ensureCatalog(adminToken) {
   const options = await expectOk(callApi(adminToken, "GET", "/catalog-items/options"), "Ler o catálogo");
   let paint = options.find((option) => option.type === "paintType");
@@ -83,6 +97,8 @@ async function ensureCatalog(adminToken) {
       type: "partMaterial", name: `${E2E_PREFIX} Aço carbono`, priceFactor: 1.2,
     }), "Criar o material");
   }
+  // The simulator page lists the catalog from the cache.
+  if (!options.includes(paint) || !options.includes(material)) await clearSiteCache(adminToken);
   return { paint, material };
 }
 
@@ -174,6 +190,7 @@ function runLabel() {
 
 module.exports = {
   callApi,
+  clearSiteCache,
   completeServiceOrders,
   ensureCatalog,
   ensureSuiteAccounts,

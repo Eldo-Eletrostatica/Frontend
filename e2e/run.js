@@ -16,6 +16,7 @@ const { createReadStream, createWriteStream, rmSync } = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 
+const { clearSiteCache } = require("./support/api");
 const { ADMIN_CREDENTIALS, BASE_URL } = require("./support/browser");
 
 const E2E_DIRECTORY = __dirname;
@@ -130,6 +131,9 @@ async function wakeUp() {
     API_URL ? waitUntilAvailable(`${API_URL}/`, "A API") : Promise.resolve(),
   ]);
   await waitUntilAvailable(`${BASE_URL}/api`, "O proxy do site para a API");
+  // A restore made outside the suite may have left the site's cache behind
+  // the database.
+  await clearSiteCache();
 }
 
 // The PostgreSQL client runs from Docker, so nobody installs it. A database on
@@ -247,6 +251,8 @@ async function restoreAndUnlock(dumpPath) {
   }
   await releaseLock();
   rmSync(dumpPath, { force: true });
+  // The site would keep showing what the suite created and the restore removed.
+  await clearSiteCache();
   console.log("Banco restaurado.");
 }
 
