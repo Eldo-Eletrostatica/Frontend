@@ -112,7 +112,7 @@ export default function PublicNav() {
               </Link>
 
               <Link href={ROUTES.quote} onClick={() => handleNavigate(ROUTES.quote)}
-                className="h-[48px] rounded-full bg-site-accent text-site-page text-[14px] hover:opacity-90 transition-opacity"
+                className="flex items-center justify-center h-[48px] px-4 rounded-full bg-site-accent text-site-page text-[14px] text-center hover:opacity-90 transition-opacity"
                 style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
                 Solicitar Orçamento
               </Link>
