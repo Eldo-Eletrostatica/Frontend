@@ -57,4 +57,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
+# The standalone server listens on HOSTNAME. Render sets it to the machine
+# name, which binds only one interface and makes its proxy answer 502;
+# 0.0.0.0 listens on all of them, as in the Dockerfile of the Next.js docs.
+ENV HOSTNAME=0.0.0.0
 CMD ["node", "server.js"]

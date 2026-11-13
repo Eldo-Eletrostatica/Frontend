@@ -124,6 +124,10 @@ Para testar o build sem gerar a imagem, rode dentro do container de desenvolvime
 docker compose run --rm -e NODE_ENV=production frontend npm run build
 ```
 
+## Integração contínua
+
+Todo PR para a `main` ou para a `producao` e todo push nelas rodam o workflow `.github/workflows/ci.yml`: `npm ci`, `lint`, `typecheck` e `build`. O Render só publica um commit depois que esse check (**Lint, tipos e build**) passa: a `main` vai para a homologação e a `producao` para a produção. O caminho completo de uma mudança está no README do Backend, em "Deploy no Render".
+
 ## Scripts
 
 | Comando | Descrição |
@@ -165,13 +169,13 @@ npm run test:e2e                              # tudo, em sequência
 node --test --test-reporter=spec e2e/05-estoque.test.js    # só um arquivo
 ```
 
-Para rodar contra produção, troque o endereço e informe as credenciais e o token do CAPTCHA de produção:
+Para rodar contra o site no ar, use a **homologação**, nunca a produção: a suíte cria contatos, orçamentos e funcionários de teste, que na produção apareceriam para a Eldo. Troque o endereço e informe as credenciais e o token do CAPTCHA da homologação:
 
 ```bash
 E2E_BASE_URL=https://<site> E2E_ADMIN_PASSWORD=<senha> E2E_CAPTCHA_TOKEN=<token> npm run test:e2e
 ```
 
-**CAPTCHA:** a Cloudflare não deixa navegador automatizado passar no desafio do Turnstile de produção. A suíte grava no navegador o `E2E_CAPTCHA_TOKEN` do Backend, e os formulários públicos mandam esse token no lugar do widget. Um visitante de verdade não tem esse valor e vê o CAPTCHA normal; um token errado é recusado pela API.
+**CAPTCHA:** a Cloudflare não deixa navegador automatizado passar no desafio do Turnstile. A suíte grava no navegador o `E2E_CAPTCHA_TOKEN` do Backend, e os formulários públicos mandam esse token no lugar do widget. Um visitante de verdade não tem esse valor e vê o CAPTCHA normal; um token errado é recusado pela API.
 
 | Variável | Padrão |
 | --- | --- |
@@ -179,6 +183,6 @@ E2E_BASE_URL=https://<site> E2E_ADMIN_PASSWORD=<senha> E2E_CAPTCHA_TOKEN=<token>
 | `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | `admin@eldo.com.br` / `Admin@123` |
 | `E2E_MANAGER_EMAIL` / `E2E_MANAGER_PASSWORD` | `e2e.gestor@eldo.test` / `E2eGestor@2026`, criado pela suíte se não existir |
 | `E2E_EMPLOYEE_EMAIL` / `E2E_EMPLOYEE_PASSWORD` | `e2e.funcionario@eldo.test` / `E2eFuncionario@2026`, criado pela suíte se não existir |
-| `E2E_CAPTCHA_TOKEN` | O valor de desenvolvimento do Backend; em produção, o mesmo `E2E_CAPTCHA_TOKEN` configurado no Backend |
+| `E2E_CAPTCHA_TOKEN` | O valor de desenvolvimento do Backend; na homologação, o `E2E_CAPTCHA_TOKEN` gerado pelo Render na `eldo-api-homolog`. A produção não tem esse token |
 | `E2E_STEP_DELAY_MS` | `1000`, a pausa entre os passos para quem assiste; `0` roda direto |
 | `E2E_HEADLESS` | `false`, com o navegador aberto na tela; `true` roda sem tela |

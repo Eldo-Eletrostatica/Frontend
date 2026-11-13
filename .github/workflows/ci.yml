@@ -1,0 +1,48 @@
+name: CI
+
+# producao too: Render deploys production only after this check passes on the
+# commit the promotion pull request creates there.
+on:
+  pull_request:
+    branches: [main, producao]
+  push:
+    branches: [main, producao]
+
+# A new push to the same PR cancels the run that became outdated.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    # This name is the required status check in the branch protection.
+    name: Lint, tipos e build
+    runs-on: ubuntu-latest
+
+    # next build writes these into the output; the values only need to be
+    # valid URLs and a key, since the build does not call the API.
+    env:
+      API_URL: http://localhost:3001
+      STORAGE_PUBLIC_URL: http://localhost:8333/eldo
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The same major version as the Dockerfile.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # npm ci fails when package-lock.json is out of sync with package.json.
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm run build
