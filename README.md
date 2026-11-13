@@ -2,8 +2,17 @@
 
 Frontend do site institucional da Eldo Eletrostática (empresa de pintura eletrostática), com o site público e a área interna dos funcionários.
 
-> [!NOTE]
-> As telas vieram do protótipo e ainda usam dados fixos, guardados em memória. A integração com o Backend segue a spec [#37](https://github.com/Eldo-Eletrostatica/Frontend/issues/37), uma User Story por PR, e cada tela troca os dados de exemplo pela API no PR da sua US.
+Todas as telas usam a API do [Backend](https://github.com/Eldo-Eletrostatica/Backend): o site público (portfólio, eventos, avaliações, contato, orçamento e consulta da OS) e a área interna (dashboard, relatórios, serviços, estoque, orçamentos, vendas, comissões, contatos, funcionários, tabela de orçamento e editor do site).
+
+## Ambientes
+
+| Ambiente | Endereço | Branch publicada | Para quê |
+| --- | --- | --- | --- |
+| Desenvolvimento | http://localhost:3000 | a sua | Programar, com o Backend do `docker compose` |
+| Homologação | https://eldo-site-homolog.onrender.com | `main` | Validar cada mudança e rodar a suíte Selenium, sem tocar nos dados da Eldo |
+| Produção | https://eldo-site.onrender.com | `producao` | O site que os clientes da Eldo usam |
+
+Uma mudança entra na `main` por PR, com o CI verde, e o Render a publica na homologação. Depois de validada lá, um PR da `main` para a `producao` a leva para a produção (ADR 0009). Nunca abra PR de tarefa para a `producao`. Os detalhes do deploy estão no README do Backend, em "Deploy no Render".
 
 ## Stack
 
@@ -18,17 +27,19 @@ Frontend do site institucional da Eldo Eletrostática (empresa de pintura eletro
 | --- | --- |
 | `src/app` | Rotas do App Router. O nome da pasta vira a URL, em português e kebab-case. `(site)` agrupa as páginas públicas, que compartilham menu e rodapé |
 | `src/components` | Componentes das telas. Os do site público ficam em `src/components/public` |
-| `src/lib` | `routes.ts` (todos os caminhos, em `ROUTES`), os contexts com os dados do protótipo e a sessão provisória da área interna |
-| `src/imports` | Logotipo e material importado do protótipo |
+| `src/lib` | `routes.ts` (todos os caminhos, em `ROUTES`), `contact.ts` (contatos públicos da empresa), `api/` (chamadas ao Backend, pelo proxy ou pelo servidor), `auth/` (sessão da área interna) e uma pasta por módulo (`quotes`, `sales`, `inventory`...) com os tipos e as chamadas dele |
+| `src/imports` | Logotipo padrão (`eldo-logo.png`), usado enquanto nenhum logotipo é publicado no editor do site |
+| `e2e/` | Suíte de ponta a ponta com Selenium (ver [Testes de ponta a ponta](#testes-de-ponta-a-ponta)) |
+| `.github/workflows` | CI (`ci.yml`) e Selenium na homologação (`e2e-homologacao.yml`) |
 | `public/` | Arquivos estáticos servidos pelo Next.js |
 | `legacy/` | Site estático anterior (HTML, CSS e JS), guardado como referência de conteúdo e imagens |
 
 ## Requisitos
 
 - Docker e Docker Compose. Rodar pelo Docker é o padrão do projeto: todos usam a mesma versão do Node e das dependências.
-- O [Backend](https://github.com/Eldo-Eletrostatica/Backend) rodando pelo `docker compose` dele, na porta 3001, para as telas que já chamam a API.
+- O [Backend](https://github.com/Eldo-Eletrostatica/Backend) rodando pelo `docker compose` dele, na porta 3001.
 
-Node.js 20+ e npm só são necessários para rodar sem Docker.
+Node.js 20+ e npm só são necessários para rodar sem Docker. A suíte Selenium roda fora do container e precisa do Node 22, do Google Chrome e do Docker.
 
 ## Configuração
 
@@ -79,7 +90,9 @@ O Frontend usa a porta 3000. Se o Backend também rodar sem Docker, suba ele na 
 | `/acompanhar-servico` | Consulta da OS pelo CNPJ ou pelo protocolo |
 | `/area-interna/login` | Login dos funcionários |
 | `/area-interna` | Dashboard |
-| `/area-interna/relatorios`, `/servicos`, `/estoque`, `/vendas`, `/funcionarios`, `/editor-do-site` | Demais telas da área interna |
+| `/area-interna/relatorios`, `/servicos`, `/estoque`, `/orcamentos`, `/vendas`, `/comissoes`, `/contatos` | Telas de gestão e operação |
+| `/area-interna/funcionarios`, `/tabela-de-orcamento`, `/editor-do-site` | Telas do administrador |
+| `/versao` | O commit publicado (`RENDER_GIT_COMMIT`), que o workflow do Selenium usa para saber quando o deploy terminou |
 
 O site público não tem link para a área interna: os funcionários entram pelo endereço. A `/area-interna` fica fora dos buscadores (`noindex` e `robots.txt`). Cada tela aparece só para os níveis de acesso que podem usá-la, e quem não está logado vai para o login. A proteção de verdade está no login e nos guards do Backend.
 
@@ -100,7 +113,7 @@ Por exemplo, com o Backend no ar, http://localhost:3000/api/reviews devolve as a
 
 ## Imagem de produção
 
-O estágio `prod` do `Dockerfile` gera uma imagem enxuta com o build `standalone` do Next:
+O estágio `prod` do `Dockerfile` gera uma imagem enxuta com o build `standalone` do Next. Ele é o último estágio, porque o Render constrói o último e não aceita `--target`; aqui o `--target prod` só deixa a intenção explícita:
 
 ```bash
 docker build --target prod \
@@ -116,7 +129,9 @@ docker run -p 3000:3000 eldo-frontend
 >
 > A `API_URL` também é usada quando o site roda: as páginas montadas no servidor (portfólio, eventos e opções do simulador) buscam os dados direto no Backend. O estágio `prod` guarda na imagem o valor passado no build, então não é preciso repetir a variável no `docker run`.
 >
-> No Render, o Blueprint do Backend não preenche a `API_URL`, e sim a `API_HOSTPORT`: o `host:porta` da API na rede privada, que só existe depois de a API ser criada. Sem `API_URL`, o site usa `http://<API_HOSTPORT>`.
+> Na produção, o Blueprint do Backend não preenche a `API_URL`, e sim a `API_HOSTPORT`: o `host:porta` da API na rede privada, que só existe depois de a API ser criada. Sem `API_URL`, o site usa `http://<API_HOSTPORT>`. Na homologação, a API é pública e a `API_URL` aponta para ela.
+>
+> A imagem define `HOSTNAME=0.0.0.0`: o servidor do Next escuta no endereço dessa variável, e o Render a preenche com o nome da máquina, o que fazia o site responder 502.
 
 Para testar o build sem gerar a imagem, rode dentro do container de desenvolvimento com `NODE_ENV=production`, porque o estágio `dev` define `NODE_ENV=development` e o `next build` falha com ele:
 
@@ -137,7 +152,7 @@ Todo PR para a `main` ou para a `producao` e todo push nelas rodam o workflow `.
 | `npm run start` | Inicia o build de produção |
 | `npm run lint` | Executa o linter. Rode antes de dar uma tarefa por pronta |
 | `npm run typecheck` | Gera os tipos das rotas (`next typegen`) e checa os tipos com o `tsc`. Funciona num checkout limpo, sem precisar de um build antes |
-| `npm run test:e2e` | Roda a suíte de ponta a ponta com Selenium, com o Chrome aberto e uma pausa entre os passos |
+| `npm run test:e2e -- <fluxos>` | Roda a suíte Selenium pelos fluxos pedidos (todos, sem argumento), com o Chrome aberto e uma pausa entre os passos |
 | `npm run e2e:check-driver` | Confere se o Selenium abre o Chrome e mostra as versões do navegador e do ChromeDriver |
 
 ## Testes de ponta a ponta
@@ -178,22 +193,45 @@ Sem a variável, o que a suíte cria fica no banco, com o prefixo `E2E`.
 
 ### Rodando na sua máquina
 
-Contra o ambiente local, com o Backend de pé pelo `docker compose` dele (porta 3001) e o Frontend na porta 3000:
+#### Contra o ambiente local
+
+Com o Backend de pé pelo `docker compose` dele (porta 3001) e o Frontend na porta 3000:
 
 ```bash
 npm run e2e:check-driver
 E2E_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres npm run test:e2e
 ```
 
-Contra a homologação, com os valores do painel do Render (`eldo-api-homolog`) e do Neon (projeto `eldo-homolog`, conexão direta):
+Se o seu Frontend local usa outra porta, informe-a em `E2E_BASE_URL` (por exemplo, `E2E_BASE_URL=http://localhost:13000`).
+
+#### Contra a homologação
+
+Guarde os valores da homologação num arquivo **fora dos repositórios**, por exemplo `../homolog-e2e.env`, ao lado das pastas `Frontend`, `Backend` e `Documentacao`. Nunca o commite.
+
+```env
+E2E_BASE_URL='https://eldo-site-homolog.onrender.com'
+E2E_ADMIN_EMAIL='<admin da homologação>'
+E2E_ADMIN_PASSWORD='<senha do admin da homologação>'
+E2E_CAPTCHA_TOKEN='<E2E_CAPTCHA_TOKEN da eldo-api-homolog>'
+E2E_DATABASE_URL='postgresql://<usuário>:<senha>@<host>/<banco>?sslmode=require'
+```
+
+- **Use aspas simples em todos os valores.** Sem aspas, o Node entende `#` como começo de comentário e corta o valor (uma senha com `#` chega pela metade).
+- O `E2E_CAPTCHA_TOKEN` está no Render, em **eldo-api-homolog → Environment**.
+- O `E2E_DATABASE_URL` vem do Neon, no projeto `eldo-homolog`, em **Connect**, com a opção **Connection pooling desligada** (o host não pode ter `-pooler`).
+
+O Node 22 lê o arquivo com `--env-file`, sem passar pelo shell:
 
 ```bash
-E2E_BASE_URL=https://eldo-site-homolog.onrender.com \
-E2E_ADMIN_EMAIL=<admin da homologação> E2E_ADMIN_PASSWORD=<senha> \
-E2E_CAPTCHA_TOKEN=<E2E_CAPTCHA_TOKEN da eldo-api-homolog> \
-E2E_DATABASE_URL='postgresql://<usuário>:<senha>@<host>/<banco>?sslmode=require' \
-npm run test:e2e -- venda
+node --env-file=../homolog-e2e.env e2e/run.js venda estoque    # fluxos escolhidos
+node --env-file=../homolog-e2e.env e2e/run.js fumaca           # checagem rápida
+node --env-file=../homolog-e2e.env e2e/run.js                  # todos
+E2E_STEP_DELAY_MS=0 node --env-file=../homolog-e2e.env e2e/run.js venda   # sem pausas
 ```
+
+Sem o `--env-file`, a suíte vai para o localhost. A primeira linha da saída mostra o destino (`Site: https://eldo-site-homolog.onrender.com | admin: ... | fluxos: venda`): se aparecer `localhost`, o arquivo não foi lido.
+
+A homologação já tem os eventos e o portfólio reais. Como o banco volta ao estado do início no fim de cada execução, esse conteúdo continua lá.
 
 **CAPTCHA:** a Cloudflare não deixa navegador automatizado passar no desafio do Turnstile. A suíte grava no navegador o `E2E_CAPTCHA_TOKEN` do Backend, e os formulários públicos mandam esse token no lugar do widget. Um visitante de verdade não tem esse valor e vê o CAPTCHA normal; um token errado é recusado pela API, o que os testes do Backend cobrem.
 
