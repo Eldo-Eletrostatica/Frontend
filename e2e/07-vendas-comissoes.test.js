@@ -27,6 +27,7 @@ const {
 const {
   callApi,
   completeServiceOrders,
+  ensureCatalog,
   ensureSuiteAccounts,
   findEmployeeId,
   generateCnpj,
@@ -64,6 +65,8 @@ describe("Vendas e comissões", () => {
 
   before(async () => {
     adminToken = await ensureSuiteAccounts();
+    // The direct sale form lists the catalog, which an empty database lacks.
+    await ensureCatalog(adminToken);
     sellerEmployeeId = await findEmployeeId(adminToken, EMPLOYEE_CREDENTIALS.email);
     driver = await buildDriver();
   });
@@ -103,6 +106,12 @@ describe("Vendas e comissões", () => {
     await openFromMenu(driver, "Vendas");
     await clickByText(driver, "button", "Nova venda");
     await waitForElement(driver, By.css("aside"), null, "o lançamento da venda");
+    // The form re-renders when the catalog arrives, losing what was typed.
+    await driver.wait(
+      async () => (await driver.findElements(By.xpath("//aside//*[normalize-space(.)='TIPO DE PINTURA']/following-sibling::select/option"))).length > 0,
+      60000,
+      "O catálogo não carregou",
+    );
 
     await clickByText(driver, "aside//button", "CLIENTE NOVO");
     await clickByText(driver, "aside//button", "PESSOA JURÍDICA");
