@@ -181,7 +181,7 @@ npm run test:e2e -- venda estoque    # só esses
 npm run test:e2e -- fumaca           # checagem rápida
 ```
 
-Antes de abrir o Chrome, o `e2e/run.js` confere as variáveis e acorda o site e a API, que na homologação dormem depois de 15 minutos sem acesso. Um teste que falha não para os outros e salva um print em `e2e/screenshots/`; os arquivos exportados vão para `e2e/downloads/`.
+Antes de abrir o Chrome, o `e2e/run.js` confere as variáveis e acorda o site e a API, que na homologação dormem depois de 15 minutos sem acesso. Acordar os dois leva até 1 minuto; o log mostra cada tentativa. Um teste que falha não para os outros e salva um print em `e2e/screenshots/`; os arquivos exportados vão para `e2e/downloads/`.
 
 ### O banco volta ao estado de antes
 
@@ -210,6 +210,7 @@ Guarde os valores da homologação num arquivo **fora dos repositórios**, por e
 
 ```env
 E2E_BASE_URL='https://eldo-site-homolog.onrender.com'
+E2E_API_URL='https://eldo-api-homolog.onrender.com'
 E2E_ADMIN_EMAIL='<admin da homologação>'
 E2E_ADMIN_PASSWORD='<senha do admin da homologação>'
 E2E_CAPTCHA_TOKEN='<E2E_CAPTCHA_TOKEN da eldo-api-homolog>'
@@ -238,6 +239,7 @@ A homologação já tem os eventos e o portfólio reais. Como o banco volta ao e
 | Variável | Padrão |
 | --- | --- |
 | `E2E_BASE_URL` | `http://localhost:3000`, o Frontend local |
+| `E2E_API_URL` | Sem valor. Na homologação, o endereço da API (`https://eldo-api-homolog.onrender.com`): o script a acorda direto, porque uma chamada vinda do site não acorda uma API do Render que está dormindo |
 | `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | `admin@eldo.com.br` / `Admin@123`; fora do localhost a senha é obrigatória |
 | `E2E_MANAGER_EMAIL` / `E2E_MANAGER_PASSWORD` | `e2e.gestor@eldo.test` / `E2eGestor@2026`, criado pela suíte se não existir |
 | `E2E_EMPLOYEE_EMAIL` / `E2E_EMPLOYEE_PASSWORD` | `e2e.funcionario@eldo.test` / `E2eFuncionario@2026`, criado pela suíte se não existir |

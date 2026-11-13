@@ -20,10 +20,13 @@ const { ADMIN_CREDENTIALS, BASE_URL } = require("./support/browser");
 
 const E2E_DIRECTORY = __dirname;
 const DATABASE_URL = process.env.E2E_DATABASE_URL;
+// The API's own public address. A request from the site to a sleeping API
+// on Render does not wake it up, so the API is woken directly.
+const API_URL = process.env.E2E_API_URL?.replace(/\/+$/, "");
 // Same major version as the staging and production databases.
 const POSTGRES_CLIENT_IMAGE = "postgres:16-alpine";
 // A free Render instance takes about a minute to wake up; both may be asleep.
-const WAKE_UP_TIMEOUT_MS = 3 * 60 * 1000;
+const WAKE_UP_TIMEOUT_MS = 5 * 60 * 1000;
 const WAKE_UP_RETRY_MS = 5000;
 // A lock older than this belongs to a run that died without cleaning up.
 const STALE_LOCK_MS = 60 * 60 * 1000;
@@ -96,26 +99,37 @@ function checkVariables() {
 }
 
 async function waitUntilAvailable(url, description) {
-  const deadline = Date.now() + WAKE_UP_TIMEOUT_MS;
+  const startedAt = Date.now();
   for (;;) {
+    let outcome;
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(WAKE_UP_RETRY_MS * 6) });
-      if (response.ok) return;
-    } catch {
-      // Still waking up.
+      if (response.ok) {
+        console.log(`  ${description} respondeu em ${Math.round((Date.now() - startedAt) / 1000)} s.`);
+        return;
+      }
+      outcome = `HTTP ${response.status}`;
+    } catch (error) {
+      outcome = error.name === "TimeoutError" ? "sem resposta em 30 s" : error.message;
     }
-    if (Date.now() > deadline) {
+    console.log(`  ${description} ainda acordando (${outcome})...`);
+    if (Date.now() - startedAt > WAKE_UP_TIMEOUT_MS) {
       throw new Error(`${description} não respondeu em ${WAKE_UP_TIMEOUT_MS / 60000} minutos (${url}).`);
     }
     await new Promise((resolve) => setTimeout(resolve, WAKE_UP_RETRY_MS));
   }
 }
 
-// The site's /api proxy reaches the API, so a 200 there means both are awake.
+// Render answers /robots.txt itself while a free service sleeps, so the site
+// is woken by /versao, a route the app serves. Both wake up at the same time;
+// the /api proxy then confirms the site reaches the API.
 async function wakeUp() {
   console.log(`Acordando o site e a API em ${BASE_URL}...`);
-  await waitUntilAvailable(`${BASE_URL}/robots.txt`, "O site");
-  await waitUntilAvailable(`${BASE_URL}/api`, "A API");
+  await Promise.all([
+    waitUntilAvailable(`${BASE_URL}/versao`, "O site"),
+    API_URL ? waitUntilAvailable(`${API_URL}/`, "A API") : Promise.resolve(),
+  ]);
+  await waitUntilAvailable(`${BASE_URL}/api`, "O proxy do site para a API");
 }
 
 // The PostgreSQL client runs from Docker, so nobody installs it. A database on
