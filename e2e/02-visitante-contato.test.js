@@ -26,7 +26,7 @@ const {
   waitForElement,
   waitForText,
 } = require("./support/browser");
-const { generateCnpj, isoDateFromToday, runLabel } = require("./support/api");
+const { ensureCatalog, ensureSuiteAccounts, generateCnpj, isoDateFromToday, runLabel } = require("./support/api");
 
 const ESTIMATOR_TOGGLE = "Prefere preencher item a item?";
 const DUE_DATE_DAYS = 30;
@@ -64,6 +64,8 @@ describe("Visitante: contato e orçamento", () => {
   const label = runLabel();
 
   before(async () => {
+    // The simulator lists the catalog, which an empty database lacks.
+    await ensureCatalog(await ensureSuiteAccounts());
     driver = await buildDriver();
     await enableCaptchaToken(driver);
   });
