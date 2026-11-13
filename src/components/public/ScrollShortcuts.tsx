@@ -27,11 +27,11 @@ export default function ScrollShortcuts() {
 
   return (
     <div className="fixed right-5 bottom-6 z-30 flex flex-col gap-2" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Voltar ao topo" title="Voltar ao topo" className="w-11 h-11 rounded-full border border-[rgba(245,242,236,0.18)] bg-[rgba(18,16,13,0.92)] text-[#e9b421] flex items-center justify-center shadow-lg hover:border-[#e9b421] transition-colors">
+      <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Voltar ao topo" title="Voltar ao topo" className="w-11 h-11 rounded-full border border-site-text/18 bg-site-page/92 text-site-accent flex items-center justify-center shadow-lg hover:border-site-accent transition-colors">
         <ArrowUp size={17} />
       </button>
       {!nearBottom && (
-        <button type="button" onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" })} aria-label="Ir até o final" title="Ir até o final" className="w-11 h-11 rounded-full border border-[rgba(245,242,236,0.18)] bg-[rgba(18,16,13,0.92)] text-[rgba(245,242,236,0.7)] flex items-center justify-center shadow-lg hover:border-[#e9b421] hover:text-[#e9b421] transition-colors">
+        <button type="button" onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" })} aria-label="Ir até o final" title="Ir até o final" className="w-11 h-11 rounded-full border border-site-text/18 bg-site-page/92 text-site-text/70 flex items-center justify-center shadow-lg hover:border-site-accent hover:text-site-accent transition-colors">
           <ArrowDown size={17} />
         </button>
       )}

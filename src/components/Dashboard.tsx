@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { AlertCircle, BarChart3, CheckCircle, FileDown, FileSpreadsheet, FileText, Percent } from "lucide-react";
 import type { Role } from "@/lib/auth/AuthProvider";
 import { ApiError } from "@/lib/api/ApiError";
+import { useVisualSettings } from "@/lib/siteSettings/VisualSettingsProvider";
 import {
   downloadStatisticsReport,
   fetchStatistics,
@@ -20,7 +21,6 @@ import {
   type StatisticsPeriod,
 } from "@/lib/statistics/statisticsPeriod";
 
-const GOLD = "#e9b421";
 const FALLBACK_ERROR = "Não foi possível carregar os indicadores. Tente novamente.";
 const INVALID_PERIOD_MESSAGE = "A data inicial não pode ser depois da data final.";
 // Chart labels longer than this are cut; the ranking beside shows the full name.
@@ -116,10 +116,10 @@ export default function Dashboard({ role }: Props) {
       {/* Header */}
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8">
         <div>
-          <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+          <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
             ANÁLISE ESTRATÉGICA
           </p>
-          <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+          <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
             Dashboard
           </h1>
         </div>
@@ -135,8 +135,8 @@ export default function Dashboard({ role }: Props) {
                 aria-pressed={activePreset === preset.id}
                 className={`px-4 py-2 text-[12px] tracking-[1px] transition-all ${
                   activePreset === preset.id
-                    ? "bg-[#e9b421] text-[#12100d]"
-                    : "border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.55)] hover:text-[rgba(245,242,236,0.9)]"
+                    ? "bg-site-accent text-site-page"
+                    : "border border-site-text/18 text-site-text/55 hover:text-site-text/90"
                 }`}
                 style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
               >
@@ -153,8 +153,8 @@ export default function Dashboard({ role }: Props) {
       </div>
 
       {/* Export (US12) */}
-      <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b border-[rgba(245,242,236,0.08)]">
-        <span className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)] mr-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+      <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b border-site-text/8">
+        <span className="text-[11px] tracking-[2px] text-site-text/45 mr-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
           EXPORTAR O PERÍODO
         </span>
         {(["pdf", "xlsx"] as const).map((format) => {
@@ -165,7 +165,7 @@ export default function Dashboard({ role }: Props) {
               type="button"
               onClick={() => exportReport(format)}
               disabled={!isPeriodValid || exportState.status === "exporting"}
-              className="flex items-center gap-2 px-4 py-2 text-[12px] tracking-[1px] border border-[rgba(233,180,33,0.45)] text-[#e9b421] hover:bg-[rgba(233,180,33,0.08)] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-4 py-2 text-[12px] tracking-[1px] border border-site-accent/45 text-site-accent hover:bg-site-accent/8 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
             >
               {format === "pdf" ? <FileDown size={14} /> : <FileSpreadsheet size={14} />}
@@ -174,7 +174,7 @@ export default function Dashboard({ role }: Props) {
           );
         })}
         {exportState.status === "warning" && (
-          <p role="alert" className="flex items-center gap-2 text-[13px] text-[#e9b421]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <p role="alert" className="flex items-center gap-2 text-[13px] text-site-accent" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             <AlertCircle size={14} /> {exportState.message}
           </p>
         )}
@@ -183,7 +183,7 @@ export default function Dashboard({ role }: Props) {
       {!isPeriodValid ? (
         <Notice title="Período inválido" description={INVALID_PERIOD_MESSAGE} />
       ) : state.status === "loading" ? (
-        <p className="py-16 text-center text-[14px] text-[rgba(245,242,236,0.45)]" aria-live="polite" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="py-16 text-center text-[14px] text-site-text/45" aria-live="polite" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Carregando indicadores...
         </p>
       ) : state.status === "error" ? (
@@ -196,6 +196,8 @@ export default function Dashboard({ role }: Props) {
 }
 
 function StatisticsView({ statistics }: { statistics: Statistics }) {
+  const { visualSettings } = useVisualSettings();
+  const { colors } = visualSettings;
   const periodText = `${formatDay(statistics.startDate)} a ${formatDay(statistics.endDate)}`;
 
   if (!statistics.hasData) {
@@ -216,12 +218,12 @@ function StatisticsView({ statistics }: { statistics: Statistics }) {
 
   return (
     <>
-      <p className="mb-4 text-[12px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+      <p className="mb-4 text-[12px] text-site-text/45" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
         Período: {periodText}
       </p>
 
       {/* KPI cards */}
-      <div className="grid sm:grid-cols-3 gap-px bg-[rgba(245,242,236,0.08)]">
+      <div className="grid sm:grid-cols-3 gap-px bg-site-text/8">
         <KpiCard label="ORÇAMENTOS NO PERÍODO" value={String(statistics.quoteCount)} sub="Pedidos por PDF ou pelo simulador" icon={<FileText size={16} />} />
         <KpiCard label="VIRARAM VENDA" value={String(statistics.convertedQuoteCount)} sub="Dos orçamentos criados no período" icon={<CheckCircle size={16} />} />
         <KpiCard
@@ -234,47 +236,47 @@ function StatisticsView({ statistics }: { statistics: Statistics }) {
       </div>
 
       {/* Most requested paint types */}
-      <div className="grid lg:grid-cols-3 gap-px bg-[rgba(245,242,236,0.08)] mt-px">
-        <div className="lg:col-span-2 bg-[#12100d] p-6">
+      <div className="grid lg:grid-cols-3 gap-px bg-site-text/8 mt-px">
+        <div className="lg:col-span-2 bg-site-page p-6">
           <ChartLabel>TIPOS DE PINTURA MAIS PEDIDOS</ChartLabel>
           {chartData.length === 0 ? (
-            <p className="mt-6 text-[13px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+            <p className="mt-6 text-[13px] text-site-text/45" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
               Nenhum pedido com tipo de pintura no período.
             </p>
           ) : (
             <div className="h-[260px] mt-6">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 16, left: 8, bottom: 0 }}>
-                  <CartesianGrid stroke="rgba(245,242,236,0.06)" horizontal={false} />
-                  <XAxis type="number" allowDecimals={false} tick={{ fill: "rgba(245,242,236,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={130} tick={{ fill: "rgba(245,242,236,0.7)", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip content={<RankingTooltip />} cursor={{ fill: "rgba(245,242,236,0.04)" }} />
-                  <Bar dataKey="orderCount" name="Pedidos" fill={GOLD} radius={[0, 2, 2, 0]} maxBarSize={26} />
+                  <CartesianGrid stroke={colors.text} strokeOpacity={0.06} horizontal={false} />
+                  <XAxis type="number" allowDecimals={false} tick={{ fill: colors.text, fillOpacity: 0.4, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" width={130} tick={{ fill: colors.text, fillOpacity: 0.7, fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<RankingTooltip />} cursor={{ fill: colors.text, fillOpacity: 0.04 }} />
+                  <Bar dataKey="orderCount" name="Pedidos" fill={colors.accent} radius={[0, 2, 2, 0]} maxBarSize={26} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </div>
 
-        <div className="bg-[#12100d] p-6">
+        <div className="bg-site-page p-6">
           <div className="flex items-center gap-3">
-            <BarChart3 size={16} className="text-[#e9b421]" />
+            <BarChart3 size={16} className="text-site-accent" />
             <ChartLabel>RANKING</ChartLabel>
           </div>
           <ol className="flex flex-col gap-3 mt-5">
             {statistics.topPaintTypes.map((paintType, index) => (
               <li key={paintType.catalogItemId} className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-3 min-w-0">
-                  <span className="text-[12px] text-[#e9b421] w-5 flex-shrink-0" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{index + 1}º</span>
-                  <span className="text-[13px] text-[rgba(245,242,236,0.75)] break-words" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{paintType.name}</span>
+                  <span className="text-[12px] text-site-accent w-5 flex-shrink-0" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{index + 1}º</span>
+                  <span className="text-[13px] text-site-text/75 break-words" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{paintType.name}</span>
                 </span>
-                <span className="text-[13px] text-[#f5f2ec] flex-shrink-0" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+                <span className="text-[13px] text-site-text flex-shrink-0" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
                   {paintType.orderCount} {paintType.orderCount === 1 ? "pedido" : "pedidos"}
                 </span>
               </li>
             ))}
           </ol>
-          <p className="mt-6 text-[11px] text-[rgba(245,242,236,0.35)] leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <p className="mt-6 text-[11px] text-site-text/35 leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             Conta os pedidos do período de qualquer origem e etapa, inclusive vendas diretas.
           </p>
         </div>
@@ -286,12 +288,12 @@ function StatisticsView({ statistics }: { statistics: Statistics }) {
 function DateInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="flex items-center gap-2">
-      <span className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{label}</span>
+      <span className="text-[11px] tracking-[2px] text-site-text/45" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{label}</span>
       <input
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-[36px] px-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors [color-scheme:dark]"
+        className="h-[36px] px-3 bg-site-card border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent transition-colors [color-scheme:dark]"
         style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
       />
     </label>
@@ -300,20 +302,20 @@ function DateInput({ label, value, onChange }: { label: string; value: string; o
 
 function KpiCard({ label, value, sub, icon, progress }: { label: string; value: string; sub: string; icon: React.ReactNode; progress?: number | null }) {
   return (
-    <div className="bg-[#12100d] px-6 py-5">
-      <span className="text-[rgba(245,242,236,0.4)]">{icon}</span>
-      <p className="text-[32px] text-[#f5f2ec] leading-tight mt-3" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+    <div className="bg-site-page px-6 py-5">
+      <span className="text-site-text/40">{icon}</span>
+      <p className="text-[32px] text-site-text leading-tight mt-3" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
         {value}
       </p>
-      <p className="text-[11px] tracking-[1.8px] text-[rgba(245,242,236,0.4)] mt-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+      <p className="text-[11px] tracking-[1.8px] text-site-text/40 mt-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
         {label}
       </p>
       {typeof progress === "number" && (
-        <div className="mt-3 h-[3px] bg-[rgba(245,242,236,0.08)]" aria-hidden="true">
-          <div className="h-full bg-[#e9b421]" style={{ width: `${Math.round(progress * 100)}%` }} />
+        <div className="mt-3 h-[3px] bg-site-text/8" aria-hidden="true">
+          <div className="h-full bg-site-accent" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       )}
-      <p className="text-[12px] text-[rgba(245,242,236,0.45)] mt-2" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+      <p className="text-[12px] text-site-text/45 mt-2" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
         {sub}
       </p>
     </div>
@@ -322,16 +324,16 @@ function KpiCard({ label, value, sub, icon, progress }: { label: string; value: 
 
 function Notice({ title, description }: { title: string; description: string }) {
   return (
-    <div className="py-16 px-6 text-center bg-[#12100d] border border-[rgba(245,242,236,0.08)]">
-      <p className="text-[18px] text-[#f5f2ec] mb-2" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{title}</p>
-      <p className="text-[14px] text-[rgba(245,242,236,0.55)] max-w-[520px] mx-auto" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{description}</p>
+    <div className="py-16 px-6 text-center bg-site-page border border-site-text/8">
+      <p className="text-[18px] text-site-text mb-2" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{title}</p>
+      <p className="text-[14px] text-site-text/55 max-w-[520px] mx-auto" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{description}</p>
     </div>
   );
 }
 
 function ChartLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+    <p className="text-[11px] tracking-[2px] text-site-text/50" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
       {children}
     </p>
   );
@@ -346,8 +348,8 @@ function RankingTooltip({ active, payload }: RankingTooltipProps) {
   if (!active || !payload?.length) return null;
   const [entry] = payload;
   return (
-    <div className="px-3 py-2 border border-[rgba(245,242,236,0.12)]" style={{ background: "#1a1713" }}>
-      <p className="text-[13px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+    <div className="px-3 py-2 border border-site-text/12 bg-site-card">
+      <p className="text-[13px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
         {entry.payload?.fullName}: {entry.value} {entry.value === 1 ? "pedido" : "pedidos"}
       </p>
     </div>

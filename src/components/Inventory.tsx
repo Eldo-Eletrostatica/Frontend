@@ -286,21 +286,21 @@ export default function Inventory() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONTROLE DE ESTOQUE</p>
-          <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Estoque</h1>
+          <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONTROLE DE ESTOQUE</p>
+          <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Estoque</h1>
         </div>
         <div className="flex gap-2">
           {canManageCategories && (
-            <button onClick={() => setIsCategoriesOpen(true)} className="flex items-center gap-2 px-4 py-2.5 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] text-[12px] hover:border-[rgba(245,242,236,0.4)] transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+            <button onClick={() => setIsCategoriesOpen(true)} className="flex items-center gap-2 px-4 py-2.5 border border-site-text/18 text-site-text/70 text-[12px] hover:border-site-text/40 transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
               <Tag size={14} /> Categorias
             </button>
           )}
           {canSeeHistory && (
-            <button onClick={openHistory} className="flex items-center gap-2 px-4 py-2.5 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] text-[12px] hover:border-[rgba(245,242,236,0.4)] transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+            <button onClick={openHistory} className="flex items-center gap-2 px-4 py-2.5 border border-site-text/18 text-site-text/70 text-[12px] hover:border-site-text/40 transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
               <History size={14} /> Histórico
             </button>
           )}
-          <button onClick={openForm} className="flex items-center gap-2 px-5 py-2.5 bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 transition-opacity" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+          <button onClick={openForm} className="flex items-center gap-2 px-5 py-2.5 bg-site-accent text-site-page text-[13px] hover:opacity-90 transition-opacity" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
             <Plus size={16} /> Novo item
           </button>
         </div>
@@ -309,10 +309,10 @@ export default function Inventory() {
       {/* Alerts banner */}
       {alerts.length > 0 && (
         <button onClick={() => setShowAlertsOnly(!showAlertsOnly)}
-          className={`w-full flex items-center gap-3 px-5 py-3 mb-6 border text-left transition-colors ${showAlertsOnly ? "border-[#e9b421] bg-[rgba(233,180,33,0.08)]" : "border-[rgba(233,180,33,0.4)]"}`}>
-          <AlertTriangle size={16} className="text-[#e9b421] flex-shrink-0" />
-          <p className="text-[13px] text-[rgba(245,242,236,0.8)]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
-            <span className="text-[#e9b421] font-bold">{alerts.length}</span> {alerts.length === 1 ? "item abaixo" : "itens abaixo"} do estoque mínimo —{" "}
+          className={`w-full flex items-center gap-3 px-5 py-3 mb-6 border text-left transition-colors ${showAlertsOnly ? "border-site-accent bg-site-accent/8" : "border-site-accent/40"}`}>
+          <AlertTriangle size={16} className="text-site-accent flex-shrink-0" />
+          <p className="text-[13px] text-site-text/80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+            <span className="text-site-accent font-bold">{alerts.length}</span> {alerts.length === 1 ? "item abaixo" : "itens abaixo"} do estoque mínimo —{" "}
             <span className="underline">{showAlertsOnly ? "mostrar todos" : "ver apenas alertas"}</span>
           </p>
         </button>
@@ -322,7 +322,7 @@ export default function Inventory() {
       <div className="flex flex-wrap gap-2 mb-6">
         {[ALL_CATEGORIES, ...categories].map((c) => (
           <button key={c} onClick={() => setCategoryFilter(c)}
-            className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${categoryFilter === c ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)] hover:text-[rgba(245,242,236,0.9)]"}`}
+            className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${categoryFilter === c ? "bg-site-accent text-site-page" : "border border-site-text/15 text-site-text/55 hover:text-site-text/90"}`}
             style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
             {c.toUpperCase()}
           </button>
@@ -330,25 +330,25 @@ export default function Inventory() {
       </div>
 
       {isLoading ? (
-        <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando estoque...</p>
+        <p className="text-[14px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando estoque...</p>
       ) : loadError ? (
         <div className="flex flex-col items-start gap-3">
           <p role="alert" className="text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{loadError}</p>
-          <button onClick={() => loadItems()} className="px-4 py-2 border border-[rgba(245,242,236,0.2)] text-[12px] text-[rgba(245,242,236,0.7)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+          <button onClick={() => loadItems()} className="px-4 py-2 border border-site-text/20 text-[12px] text-site-text/70 hover:text-site-accent" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
             TENTAR NOVAMENTE
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="text-[14px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Nenhum item cadastrado. Use &quot;Novo item&quot; para começar.
         </p>
       ) : (
-        <div className="border border-[rgba(245,242,236,0.08)] overflow-x-auto">
+        <div className="border border-site-text/8 overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[rgba(245,242,236,0.1)]">
+              <tr className="border-b border-site-text/10">
                 {["ITEM", "CATEGORIA", "FORNECEDOR", "SALDO", "MÍN.", "ATUALIZADO", ""].map((h) => (
-                  <th key={h} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
+                  <th key={h} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -357,27 +357,27 @@ export default function Inventory() {
                 const alert = isBelowMinimum(item);
                 const unit = UNIT_LABELS[item.unit];
                 return (
-                  <tr key={item.inventoryItemId} className={`border-b border-[rgba(245,242,236,0.06)] hover:bg-[rgba(245,242,236,0.02)] transition-colors ${alert ? "bg-[rgba(233,180,33,0.03)]" : ""}`}>
+                  <tr key={item.inventoryItemId} className={`border-b border-site-text/6 hover:bg-site-text/2 transition-colors ${alert ? "bg-site-accent/3" : ""}`}>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        {alert && <AlertTriangle size={13} className="text-[#e9b421] flex-shrink-0" />}
-                        <p className="text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{item.name}</p>
+                        {alert && <AlertTriangle size={13} className="text-site-accent flex-shrink-0" />}
+                        <p className="text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{item.name}</p>
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.55)] border border-[rgba(245,242,236,0.12)] px-2 py-0.5" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{item.category.toUpperCase()}</span>
+                      <span className="text-[11px] tracking-[1.5px] text-site-text/55 border border-site-text/12 px-2 py-0.5" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{item.category.toUpperCase()}</span>
                     </td>
-                    <td className="px-5 py-4 text-[13px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{item.supplierName}</td>
+                    <td className="px-5 py-4 text-[13px] text-site-text/55" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{item.supplierName}</td>
                     <td className="px-5 py-4">
-                      <span className={`text-[15px] ${alert ? "text-[#e9b421]" : "text-[#f5f2ec]"}`} style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
-                        {item.balance} <span className="text-[11px] text-[rgba(245,242,236,0.4)]">{unit}</span>
+                      <span className={`text-[15px] ${alert ? "text-site-accent" : "text-site-text"}`} style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+                        {item.balance} <span className="text-[11px] text-site-text/40">{unit}</span>
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-[13px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{item.minimumStock} {unit}</td>
-                    <td className="px-5 py-4 text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{new Date(item.updatedAt).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-5 py-4 text-[13px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{item.minimumStock} {unit}</td>
+                    <td className="px-5 py-4 text-[12px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{new Date(item.updatedAt).toLocaleDateString("pt-BR")}</td>
                     <td className="px-5 py-4">
                       <button onClick={() => openMovement(item)}
-                        className="flex items-center gap-1 px-3 py-1.5 border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.6)] text-[11px] hover:border-[#e9b421] hover:text-[#e9b421] transition-all"
+                        className="flex items-center gap-1 px-3 py-1.5 border border-site-text/15 text-site-text/60 text-[11px] hover:border-site-accent hover:text-site-accent transition-all"
                         style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                         <Package size={11} /> Movimentar
                       </button>
@@ -404,7 +404,7 @@ export default function Inventory() {
                   {categoryOptions.map((c) => <option key={c.inventoryCategoryId} value={c.inventoryCategoryId}>{c.name}</option>)}
                 </select>
                 {categoryOptions.length === 0 && (
-                  <p className="text-[12px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                  <p className="text-[12px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                     {canManageCategories ? 'Cadastre uma categoria em "Categorias".' : "Peça ao administrador para cadastrar as categorias."}
                   </p>
                 )}
@@ -424,7 +424,7 @@ export default function Inventory() {
             </div>
 
             {duplicateOf && (
-              <p role="alert" className="px-4 py-3 border border-[rgba(233,180,33,0.5)] text-[13px] text-[#e9b421]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+              <p role="alert" className="px-4 py-3 border border-site-accent/50 text-[13px] text-site-accent" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                 Já existe um item com o nome &quot;{duplicateOf.name}&quot; ({duplicateOf.category}). Confira se não é o mesmo item antes de cadastrar de novo.
               </p>
             )}
@@ -454,16 +454,16 @@ export default function Inventory() {
       {movementItem && createPortal(
         <Drawer title={`Movimentar: ${movementItem.name}`} onClose={() => setMovementItemId(null)}>
           <div className="flex flex-col gap-5">
-            <div className="p-4 border border-[rgba(245,242,236,0.1)] flex items-center justify-between">
-              <span className="text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Saldo atual</span>
-              <span className="text-[20px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{movementItem.balance} {UNIT_LABELS[movementItem.unit]}</span>
+            <div className="p-4 border border-site-text/10 flex items-center justify-between">
+              <span className="text-[13px] text-site-text/60" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Saldo atual</span>
+              <span className="text-[20px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{movementItem.balance} {UNIT_LABELS[movementItem.unit]}</span>
             </div>
 
             <DF label="TIPO DE MOVIMENTAÇÃO">
               <div className="grid grid-cols-2 gap-2">
                 {(["inbound", "outbound"] as const).map((t) => (
                   <button key={t} type="button" onClick={() => setMovementForm({ ...movementForm, type: t })}
-                    className={`h-[44px] flex items-center justify-center gap-2 text-[13px] border transition-all ${movementForm.type === t ? "border-[#e9b421] bg-[rgba(233,180,33,0.1)] text-[#e9b421]" : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)]"}`}
+                    className={`h-[44px] flex items-center justify-center gap-2 text-[13px] border transition-all ${movementForm.type === t ? "border-site-accent bg-site-accent/10 text-site-accent" : "border-site-text/15 text-site-text/50"}`}
                     style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                     {t === "inbound" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
                     {t === "inbound" ? "Entrada" : "Saída"}
@@ -511,46 +511,44 @@ export default function Inventory() {
                 <input type="date" value={historyFilter.to} onChange={(e) => setHistoryFilter({ ...historyFilter, to: e.target.value })} className="drw-inp [color-scheme:dark]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
               </DF>
             </div>
-            <button type="button" onClick={() => consultHistory(historyFilter)} disabled={history.status === "loading"} className="h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 disabled:opacity-60" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+            <button type="button" onClick={() => consultHistory(historyFilter)} disabled={history.status === "loading"} className="h-[48px] bg-site-accent text-site-page text-[13px] hover:opacity-90 disabled:opacity-60" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
               {history.status === "loading" ? "Consultando..." : "Consultar período"}
             </button>
           </div>
           {history.status === "loading" && (
-            <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando histórico...</p>
+            <p className="text-[14px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando histórico...</p>
           )}
           {history.status === "error" && (
             <p role="alert" className="text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{history.message}</p>
           )}
           {history.status === "loaded" && (
-            <div className="flex flex-col gap-px bg-[rgba(245,242,236,0.06)]">
+            <div className="flex flex-col gap-px bg-site-text/6">
               {history.movements.map((m) => (
-                <div key={m.stockMovementId} className="bg-[#171511] px-4 py-4 flex items-start justify-between">
+                <div key={m.stockMovementId} className="bg-site-card px-4 py-4 flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      {m.type === "inbound" ? <ArrowUp size={13} className="text-[#e9b421]" /> : <ArrowDown size={13} className="text-red-400" />}
-                      <span className={`text-[12px] tracking-[1.5px] ${m.type === "inbound" ? "text-[#e9b421]" : "text-red-400"}`} style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{m.type === "inbound" ? "ENTRADA" : "SAÍDA"}</span>
+                      {m.type === "inbound" ? <ArrowUp size={13} className="text-site-accent" /> : <ArrowDown size={13} className="text-red-400" />}
+                      <span className={`text-[12px] tracking-[1.5px] ${m.type === "inbound" ? "text-site-accent" : "text-red-400"}`} style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{m.type === "inbound" ? "ENTRADA" : "SAÍDA"}</span>
                     </div>
-                    <p className="text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{m.inventoryItem.name}</p>
-                    <p className="text-[12px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{m.reason} · {m.employee.name}</p>
+                    <p className="text-[14px] text-site-text" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{m.inventoryItem.name}</p>
+                    <p className="text-[12px] text-site-text/45" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{m.reason} · {m.employee.name}</p>
                   </div>
                   <div className="text-right flex-shrink-0 ml-4">
-                    <p className={`text-[18px] ${m.type === "inbound" ? "text-[#e9b421]" : "text-[rgba(245,242,236,0.6)]"}`} style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+                    <p className={`text-[18px] ${m.type === "inbound" ? "text-site-accent" : "text-site-text/60"}`} style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
                       {m.type === "inbound" ? "+" : "−"}{m.quantity} {UNIT_LABELS[m.inventoryItem.unit]}
                     </p>
-                    <p className="text-[11px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{new Date(m.movedAt).toLocaleString("pt-BR")}</p>
+                    <p className="text-[11px] text-site-text/35" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{new Date(m.movedAt).toLocaleString("pt-BR")}</p>
                   </div>
                 </div>
               ))}
               {history.movements.length === 0 && (
-                <p className="p-8 text-center text-[rgba(245,242,236,0.35)] text-[14px]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhuma movimentação no período.</p>
+                <p className="p-8 text-center text-site-text/35 text-[14px]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhuma movimentação no período.</p>
               )}
             </div>
           )}
         </Drawer>,
         document.body
       )}
-
-      <style>{`.drw-inp { width:100%; height:46px; padding:0 14px; background:#12100d; border:1px solid rgba(245,242,236,0.18); color:#f5f2ec; font-size:14px; outline:none; transition:border-color .15s; } .drw-inp:focus { border-color:#e9b421; } .drw-inp option { background:#1a1713; }`}</style>
     </div>
   );
 }
@@ -591,7 +589,7 @@ function CategoriesManager({ categories, onChanged }: { categories: InventoryCat
     run(() => removeInventoryCategory(inventoryCategoryId), CATEGORY_REMOVE_ERROR, () => setRemovingId(null));
   }
 
-  const smallButton = "px-3 py-1.5 border border-[rgba(245,242,236,0.18)] text-[11px] text-[rgba(245,242,236,0.65)] hover:border-[#e9b421] hover:text-[#e9b421] transition-all disabled:opacity-50";
+  const smallButton = "px-3 py-1.5 border border-site-text/18 text-[11px] text-site-text/65 hover:border-site-accent hover:text-site-accent transition-all disabled:opacity-50";
 
   return (
     <div className="flex flex-col gap-6">
@@ -601,16 +599,16 @@ function CategoriesManager({ categories, onChanged }: { categories: InventoryCat
             <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex.: Solventes" className="drw-inp" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
           </DF>
         </div>
-        <button onClick={add} disabled={isBusy} className="h-[46px] px-5 bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 disabled:opacity-60" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>Adicionar</button>
+        <button onClick={add} disabled={isBusy} className="h-[46px] px-5 bg-site-accent text-site-page text-[13px] hover:opacity-90 disabled:opacity-60" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>Adicionar</button>
       </div>
       {error && <p role="alert" className="text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{error}</p>}
 
-      <div className="border border-[rgba(245,242,236,0.08)]">
+      <div className="border border-site-text/8">
         {categories.length === 0 && (
-          <p className="p-6 text-center text-[14px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhuma categoria cadastrada.</p>
+          <p className="p-6 text-center text-[14px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhuma categoria cadastrada.</p>
         )}
         {categories.map((category) => (
-          <div key={category.inventoryCategoryId} className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(245,242,236,0.06)] last:border-b-0">
+          <div key={category.inventoryCategoryId} className="flex items-center gap-2 px-4 py-3 border-b border-site-text/6 last:border-b-0">
             {editingId === category.inventoryCategoryId ? (
               <>
                 <input aria-label="Novo nome da categoria" type="text" value={editingName} onChange={(e) => setEditingName(e.target.value)} className="drw-inp flex-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
@@ -619,7 +617,7 @@ function CategoriesManager({ categories, onChanged }: { categories: InventoryCat
               </>
             ) : removingId === category.inventoryCategoryId ? (
               <>
-                <p className="flex-1 text-[12px] text-[rgba(245,242,236,0.7)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                <p className="flex-1 text-[12px] text-site-text/70" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                   Remover &quot;{category.name}&quot;? Os itens dela continuam mostrando esse nome.
                 </p>
                 <button onClick={() => remove(category.inventoryCategoryId)} disabled={isBusy} className={smallButton}>Remover</button>
@@ -627,7 +625,7 @@ function CategoriesManager({ categories, onChanged }: { categories: InventoryCat
               </>
             ) : (
               <>
-                <p className="flex-1 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{category.name}</p>
+                <p className="flex-1 text-[14px] text-site-text" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>{category.name}</p>
                 <button onClick={() => { setEditingId(category.inventoryCategoryId); setEditingName(category.name); setRemovingId(null); setError(null); }} className={smallButton}>Renomear</button>
                 <button onClick={() => { setRemovingId(category.inventoryCategoryId); setEditingId(null); setError(null); }} className={smallButton}>Remover</button>
               </>
@@ -643,10 +641,10 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] border-l border-[rgba(245,242,236,0.12)]" style={{ background: "#171511" }}>
-        <div className="flex items-center justify-between px-8 py-6 border-b border-[rgba(245,242,236,0.08)]">
-          <h2 className="text-[20px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
-          <button onClick={onClose} className="text-[rgba(245,242,236,0.35)] hover:text-[rgba(245,242,236,0.9)] transition-colors"><X size={20} /></button>
+      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] bg-site-card border-l border-site-text/12">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-site-text/8">
+          <h2 className="text-[20px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
+          <button onClick={onClose} className="text-site-text/35 hover:text-site-text/90 transition-colors"><X size={20} /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-8 py-8">{children}</div>
       </aside>
@@ -657,8 +655,8 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
 function DrawerFooter({ onCancel, onConfirm, confirmLabel, isBusy }: { onCancel: () => void; onConfirm: () => void; confirmLabel: string; isBusy: boolean }) {
   return (
     <div className="flex gap-3 mt-8">
-      <button onClick={onCancel} disabled={isBusy} className="flex-1 h-[48px] border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.6)] text-[13px] hover:border-[rgba(245,242,236,0.35)] transition-colors disabled:opacity-50" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Cancelar</button>
-      <button onClick={onConfirm} disabled={isBusy} className="flex-1 h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{confirmLabel}</button>
+      <button onClick={onCancel} disabled={isBusy} className="flex-1 h-[48px] border border-site-text/18 text-site-text/60 text-[13px] hover:border-site-text/35 transition-colors disabled:opacity-50" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Cancelar</button>
+      <button onClick={onConfirm} disabled={isBusy} className="flex-1 h-[48px] bg-site-accent text-site-page text-[13px] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{confirmLabel}</button>
     </div>
   );
 }
@@ -666,7 +664,7 @@ function DrawerFooter({ onCancel, onConfirm, confirmLabel, isBusy }: { onCancel:
 function DF({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{label}</label>
+      <label className="text-[11px] tracking-[2px] text-site-text/50" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{label}</label>
       {children}
       {error && <p role="alert" className="text-[12px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{error}</p>}
     </div>

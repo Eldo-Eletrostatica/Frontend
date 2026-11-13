@@ -51,8 +51,8 @@ interface SaleFormState {
 const LOAD_ERROR_MESSAGE = "Não foi possível carregar as vendas.";
 const LAUNCH_ERROR_MESSAGE = "Não foi possível registrar a venda. Tente novamente.";
 const STATUS_STYLE: Record<SaleStatus, string> = {
-  queued: "text-[rgba(245,242,236,0.55)] bg-[rgba(245,242,236,0.08)]",
-  inProduction: "text-[#e9b421] bg-[rgba(233,180,33,0.15)]",
+  queued: "text-site-text/55 bg-site-text/8",
+  inProduction: "text-site-accent bg-site-accent/15",
   finishing: "text-blue-300 bg-[rgba(147,197,253,0.12)]",
   completed: "text-emerald-400 bg-[rgba(52,211,153,0.1)]",
 };
@@ -296,14 +296,14 @@ export default function Sales() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>LANÇAMENTO DE VENDAS</p>
-          <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Vendas</h1>
+          <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>LANÇAMENTO DE VENDAS</p>
+          <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Vendas</h1>
         </div>
         <button
           onClick={openSaleModal}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-5 py-2.5 bg-site-accent text-site-page text-[13px] hover:opacity-90 transition-opacity"
           style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
-          >
+        >
           <Plus size={16} /> Nova venda
         </button>
       </div>
@@ -314,26 +314,26 @@ export default function Sales() {
         </p>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-[rgba(245,242,236,0.08)] mb-px">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-site-text/8 mb-px">
         {[
           { label: "TOTAL VENDIDO", value: formatMoney(totalSales) },
           { label: "TOTAL COMISSÕES", value: formatMoney(totalCommission) },
           { label: "VENDAS NO PERÍODO", value: String(sales.length) },
           { label: "TICKET MÉDIO", value: formatMoney(ticketAverage) },
         ].map((k) => (
-          <div key={k.label} className="bg-[#12100d] px-6 py-5">
-            <p className="text-[28px] text-[#f5f2ec] leading-tight mb-1" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{k.value}</p>
-            <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{k.label}</p>
+          <div key={k.label} className="bg-site-page px-6 py-5">
+            <p className="text-[28px] text-site-text leading-tight mb-1" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{k.value}</p>
+            <p className="text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{k.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="flex gap-0 mb-6 mt-6 border-b border-[rgba(245,242,236,0.1)]">
+      <div className="flex gap-0 mb-6 mt-6 border-b border-site-text/10">
         {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-6 py-3 text-[13px] border-b-2 transition-all ${tab === t ? "border-[#e9b421] text-[#e9b421]" : "border-transparent text-[rgba(245,242,236,0.5)] hover:text-[rgba(245,242,236,0.8)]"}`}
+            className={`px-6 py-3 text-[13px] border-b-2 transition-all ${tab === t ? "border-site-accent text-site-accent" : "border-transparent text-site-text/50 hover:text-site-text/80"}`}
             style={{ fontFamily: "'Barlow:Medium', sans-serif" }}
           >
             {t}
@@ -346,7 +346,7 @@ export default function Sales() {
           <div className="flex flex-wrap gap-2 mb-5">
             <button
               onClick={() => setSellerFilter("Todos")}
-              className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${sellerFilter === "Todos" ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)]"}`}
+              className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${sellerFilter === "Todos" ? "bg-site-accent text-site-page" : "border border-site-text/15 text-site-text/55"}`}
               style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
             >
               TODOS
@@ -355,7 +355,7 @@ export default function Sales() {
               <button
                 key={seller.employeeId}
                 onClick={() => setSellerFilter(seller.employeeId)}
-                className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${sellerFilter === seller.employeeId ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)]"}`}
+                className={`px-4 py-1.5 text-[11px] tracking-[1.5px] transition-all ${sellerFilter === seller.employeeId ? "bg-site-accent text-site-page" : "border border-site-text/15 text-site-text/55"}`}
                 style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
               >
                 {seller.name.toUpperCase().split(" ")[0]}
@@ -364,7 +364,7 @@ export default function Sales() {
           </div>
 
           {isLoading && (
-            <p className="px-5 py-10 text-center text-[14px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+            <p className="px-5 py-10 text-center text-[14px] text-site-text/55" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
               Carregando vendas…
             </p>
           )}
@@ -376,32 +376,32 @@ export default function Sales() {
           )}
 
           {!isLoading && !loadError && (
-            <div className="border border-[rgba(245,242,236,0.08)] overflow-x-auto">
+            <div className="border border-site-text/8 overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[rgba(245,242,236,0.1)]">
+                  <tr className="border-b border-site-text/10">
                     {["PROTOCOLO", "CLIENTE", "ESCOPO", "VALOR", "VENDEDOR", "COMISSÃO", "DATA", "STATUS"].map((h) => (
-                      <th key={h} className="px-4 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
+                      <th key={h} className="px-4 py-4 text-left text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {visibleSales.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-4 py-10 text-center text-[14px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                      <td colSpan={8} className="px-4 py-10 text-center text-[14px] text-site-text/45" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                         Nenhuma venda lançada ainda.
                       </td>
                     </tr>
                   )}
                   {visibleSales.map((sale) => (
-                    <tr key={sale.orderId} className="border-b border-[rgba(245,242,236,0.06)] hover:bg-[rgba(245,242,236,0.02)]">
-                      <td className="px-4 py-4 text-[11px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{sale.trackingCode ?? "—"}</td>
-                      <td className="px-4 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{sale.customer.name}</td>
-                      <td className="px-4 py-4 text-[13px] text-[rgba(245,242,236,0.6)] max-w-[220px] truncate" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{sale.scope ?? "—"}</td>
-                      <td className="px-4 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{sale.finalPrice == null ? "—" : formatMoney(sale.finalPrice)}</td>
-                      <td className="px-4 py-4 text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{sellerNameOf(sellers, sale.sellerEmployeeId).split(" ")[0]}</td>
-                      <td className="px-4 py-4 text-[14px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{sale.commission == null ? "—" : formatMoney(sale.commission)}</td>
-                      <td className="px-4 py-4 text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{formatSoldAt(sale.soldAt)}</td>
+                    <tr key={sale.orderId} className="border-b border-site-text/6 hover:bg-site-text/2">
+                      <td className="px-4 py-4 text-[11px] text-site-text/45" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{sale.trackingCode ?? "—"}</td>
+                      <td className="px-4 py-4 text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{sale.customer.name}</td>
+                      <td className="px-4 py-4 text-[13px] text-site-text/60 max-w-[220px] truncate" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{sale.scope ?? "—"}</td>
+                      <td className="px-4 py-4 text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{sale.finalPrice == null ? "—" : formatMoney(sale.finalPrice)}</td>
+                      <td className="px-4 py-4 text-[13px] text-site-text/60" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{sellerNameOf(sellers, sale.sellerEmployeeId).split(" ")[0]}</td>
+                      <td className="px-4 py-4 text-[14px] text-site-accent" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{sale.commission == null ? "—" : formatMoney(sale.commission)}</td>
+                      <td className="px-4 py-4 text-[12px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{formatSoldAt(sale.soldAt)}</td>
                       <td className="px-4 py-4">
                         <span className={`text-[10px] tracking-[1.5px] px-2 py-1 ${STATUS_STYLE[sale.status]}`} style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
                           {SALE_STATUS_LABELS[sale.status].toUpperCase()}
@@ -417,24 +417,24 @@ export default function Sales() {
       )}
 
       {tab === "Comissões" && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px bg-[rgba(245,242,236,0.08)]">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px bg-site-text/8">
           {ranking.length === 0 && (
-            <div className="bg-[#12100d] p-6 col-span-full">
-              <p className="text-[14px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Sem vendedores para rankear.</p>
+            <div className="bg-site-page p-6 col-span-full">
+              <p className="text-[14px] text-site-text/45" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Sem vendedores para rankear.</p>
             </div>
           )}
           {ranking.map((r, i) => (
-            <div key={r.seller} className="bg-[#12100d] p-6">
+            <div key={r.seller} className="bg-site-page p-6">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>#{i + 1}</span>
-                {i === 0 && <Trophy size={16} className="text-[#e9b421]" />}
-                {i === 1 && <TrendingUp size={16} className="text-[rgba(245,242,236,0.4)]" />}
+                <span className="text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>#{i + 1}</span>
+                {i === 0 && <Trophy size={16} className="text-site-accent" />}
+                {i === 1 && <TrendingUp size={16} className="text-site-text/40" />}
               </div>
-              <p className="text-[15px] text-[#f5f2ec] mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{r.seller.split(" ")[0]}</p>
-              <p className="text-[28px] text-[#e9b421] leading-tight mb-1" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{formatMoney(r.commission)}</p>
-              <p className="text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>em comissão</p>
-              <div className="mt-4 pt-4 border-t border-[rgba(245,242,236,0.08)]">
-                <p className="text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{formatMoney(r.total)} vendido · {r.count} venda(s)</p>
+              <p className="text-[15px] text-site-text mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{r.seller.split(" ")[0]}</p>
+              <p className="text-[28px] text-site-accent leading-tight mb-1" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{formatMoney(r.commission)}</p>
+              <p className="text-[12px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>em comissão</p>
+              <div className="mt-4 pt-4 border-t border-site-text/8">
+                <p className="text-[13px] text-site-text/60" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{formatMoney(r.total)} vendido · {r.count} venda(s)</p>
               </div>
             </div>
           ))}
@@ -444,8 +444,8 @@ export default function Sales() {
       {modal === "add-sale" && createPortal(
         <Drawer title="Nova venda" onClose={() => !isSaving && setModal(null)}>
           <div className="flex flex-col gap-5">
-            <div className="px-4 py-3 border-l-2 border-[#e9b421]" style={{ background: "rgba(233,180,33,0.04)" }}>
-              <p className="text-[11px] text-[rgba(245,242,236,0.55)] leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+            <div className="px-4 py-3 border-l-2 border-site-accent bg-site-accent/4">
+              <p className="text-[11px] text-site-text/55 leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                 Ao registrar a venda, uma OS é criada automaticamente e o cliente recebe um protocolo para acompanhar o status.
               </p>
             </div>
@@ -461,7 +461,7 @@ export default function Sales() {
                     type="button"
                     disabled={isSaving}
                     onClick={() => setSaleForm((current) => ({ ...current, mode }))}
-                    className={`h-[44px] border text-[12px] tracking-[1px] transition-all ${saleForm.mode === mode ? "border-[#e9b421] bg-[rgba(233,180,33,0.1)] text-[#e9b421]" : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)]"}`}
+                    className={`h-[44px] border text-[12px] tracking-[1px] transition-all ${saleForm.mode === mode ? "border-site-accent bg-site-accent/10 text-site-accent" : "border-site-text/15 text-site-text/50"}`}
                     style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
                   >
                     {label}
@@ -491,7 +491,7 @@ export default function Sales() {
                 onChange={(e) => setSaleForm({ ...saleForm, scope: e.target.value })}
                 rows={2}
                 placeholder="Peças, processo, acabamento…"
-                className="w-full px-4 py-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] placeholder-[rgba(245,242,236,0.3)] outline-none focus:border-[#e9b421] resize-none transition-colors"
+                className="w-full px-4 py-3 bg-site-page border border-site-text/18 text-site-text text-[14px] placeholder-site-text/30 outline-none focus:border-site-accent resize-none transition-colors"
                 style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
               />
             </DF>
@@ -502,7 +502,7 @@ export default function Sales() {
                 value={saleForm.dueDate}
                 disabled={isSaving}
                 onChange={(e) => setSaleForm({ ...saleForm, dueDate: e.target.value })}
-                className="drw-inp"
+                className="drw-inp [color-scheme:dark]"
                 style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
               />
             </DF>
@@ -510,8 +510,8 @@ export default function Sales() {
             {saleForm.mode === "approved" ? (
               <DF label="ORÇAMENTO APROVADO">
                 {approvedQuotes.length === 0 ? (
-                  <p className="text-[13px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-                    Nenhum orçamento aprovado. Aprove um na tela de <Link href={ROUTES.quotes} className="underline text-[#e9b421]">Orçamentos</Link> ou lance uma venda para cliente novo.
+                  <p className="text-[13px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                    Nenhum orçamento aprovado. Aprove um na tela de <Link href={ROUTES.quotes} className="underline text-site-accent">Orçamentos</Link> ou lance uma venda para cliente novo.
                   </p>
                 ) : (
                   <select
@@ -532,7 +532,7 @@ export default function Sales() {
               </DF>
             ) : (
               <>
-                <p className="text-[10px] tracking-[2.5px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>DADOS DO CLIENTE</p>
+                <p className="text-[10px] tracking-[2.5px] text-site-text/35" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>DADOS DO CLIENTE</p>
 
                 <DF label="TIPO DE CLIENTE">
                   <div className="grid grid-cols-2 gap-2">
@@ -545,7 +545,7 @@ export default function Sales() {
                         type="button"
                         disabled={isSaving}
                         onClick={() => setSaleForm({ ...saleForm, customerType: type })}
-                        className={`h-[44px] border text-[12px] tracking-[1px] transition-all ${saleForm.customerType === type ? "border-[#e9b421] bg-[rgba(233,180,33,0.1)] text-[#e9b421]" : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)]"}`}
+                        className={`h-[44px] border text-[12px] tracking-[1px] transition-all ${saleForm.customerType === type ? "border-site-accent bg-site-accent/10 text-site-accent" : "border-site-text/15 text-site-text/50"}`}
                         style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
                       >
                         {label}
@@ -570,12 +570,12 @@ export default function Sales() {
                 </div>
 
                 <div className="flex items-center justify-between mt-2">
-                  <p className="text-[10px] tracking-[2.5px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ITENS</p>
+                  <p className="text-[10px] tracking-[2.5px] text-site-text/35" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ITENS</p>
                   <button
                     type="button"
                     disabled={isSaving || paints.length === 0 || materials.length === 0}
                     onClick={() => setSaleForm((current) => ({ ...current, items: [...current.items, emptyItem(paints, materials)] }))}
-                    className="flex items-center gap-1.5 text-[11px] text-[#e9b421] disabled:opacity-40"
+                    className="flex items-center gap-1.5 text-[11px] text-site-accent disabled:opacity-40"
                     style={{ fontFamily: "'Barlow:Medium', sans-serif" }}
                   >
                     <Plus size={12} /> Adicionar item
@@ -589,11 +589,11 @@ export default function Sales() {
                 )}
 
                 {saleForm.items.map((item, index) => (
-                  <div key={item.key} className="p-4 border border-[rgba(245,242,236,0.1)] flex flex-col gap-3">
+                  <div key={item.key} className="p-4 border border-site-text/10 flex flex-col gap-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-[12px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Item {index + 1}</p>
+                      <p className="text-[12px] text-site-text/55" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Item {index + 1}</p>
                       {saleForm.items.length > 1 && (
-                        <button type="button" disabled={isSaving} onClick={() => setSaleForm((current) => ({ ...current, items: current.items.filter((row) => row.key !== item.key) }))} className="text-[rgba(245,242,236,0.35)] hover:text-red-300 transition-colors">
+                        <button type="button" disabled={isSaving} onClick={() => setSaleForm((current) => ({ ...current, items: current.items.filter((row) => row.key !== item.key) }))} className="text-site-text/35 hover:text-red-300 transition-colors">
                           <Trash2 size={14} />
                         </button>
                       )}
@@ -638,9 +638,6 @@ export default function Sales() {
         </Drawer>,
         document.body,
       )}
-
-
-      <style>{`.drw-inp { width:100%; height:46px; padding:0 14px; background:#12100d; border:1px solid rgba(245,242,236,0.18); color:#f5f2ec; font-size:14px; outline:none; transition:border-color .15s; } .drw-inp:focus { border-color:#e9b421; } .drw-inp option { background:#1a1713; } .drw-inp:disabled { opacity:0.55; }`}</style>
     </div>
   );
 }
@@ -649,10 +646,10 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] border-l border-[rgba(245,242,236,0.12)]" style={{ background: "#171511" }}>
-        <div className="flex items-center justify-between px-8 py-6 border-b border-[rgba(245,242,236,0.08)]">
-          <h2 className="text-[20px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
-          <button onClick={onClose} className="text-[rgba(245,242,236,0.35)] hover:text-[rgba(245,242,236,0.9)] transition-colors"><X size={20} /></button>
+      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] bg-site-card border-l border-site-text/12">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-site-text/8">
+          <h2 className="text-[20px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
+          <button onClick={onClose} className="text-site-text/35 hover:text-site-text/90 transition-colors"><X size={20} /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-8 py-8">{children}</div>
       </aside>
@@ -676,7 +673,7 @@ function DrawerFooter({
       <button
         onClick={onCancel}
         disabled={disabled}
-        className="flex-1 h-[48px] border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.6)] text-[13px] disabled:opacity-50"
+        className="flex-1 h-[48px] border border-site-text/18 text-site-text/60 text-[13px] disabled:opacity-50"
         style={{ fontFamily: "'Barlow:Medium', sans-serif" }}
       >
         Cancelar
@@ -684,7 +681,7 @@ function DrawerFooter({
       <button
         onClick={onConfirm}
         disabled={disabled}
-        className="flex-1 h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 disabled:opacity-60"
+        className="flex-1 h-[48px] bg-site-accent text-site-page text-[13px] hover:opacity-90 disabled:opacity-60"
         style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
       >
         {confirmLabel}
@@ -696,7 +693,7 @@ function DrawerFooter({
 function DF({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{label}</label>
+      <label className="text-[11px] tracking-[2px] text-site-text/50" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{label}</label>
       {children}
     </div>
   );

@@ -116,13 +116,13 @@ export default function Quotes() {
   return (
     <div>
       <div className="mb-10">
-        <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+        <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
           ATENDIMENTO PESSOA JURÍDICA
         </p>
-        <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+        <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
           Orçamentos
         </h1>
-        <p className="mt-2 text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="mt-2 text-[14px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Pedidos feitos pelo simulador e por PDF no site. Envie o valor ao cliente, registre a resposta e lance a venda quando ele aprovar.
         </p>
       </div>
@@ -134,7 +134,7 @@ export default function Quotes() {
             type="button"
             onClick={() => setFilter(option.value)}
             aria-pressed={filter === option.value}
-            className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${filter === option.value ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)] hover:text-[rgba(245,242,236,0.9)]"}`}
+            className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${filter === option.value ? "bg-site-accent text-site-page" : "border border-site-text/15 text-site-text/55 hover:text-site-text/90"}`}
             style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
           >
             {option.label.toUpperCase()}
@@ -157,7 +157,7 @@ export default function Quotes() {
       )}
 
       {listState.kind === "loading" && (
-        <p className="px-5 py-10 text-center text-[14px] text-[rgba(245,242,236,0.35)] border border-[rgba(245,242,236,0.08)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="px-5 py-10 text-center text-[14px] text-site-text/35 border border-site-text/8" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Carregando orçamentos...
         </p>
       )}
@@ -165,14 +165,14 @@ export default function Quotes() {
       {listState.kind === "failed" && (
         <div role="alert" className="px-5 py-10 text-center border border-red-500/30">
           <p className="text-[14px] text-red-300 mb-4" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{listState.message}</p>
-          <button type="button" onClick={reload} className="px-5 py-2.5 border border-[rgba(245,242,236,0.2)] text-[13px] text-[#f5f2ec] hover:border-[#e9b421] hover:text-[#e9b421] transition-colors" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+          <button type="button" onClick={reload} className="px-5 py-2.5 border border-site-text/20 text-[13px] text-site-text hover:border-site-accent hover:text-site-accent transition-colors" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
             Tentar novamente
           </button>
         </div>
       )}
 
       {listState.kind === "loaded" && visibleQuotes.length === 0 && (
-        <p className="px-5 py-10 text-center text-[14px] text-[rgba(245,242,236,0.35)] border border-[rgba(245,242,236,0.08)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="px-5 py-10 text-center text-[14px] text-site-text/35 border border-site-text/8" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           {EMPTY_LIST_MESSAGE[filter]}
         </p>
       )}
@@ -199,7 +199,7 @@ function QuoteCard({ quote, isUpdating, onChangeStatus }: QuoteCardProps) {
   const [priceError, setPriceError] = useState("");
   const canSendValue = quote.status !== "approved";
   const sendLabel = quote.status === "requested" ? "Enviar valor" : quote.status === "rejected" ? "Reabrir com novo valor" : "Reenviar valor";
-  const linkClassName = "flex items-center gap-2 text-[13px] text-[rgba(245,242,236,0.7)] hover:text-[#e9b421] transition-colors break-all";
+  const linkClassName = "flex items-center gap-2 text-[13px] text-site-text/70 hover:text-site-accent transition-colors break-all";
 
   function sendValue() {
     const finalPrice = Number(price);
@@ -212,16 +212,16 @@ function QuoteCard({ quote, isUpdating, onChangeStatus }: QuoteCardProps) {
   }
 
   return (
-    <li data-order-id={quote.orderId} className="border border-[rgba(245,242,236,0.08)] bg-[rgba(245,242,236,0.015)] px-5 py-5 flex flex-col xl:flex-row gap-5">
+    <li data-order-id={quote.orderId} className="border border-site-text/8 bg-site-text/2 px-5 py-5 flex flex-col xl:flex-row gap-5">
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-3 mb-1">
-          <p className="text-[15px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{quote.customerName}</p>
+          <p className="text-[15px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{quote.customerName}</p>
           <StatusTag status={quote.status} />
-          <span className="text-[10px] tracking-[1.5px] text-[rgba(245,242,236,0.4)] border border-[rgba(245,242,236,0.12)] px-2 py-0.5" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+          <span className="text-[10px] tracking-[1.5px] text-site-text/40 border border-site-text/12 px-2 py-0.5" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
             {quote.source === "pdf" ? "PDF" : "SIMULADOR"}
           </span>
         </div>
-        <p className="text-[12px] text-[rgba(245,242,236,0.4)] mb-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="text-[12px] text-site-text/40 mb-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           {quote.customerDocument ? `CNPJ ${formatCnpj(quote.customerDocument)} · ` : ""}Recebido em {DATE_TIME_FORMAT.format(new Date(quote.createdAt))}
           {quote.dueDate ? ` · Prazo desejado ${formatDueDate(quote.dueDate)}` : ""}
         </p>
@@ -229,14 +229,14 @@ function QuoteCard({ quote, isUpdating, onChangeStatus }: QuoteCardProps) {
         {quote.items.length > 0 && (
           <ul className="mb-3 flex flex-col gap-1">
             {quote.items.map((item, index) => (
-              <li key={index} className="text-[13px] text-[rgba(245,242,236,0.75)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+              <li key={index} className="text-[13px] text-site-text/75" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                 {item.paintName} em {item.materialName}: {AREA_FORMAT.format(item.areaM2)} m² × {item.quantity}
               </li>
             ))}
           </ul>
         )}
         {quote.minPrice !== null && quote.maxPrice !== null && (
-          <p className="mb-3 text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <p className="mb-3 text-[13px] text-site-text/60" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             Faixa mostrada ao cliente: {BRL.format(quote.minPrice)} a {BRL.format(quote.maxPrice)}
           </p>
         )}
@@ -246,18 +246,18 @@ function QuoteCard({ quote, isUpdating, onChangeStatus }: QuoteCardProps) {
           </a>
         )}
         {quote.customerMessage && (
-          <p className="text-[14px] text-[rgba(245,242,236,0.75)] whitespace-pre-line break-words" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <p className="text-[14px] text-site-text/75 whitespace-pre-line break-words" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             {quote.customerMessage}
           </p>
         )}
         {quote.finalPrice !== null && (
-          <p className="mt-3 text-[14px] text-[#e9b421]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+          <p className="mt-3 text-[14px] text-site-accent" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
             Valor enviado: {BRL.format(quote.finalPrice)}
           </p>
         )}
       </div>
 
-      <div className="xl:w-[280px] flex flex-col gap-2.5 xl:border-l xl:border-[rgba(245,242,236,0.07)] xl:pl-5" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+      <div className="xl:w-[280px] flex flex-col gap-2.5 xl:border-l xl:border-site-text/7 xl:pl-5" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
         <a href={`tel:${onlyDigits(quote.customerPhone)}`} className={linkClassName} data-quote-link="phone">
           <Phone size={14} className="flex-shrink-0" /> {quote.customerPhone}
         </a>
@@ -270,7 +270,7 @@ function QuoteCard({ quote, isUpdating, onChangeStatus }: QuoteCardProps) {
 
         {canSendValue && (
           <label className="mt-2 flex flex-col gap-1.5">
-            <span className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>VALOR FINAL (R$)</span>
+            <span className="text-[11px] tracking-[2px] text-site-text/45" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>VALOR FINAL (R$)</span>
             <input
               type="number"
               min="0.01"
@@ -278,7 +278,7 @@ function QuoteCard({ quote, isUpdating, onChangeStatus }: QuoteCardProps) {
               value={price}
               disabled={isUpdating}
               onChange={(event) => setPrice(event.target.value)}
-              className="h-[40px] px-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421]"
+              className="h-[40px] px-3 bg-site-card border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent"
             />
             {priceError && <span role="alert" className="text-[12px] text-red-300">{priceError}</span>}
           </label>
@@ -298,7 +298,7 @@ function QuoteCard({ quote, isUpdating, onChangeStatus }: QuoteCardProps) {
           {quote.status === "approved" && (
             <Link
               href={`${ROUTES.sales}?orderId=${quote.orderId}`}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] tracking-[0.5px] bg-[#e9b421] text-[#12100d] hover:opacity-90 transition-opacity"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] tracking-[0.5px] bg-site-accent text-site-page hover:opacity-90 transition-opacity"
               style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
               data-quote-action="launch-sale"
             >
@@ -322,7 +322,7 @@ function ActionButton({ children, icon, onClick, disabled, primary = false }: { 
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] tracking-[0.5px] transition-opacity disabled:opacity-50 ${primary ? "bg-[#e9b421] text-[#12100d] hover:opacity-90" : "border border-[rgba(245,242,236,0.2)] text-[rgba(245,242,236,0.75)] hover:border-[rgba(245,242,236,0.4)]"}`}
+      className={`flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] tracking-[0.5px] transition-opacity disabled:opacity-50 ${primary ? "bg-site-accent text-site-page hover:opacity-90" : "border border-site-text/20 text-site-text/75 hover:border-site-text/40"}`}
       style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
     >
       {icon} {children}
@@ -331,7 +331,7 @@ function ActionButton({ children, icon, onClick, disabled, primary = false }: { 
 }
 
 const STATUS_TAG_STYLE: Record<QuoteStatus, string> = {
-  requested: "bg-[rgba(233,180,33,0.12)] text-[#e9b421]",
+  requested: "bg-site-accent/12 text-site-accent",
   sent: "bg-[rgba(96,165,250,0.12)] text-blue-300",
   approved: "bg-[rgba(74,222,128,0.1)] text-green-400",
   rejected: "bg-[rgba(248,113,113,0.1)] text-red-300",

@@ -30,8 +30,8 @@ interface Props {
 }
 
 const FALLBACK_ERROR = "Não foi possível enviar o pedido. Tente novamente.";
-const INPUT_CLASS = "w-full h-[46px] px-4 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] placeholder-[rgba(245,242,236,0.3)] outline-none focus:border-[#e9b421] transition-colors";
-const TEXTAREA_CLASS = "w-full min-h-[92px] px-4 py-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[14px] placeholder-[rgba(245,242,236,0.3)] outline-none focus:border-[#e9b421] transition-colors resize-y";
+const INPUT_CLASS = "w-full h-[46px] px-4 bg-site-card border border-site-text/18 text-site-text text-[14px] placeholder-site-text/30 outline-none focus:border-site-accent transition-colors [&>option]:bg-site-card";
+const TEXTAREA_CLASS = "w-full min-h-[92px] px-4 py-3 bg-site-card border border-site-text/18 text-site-text text-[14px] placeholder-site-text/30 outline-none focus:border-site-accent transition-colors resize-y";
 
 let nextItemKey = 0;
 
@@ -163,18 +163,18 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
 
   return (
     <div className="max-w-[1240px] mx-auto px-6 pt-16 pb-20">
-      <div className="border-b border-[rgba(245,242,236,0.12)] pb-10 mb-10">
-        <p className="text-[13px] tracking-[2.86px] text-[#e9b421] mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONTATO · PESSOA JURÍDICA</p>
-        <h1 className="text-[48px] text-[#f5f2ec] leading-[1.05] tracking-[-1.44px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Orçamento para<br />empresas</h1>
-        <p className="mt-5 max-w-[720px] text-[15px] text-[rgba(245,242,236,0.55)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+      <div className="border-b border-site-text/12 pb-10 mb-10">
+        <p className="text-[13px] tracking-[2.86px] text-site-accent mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONTATO · PESSOA JURÍDICA</p>
+        <h1 className="text-[48px] text-site-text leading-[1.05] tracking-[-1.44px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Orçamento para<br />empresas</h1>
+        <p className="mt-5 max-w-[720px] text-[15px] text-site-text/55 leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           {isEstimatorAvailable
             ? "Escolha como prefere pedir: envie o projeto em PDF ou preencha as peças no simulador para ver uma estimativa inicial na hora e, se quiser, solicitar o orçamento formal."
             : "Envie o projeto em PDF. Nossa equipe analisa o pedido e responde em até 48 horas."}
         </p>
       </div>
 
-      <section className="relative overflow-hidden border border-[rgba(233,180,33,0.32)] bg-[#171511] p-7 md:p-10 mb-8">
-        <div className="absolute top-0 left-0 h-full w-1 bg-[#e9b421]" />
+      <section className="relative overflow-hidden border border-site-accent/32 bg-site-card p-7 md:p-10 mb-8">
+        <div className="absolute top-0 left-0 h-full w-1 bg-site-accent" />
         {sentPdfName ? (
           <div className="flex flex-col sm:flex-row sm:items-center gap-5" role="status">
             <div className="w-14 h-14 rounded-full bg-[rgba(52,211,153,0.1)] border border-emerald-500/40 flex items-center justify-center flex-shrink-0">
@@ -182,11 +182,11 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
             </div>
             <div>
               <p className="text-[11px] tracking-[2.4px] text-emerald-400 mb-2" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>PROJETO RECEBIDO</p>
-              <h2 className="text-[24px] text-[#f5f2ec] mb-2" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Nossa equipe fará a análise manual</h2>
-              <p className="text-[14px] text-[rgba(245,242,236,0.62)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-                O arquivo <strong className="text-[rgba(245,242,236,0.85)]">{sentPdfName}</strong> foi enviado. Nossa equipe responde com o orçamento em até 48 horas.
+              <h2 className="text-[24px] text-site-text mb-2" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Nossa equipe fará a análise manual</h2>
+              <p className="text-[14px] text-site-text/62 leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                O arquivo <strong className="text-site-text/85">{sentPdfName}</strong> foi enviado. Nossa equipe responde com o orçamento em até 48 horas.
               </p>
-              <button type="button" onClick={() => setSentPdfName("")} className="mt-4 text-[12px] text-[#e9b421] hover:opacity-80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Enviar outro projeto</button>
+              <button type="button" onClick={() => setSentPdfName("")} className="mt-4 text-[12px] text-site-accent hover:opacity-80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Enviar outro projeto</button>
             </div>
           </div>
         ) : (
@@ -194,19 +194,19 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
             <div className="grid md:grid-cols-[1fr_auto] gap-8 items-center">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <FileText size={22} className="text-[#e9b421]" />
-                  <p className="text-[11px] tracking-[2.4px] text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>{isEstimatorAvailable ? "CAMINHO RECOMENDADO" : "ORÇAMENTO PELA EQUIPE"}</p>
+                  <FileText size={22} className="text-site-accent" />
+                  <p className="text-[11px] tracking-[2.4px] text-site-accent" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>{isEstimatorAvailable ? "CAMINHO RECOMENDADO" : "ORÇAMENTO PELA EQUIPE"}</p>
                 </div>
-                <h2 className="text-[28px] text-[#f5f2ec] leading-tight mb-3" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Enviar projeto em PDF</h2>
-                <p className="text-[15px] text-[rgba(245,242,236,0.62)] leading-[1.7] max-w-[680px]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                <h2 className="text-[28px] text-site-text leading-tight mb-3" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Enviar projeto em PDF</h2>
+                <p className="text-[15px] text-site-text/62 leading-[1.7] max-w-[680px]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                   Recomendado para pedidos com múltiplas peças ou lotes grandes. Envie plantas, medidas e especificações em um único arquivo de até 10 MB para uma análise mais precisa da equipe.
                 </p>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="min-w-[250px] min-h-[132px] px-7 py-6 border border-dashed border-[#e9b421] bg-[rgba(233,180,33,0.05)] cursor-pointer flex flex-col items-center justify-center text-center hover:bg-[rgba(233,180,33,0.09)] transition-colors">
-                  <Upload size={22} className="text-[#e9b421] mb-3" />
-                  <span className="text-[14px] text-[#f5f2ec] max-w-[240px] break-words" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{pdfFields.file ? pdfFields.file.name : "Selecionar arquivo PDF"}</span>
-                  <span className="text-[11px] text-[rgba(245,242,236,0.4)] mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{pdfFields.file ? "Clique para trocar o arquivo" : "Somente arquivos .pdf"}</span>
+                <label className="min-w-[250px] min-h-[132px] px-7 py-6 border border-dashed border-site-accent bg-site-accent/5 cursor-pointer flex flex-col items-center justify-center text-center hover:bg-site-accent/9 transition-colors">
+                  <Upload size={22} className="text-site-accent mb-3" />
+                  <span className="text-[14px] text-site-text max-w-[240px] break-words" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{pdfFields.file ? pdfFields.file.name : "Selecionar arquivo PDF"}</span>
+                  <span className="text-[11px] text-site-text/40 mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{pdfFields.file ? "Clique para trocar o arquivo" : "Somente arquivos .pdf"}</span>
                   <input type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(event) => setPdfFields({ ...pdfFields, file: event.target.files?.[0] ?? null })} />
                 </label>
                 <FieldError message={getFieldError("pdf", "file")} />
@@ -228,7 +228,7 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
             </div>
             <SubmitError message={submitError?.path === "pdf" ? submitError.message : undefined} />
             <div className="mt-6 flex justify-end">
-              <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-2 h-[48px] px-7 rounded-full bg-[#e9b421] text-[#12100d] text-[14px] disabled:opacity-50" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+              <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-2 h-[48px] px-7 rounded-full bg-site-accent text-site-page text-[14px] disabled:opacity-50" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
                 <Upload size={16} /> {submittingPath === "pdf" ? "Enviando..." : "Enviar projeto"}
               </button>
             </div>
@@ -237,20 +237,20 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
       </section>
 
       {isEstimatorAvailable && (
-        <section className="border border-[rgba(245,242,236,0.1)] bg-[rgba(23,21,17,0.55)]">
+        <section className="border border-site-text/10 bg-site-card/55">
           <button type="button" onClick={() => setIsEstimatorOpen(!isEstimatorOpen)} aria-expanded={isEstimatorOpen} className="w-full px-6 py-5 flex items-center justify-between gap-4 text-left">
             <div className="flex items-center gap-4">
-              <Calculator size={18} className="text-[rgba(245,242,236,0.42)]" />
+              <Calculator size={18} className="text-site-text/42" />
               <div>
-                <p className="text-[14px] text-[rgba(245,242,236,0.74)]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>Prefere preencher item a item?</p>
-                <p className="text-[12px] text-[rgba(245,242,236,0.38)] mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Use o simulador para obter uma estimativa inicial.</p>
+                <p className="text-[14px] text-site-text/74" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>Prefere preencher item a item?</p>
+                <p className="text-[12px] text-site-text/38 mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Use o simulador para obter uma estimativa inicial.</p>
               </div>
             </div>
-            <ChevronDown size={18} className={`text-[rgba(245,242,236,0.45)] transition-transform ${isEstimatorOpen ? "rotate-180" : ""}`} />
+            <ChevronDown size={18} className={`text-site-text/45 transition-transform ${isEstimatorOpen ? "rotate-180" : ""}`} />
           </button>
 
           {isEstimatorOpen && (
-            <div className="border-t border-[rgba(245,242,236,0.08)] p-6 md:p-8">
+            <div className="border-t border-site-text/8 p-6 md:p-8">
               {isQuoteRequested ? (
                 <QuoteRequested onRestart={startNewEstimate} />
               ) : priceRange ? (
@@ -282,7 +282,7 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                     </div>
                     <SubmitError message={submitError?.path === "estimator" ? submitError.message : undefined} />
                     <div className="mt-8 flex justify-end">
-                      <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-2 h-[48px] px-7 rounded-full bg-[#e9b421] text-[#12100d] text-[14px] disabled:opacity-50" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+                      <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-2 h-[48px] px-7 rounded-full bg-site-accent text-site-page text-[14px] disabled:opacity-50" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
                         <Send size={16} /> {submittingPath === "estimator" ? "Enviando..." : "Solicitar orçamento formal"}
                       </button>
                     </div>
@@ -293,11 +293,11 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                   <SectionTitle>PEÇAS DO PROJETO</SectionTitle>
                   <div className="flex flex-col gap-5 mt-5">
                     {estimatorFields.items.map((item, index) => (
-                      <div key={item.key} className="border border-[rgba(245,242,236,0.08)] p-5" data-testid="quote-item">
+                      <div key={item.key} className="border border-site-text/8 p-5" data-testid="quote-item">
                         <div className="flex items-center justify-between mb-4">
-                          <p className="text-[12px] tracking-[2px] text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>PEÇA {index + 1}</p>
+                          <p className="text-[12px] tracking-[2px] text-site-accent" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>PEÇA {index + 1}</p>
                           {estimatorFields.items.length > 1 && (
-                            <button type="button" onClick={() => removeItem(item.key)} className="flex items-center gap-1 text-[12px] text-[rgba(245,242,236,0.45)] hover:text-red-400" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+                            <button type="button" onClick={() => removeItem(item.key)} className="flex items-center gap-1 text-[12px] text-site-text/45 hover:text-red-400" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                               <Trash2 size={14} /> Remover
                             </button>
                           )}
@@ -329,13 +329,13 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
                         </div>
                       </div>
                     ))}
-                    <button type="button" onClick={addItem} className="self-start flex items-center gap-2 h-[40px] px-5 border border-dashed border-[rgba(245,242,236,0.25)] text-[13px] text-[rgba(245,242,236,0.7)] hover:border-[#e9b421] hover:text-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+                    <button type="button" onClick={addItem} className="self-start flex items-center gap-2 h-[40px] px-5 border border-dashed border-site-text/25 text-[13px] text-site-text/70 hover:border-site-accent hover:text-site-accent transition-colors" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                       <Plus size={15} /> Adicionar peça
                     </button>
                   </div>
                   <SubmitError message={submitError?.path === "priceRange" ? submitError.message : undefined} />
                   <div className="mt-8 flex justify-end">
-                    <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-3 h-[48px] px-7 border border-[rgba(245,242,236,0.2)] text-[rgba(245,242,236,0.78)] text-[14px] hover:border-[#e9b421] hover:text-[#e9b421] transition-colors disabled:opacity-50" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+                    <button type="submit" disabled={submittingPath !== null} className="flex items-center gap-3 h-[48px] px-7 border border-site-text/20 text-site-text/78 text-[14px] hover:border-site-accent hover:text-site-accent transition-colors disabled:opacity-50" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                       <Calculator size={16} /> {submittingPath === "priceRange" ? "Calculando..." : "Calcular estimativa"}
                     </button>
                   </div>
@@ -352,20 +352,20 @@ export default function ContactPJPage({ estimatorOptions }: Props) {
 function PriceRangeResult({ priceRange, onAdjust }: { priceRange: PriceRange; onAdjust: () => void }) {
   return (
     <div className="max-w-[780px]" role="status">
-      <p className="text-[11px] tracking-[2.4px] text-[#e9b421] mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>FAIXA ESTIMADA</p>
-      <p className="text-[34px] md:text-[44px] text-[#f5f2ec] leading-tight mb-5" style={{ fontFamily: "'Poppins:Bold', sans-serif" }} data-testid="price-range">
+      <p className="text-[11px] tracking-[2.4px] text-site-accent mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>FAIXA ESTIMADA</p>
+      <p className="text-[34px] md:text-[44px] text-site-text leading-tight mb-5" style={{ fontFamily: "'Poppins:Bold', sans-serif" }} data-testid="price-range">
         Entre {formatMoney(priceRange.minPrice)} e {formatMoney(priceRange.maxPrice)}
       </p>
       <div className="flex gap-3 p-4 border border-amber-400/30 bg-amber-400/5 mb-5">
-        <AlertTriangle size={19} className="text-[#e9b421] flex-shrink-0 mt-0.5" />
-        <p className="text-[13px] text-[rgba(245,242,236,0.72)] leading-[1.65]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-          <strong className="text-[#f5f2ec]">Esta é apenas uma estimativa inicial.</strong> O valor está sujeito à análise e confirmação da Eldo antes da aprovação final do orçamento.
+        <AlertTriangle size={19} className="text-site-accent flex-shrink-0 mt-0.5" />
+        <p className="text-[13px] text-site-text/72 leading-[1.65]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <strong className="text-site-text">Esta é apenas uma estimativa inicial.</strong> O valor está sujeito à análise e confirmação da Eldo antes da aprovação final do orçamento.
         </p>
       </div>
-      <p className="text-[13px] text-[rgba(245,242,236,0.6)] mb-5" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+      <p className="text-[13px] text-site-text/60 mb-5" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
         Para receber o orçamento da Eldo, informe o prazo e os dados da empresa abaixo e solicite o orçamento formal.
       </p>
-      <button type="button" onClick={onAdjust} className="h-[46px] px-6 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.65)] text-[13px]">Ajustar peças</button>
+      <button type="button" onClick={onAdjust} className="h-[46px] px-6 border border-site-text/18 text-site-text/65 text-[13px]">Ajustar peças</button>
     </div>
   );
 }
@@ -378,11 +378,11 @@ function QuoteRequested({ onRestart }: { onRestart: () => void }) {
       </div>
       <div>
         <p className="text-[11px] tracking-[2.4px] text-emerald-400 mb-2" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>PEDIDO ENVIADO</p>
-        <h2 className="text-[24px] text-[#f5f2ec] mb-2" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Recebemos seu pedido de orçamento</h2>
-        <p className="text-[14px] text-[rgba(245,242,236,0.62)] leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <h2 className="text-[24px] text-site-text mb-2" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Recebemos seu pedido de orçamento</h2>
+        <p className="text-[14px] text-site-text/62 leading-[1.7]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Nossa equipe confere os valores e entra em contato para combinar os próximos passos.
         </p>
-        <button type="button" onClick={onRestart} className="mt-4 text-[12px] text-[#e9b421] hover:opacity-80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Nova simulação</button>
+        <button type="button" onClick={onRestart} className="mt-4 text-[12px] text-site-accent hover:opacity-80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Nova simulação</button>
       </div>
     </div>
   );
@@ -416,12 +416,12 @@ function CompanyFields({ customer, onChange, getError }: { customer: CustomerFie
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] tracking-[2.5px] text-[rgba(245,242,236,0.4)] pb-2 border-b border-[rgba(245,242,236,0.08)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{children}</p>;
+  return <p className="text-[11px] tracking-[2.5px] text-site-text/40 pb-2 border-b border-site-text/8" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{children}</p>;
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-2 text-[11px] tracking-[1.8px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+    <label className="flex flex-col gap-2 text-[11px] tracking-[1.8px] text-site-text/50" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
       {label}
       {children}
       <FieldError message={error} />

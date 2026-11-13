@@ -164,13 +164,13 @@ export default function ContactRequests() {
     <div>
       {/* Header */}
       <div className="mb-10">
-        <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+        <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
           ATENDIMENTO PESSOA FÍSICA
         </p>
-        <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+        <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
           Contatos
         </h1>
-        <p className="mt-2 text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="mt-2 text-[14px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Solicitações enviadas pelo formulário de contato do site. Responda pelo WhatsApp e marque como atendida.
         </p>
       </div>
@@ -183,7 +183,7 @@ export default function ContactRequests() {
             type="button"
             onClick={() => selectFilter(option.value)}
             aria-pressed={filter === option.value}
-            className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${filter === option.value ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)] hover:text-[rgba(245,242,236,0.9)]"}`}
+            className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${filter === option.value ? "bg-site-accent text-site-page" : "border border-site-text/15 text-site-text/55 hover:text-site-text/90"}`}
             style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
           >
             {option.label.toUpperCase()}
@@ -198,7 +198,7 @@ export default function ContactRequests() {
       )}
 
       {listState.kind === "loading" && (
-        <p className="px-5 py-10 text-center text-[14px] text-[rgba(245,242,236,0.35)] border border-[rgba(245,242,236,0.08)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="px-5 py-10 text-center text-[14px] text-site-text/35 border border-site-text/8" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Carregando solicitações de contato...
         </p>
       )}
@@ -209,7 +209,7 @@ export default function ContactRequests() {
           <button
             type="button"
             onClick={reload}
-            className="px-5 py-2.5 border border-[rgba(245,242,236,0.2)] text-[13px] text-[#f5f2ec] hover:border-[#e9b421] hover:text-[#e9b421] transition-colors"
+            className="px-5 py-2.5 border border-site-text/20 text-[13px] text-site-text hover:border-site-accent hover:text-site-accent transition-colors"
             style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
           >
             Tentar novamente
@@ -218,7 +218,7 @@ export default function ContactRequests() {
       )}
 
       {listState.kind === "loaded" && listState.contactRequests.length === 0 && (
-        <p className="px-5 py-10 text-center text-[14px] text-[rgba(245,242,236,0.35)] border border-[rgba(245,242,236,0.08)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="px-5 py-10 text-center text-[14px] text-site-text/35 border border-site-text/8" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           {EMPTY_LIST_MESSAGE[filter]}
         </p>
       )}
@@ -235,7 +235,7 @@ export default function ContactRequests() {
               />
             ))}
           </ul>
-          <p className="mt-3 text-[12px] text-[rgba(245,242,236,0.3)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <p className="mt-3 text-[12px] text-site-text/30" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             {listState.contactRequests.length} {listState.contactRequests.length === 1 ? "solicitação" : "solicitações"}
           </p>
         </>
@@ -252,27 +252,27 @@ interface ContactRequestCardProps {
 
 function ContactRequestCard({ contactRequest, isUpdating, onChangeStatus }: ContactRequestCardProps) {
   const isHandled = contactRequest.status === "handled";
-  const linkClassName = "flex items-center gap-2 text-[13px] text-[rgba(245,242,236,0.7)] hover:text-[#e9b421] transition-colors break-all";
+  const linkClassName = "flex items-center gap-2 text-[13px] text-site-text/70 hover:text-site-accent transition-colors break-all";
 
   return (
     <li
       data-order-id={contactRequest.orderId}
-      className="border border-[rgba(245,242,236,0.08)] bg-[rgba(245,242,236,0.015)] px-5 py-5 flex flex-col lg:flex-row gap-5"
+      className="border border-site-text/8 bg-site-text/2 px-5 py-5 flex flex-col lg:flex-row gap-5"
     >
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-3 mb-2">
-          <p className="text-[15px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{contactRequest.name}</p>
+          <p className="text-[15px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{contactRequest.name}</p>
           <StatusTag isHandled={isHandled} />
         </div>
-        <p className="text-[12px] text-[rgba(245,242,236,0.4)] mb-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="text-[12px] text-site-text/40 mb-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Recebido em {DATE_FORMATTER.format(new Date(contactRequest.createdAt))}
         </p>
-        <p className="text-[14px] text-[rgba(245,242,236,0.75)] whitespace-pre-line break-words" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="text-[14px] text-site-text/75 whitespace-pre-line break-words" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           {contactRequest.message}
         </p>
       </div>
 
-      <div className="lg:w-[260px] flex flex-col gap-2.5 lg:border-l lg:border-[rgba(245,242,236,0.07)] lg:pl-5" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+      <div className="lg:w-[260px] flex flex-col gap-2.5 lg:border-l lg:border-site-text/7 lg:pl-5" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
         <a href={`tel:${readPhoneDigits(contactRequest.phone)}`} className={linkClassName} data-contact-link="phone">
           <Phone size={14} className="flex-shrink-0" /> {contactRequest.phone}
         </a>
@@ -292,7 +292,7 @@ function ContactRequestCard({ contactRequest, isUpdating, onChangeStatus }: Cont
           type="button"
           disabled={isUpdating}
           onClick={() => onChangeStatus(contactRequest, isHandled ? "requested" : "handled")}
-          className={`mt-2 flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] tracking-[0.5px] transition-opacity disabled:opacity-50 ${isHandled ? "border border-[rgba(245,242,236,0.2)] text-[rgba(245,242,236,0.75)] hover:border-[#e9b421] hover:text-[#e9b421]" : "bg-[#e9b421] text-[#12100d] hover:opacity-90"}`}
+          className={`mt-2 flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] tracking-[0.5px] transition-opacity disabled:opacity-50 ${isHandled ? "border border-site-text/20 text-site-text/75 hover:border-site-accent hover:text-site-accent" : "bg-site-accent text-site-page hover:opacity-90"}`}
           style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
         >
           {isHandled ? <RotateCcw size={14} /> : <Check size={14} />}
@@ -306,7 +306,7 @@ function ContactRequestCard({ contactRequest, isUpdating, onChangeStatus }: Cont
 function StatusTag({ isHandled }: { isHandled: boolean }) {
   return (
     <span
-      className={`px-2 py-0.5 text-[10px] tracking-[1.5px] ${isHandled ? "bg-[rgba(74,222,128,0.1)] text-green-400" : "bg-[rgba(233,180,33,0.12)] text-[#e9b421]"}`}
+      className={`px-2 py-0.5 text-[10px] tracking-[1.5px] ${isHandled ? "bg-[rgba(74,222,128,0.1)] text-green-400" : "bg-site-accent/12 text-site-accent"}`}
       style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}
     >
       {isHandled ? "ATENDIDO" : "NOVO"}
