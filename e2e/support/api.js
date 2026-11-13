@@ -1,6 +1,7 @@
 // Prepares the data a flow needs straight through the API, so each test only
 // clicks through the screen it covers. Calls go through the site's /api proxy,
-// the same address the browser uses, so this also works against production.
+// the same address the browser uses, so the calls work against localhost and
+// the staging environment alike.
 
 const {
   ADMIN_CREDENTIALS,

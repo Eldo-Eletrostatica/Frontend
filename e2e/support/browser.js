@@ -1,7 +1,7 @@
 // Helpers of the end-to-end suite: browser, steps with a pause, login and
 // explicit waits. The suite opens Chrome on the machine that runs it and visits
 // the site at E2E_BASE_URL, so the same tests run against localhost and
-// against production. The variables are listed in the README.
+// against the staging environment. The variables are listed in the README.
 //
 //   npm run test:e2e
 
@@ -156,12 +156,36 @@ async function scrollIntoView(driver, element) {
   await driver.executeScript("arguments[0].scrollIntoView({ block: 'center' });", element);
 }
 
+// A slow server re-renders a form while the test uses it, or an overlay is
+// still fading out: these errors pass on their own after a moment.
+const TRANSIENT_ERRORS = new Set([
+  "StaleElementReferenceError",
+  "ElementClickInterceptedError",
+  "ElementNotInteractableError",
+]);
+const RETRY_TIMEOUT_MS = 10000;
+const RETRY_INTERVAL_MS = 250;
+
+async function retryWhileChanging(driver, action) {
+  const deadline = Date.now() + RETRY_TIMEOUT_MS;
+  for (;;) {
+    try {
+      return await action();
+    } catch (error) {
+      if (!TRANSIENT_ERRORS.has(error.name) || Date.now() > deadline) throw error;
+      await driver.sleep(RETRY_INTERVAL_MS);
+    }
+  }
+}
+
 async function click(driver, locator, description, scope = null) {
-  const element = await waitForElement(driver, locator, scope, description);
-  await scrollIntoView(driver, element);
   await step(driver, `clica em ${description}`);
-  await element.click();
-  return element;
+  return retryWhileChanging(driver, async () => {
+    const element = await waitForElement(driver, locator, scope, description);
+    await scrollIntoView(driver, element);
+    await element.click();
+    return element;
+  });
 }
 
 async function clickByText(driver, tagName, text, scope = null) {
@@ -175,13 +199,15 @@ async function clickByTestId(driver, testId, scope = null) {
 
 // Clears the field and types the text, the way a person would.
 async function typeInto(driver, locator, text, description, scope = null) {
-  const element = await waitForElement(driver, locator, scope, description);
-  await scrollIntoView(driver, element);
   await step(driver, `preenche ${description}`);
-  await element.click();
-  await element.sendKeys(Key.chord(process.platform === "darwin" ? Key.COMMAND : Key.CONTROL, "a"), Key.BACK_SPACE);
-  await element.sendKeys(text);
-  return element;
+  return retryWhileChanging(driver, async () => {
+    const element = await waitForElement(driver, locator, scope, description);
+    await scrollIntoView(driver, element);
+    await element.click();
+    await element.sendKeys(Key.chord(process.platform === "darwin" ? Key.COMMAND : Key.CONTROL, "a"), Key.BACK_SPACE);
+    await element.sendKeys(text);
+    return element;
+  });
 }
 
 async function typeIntoField(driver, labelText, text, scope = null, fieldTag = "input") {
