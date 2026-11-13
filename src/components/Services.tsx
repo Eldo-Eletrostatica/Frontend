@@ -9,10 +9,10 @@ import { listOverdueServiceOrders, listServiceOrders, updateServiceOrderStatus }
 import type { ServiceOrder, ServiceOrderStatus } from "@/lib/serviceOrders/types";
 
 const STATUS_CONFIG: Record<ServiceOrderStatus, { label: string; color: string; bg: string }> = {
-  queued:       { label: "Em fila",     color: "text-[rgba(245,242,236,0.55)]", bg: "bg-[rgba(245,242,236,0.08)]" },
-  inProduction: { label: "Em produção", color: "text-[#e9b421]",               bg: "bg-[rgba(233,180,33,0.15)]"  },
-  finishing:    { label: "Finalização", color: "text-blue-300",                bg: "bg-[rgba(147,197,253,0.12)]" },
-  completed:    { label: "Concluído",   color: "text-emerald-400",             bg: "bg-[rgba(52,211,153,0.1)]"   },
+  queued:       { label: "Em fila",     color: "text-site-text/55",  bg: "bg-site-text/8"    },
+  inProduction: { label: "Em produção", color: "text-site-accent",   bg: "bg-site-accent/15" },
+  finishing:    { label: "Finalização", color: "text-blue-300",      bg: "bg-[rgba(147,197,253,0.12)]" },
+  completed:    { label: "Concluído",   color: "text-emerald-400",   bg: "bg-[rgba(52,211,153,0.1)]"   },
 };
 
 const STATUSES: ServiceOrderStatus[] = ["queued", "inProduction", "finishing", "completed"];
@@ -136,13 +136,13 @@ export default function Services() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ORDENS DE SERVIÇO</p>
-          <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Serviços</h1>
+          <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ORDENS DE SERVIÇO</p>
+          <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Serviços</h1>
         </div>
         <div className="flex gap-2">
           {viewOptions.filter((option) => option.visible).map((option) => (
             <button key={option.id} onClick={() => openView(option.id)}
-              className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${view === option.id ? "bg-[#e9b421] text-[#12100d]" : "border border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.55)]"}`}
+              className={`px-4 py-2 text-[11px] tracking-[1.5px] transition-all ${view === option.id ? "bg-site-accent text-site-page" : "border border-site-text/15 text-site-text/55"}`}
               style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
               {option.label}
             </button>
@@ -155,11 +155,11 @@ export default function Services() {
         <button
           type="button"
           onClick={() => canSeeOverduePanel && openView("overdue")}
-          className="flex items-center gap-3 px-5 py-3 mb-6 border border-[rgba(233,180,33,0.4)] w-full text-left hover:bg-[rgba(233,180,33,0.04)] transition-colors"
+          className="flex items-center gap-3 px-5 py-3 mb-6 border border-site-accent/40 w-full text-left hover:bg-site-accent/4 transition-colors"
         >
-          <AlertTriangle size={16} className="text-[#e9b421]" />
-          <p className="text-[13px] text-[rgba(245,242,236,0.8)]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
-            <span className="text-[#e9b421] font-bold">{lateCount}</span> {lateCount === 1 ? "serviço atrasado" : "serviços atrasados"}
+          <AlertTriangle size={16} className="text-site-accent" />
+          <p className="text-[13px] text-site-text/80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+            <span className="text-site-accent font-bold">{lateCount}</span> {lateCount === 1 ? "serviço atrasado" : "serviços atrasados"}
             {canSeeOverduePanel ? " — abrir painel de atrasos" : " — verifique os prazos no kanban"}
           </p>
         </button>
@@ -178,43 +178,42 @@ export default function Services() {
           onOpen={setSelectedId}
         />
       ) : isLoading ? (
-        <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando serviços...</p>
+        <p className="text-[14px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando serviços...</p>
       ) : loadError ? (
         <div className="flex flex-col items-start gap-3">
           <p role="alert" className="text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{loadError}</p>
-          <button onClick={loadServices} className="px-4 py-2 border border-[rgba(245,242,236,0.2)] text-[12px] text-[rgba(245,242,236,0.7)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+          <button onClick={loadServices} className="px-4 py-2 border border-site-text/20 text-[12px] text-site-text/70 hover:text-site-accent" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
             TENTAR NOVAMENTE
           </button>
         </div>
       ) : services.length === 0 ? (
-        <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="text-[14px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Nenhum serviço ainda. As ordens de serviço nascem do lançamento de uma venda.
         </p>
       ) : view === "kanban" ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-[rgba(245,242,236,0.08)]">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-site-text/8">
           {STATUSES.map((status) => {
             const cols = services.filter((s) => s.status === status);
             const cfg = STATUS_CONFIG[status];
             return (
-              <div key={status} className="bg-[#12100d] flex flex-col min-h-[400px]">
-                <div className="px-4 py-4 border-b border-[rgba(245,242,236,0.08)] flex items-center justify-between">
+              <div key={status} className="bg-site-page flex flex-col min-h-[400px]">
+                <div className="px-4 py-4 border-b border-site-text/8 flex items-center justify-between">
                   <span className={`text-[11px] tracking-[2px] px-2 py-1 ${cfg.color} ${cfg.bg}`} style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
                     {cfg.label.toUpperCase()}
                   </span>
-                  <span className="text-[12px] text-[rgba(245,242,236,0.35)]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{cols.length}</span>
+                  <span className="text-[12px] text-site-text/35" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{cols.length}</span>
                 </div>
                 <div className="flex flex-col gap-2 p-3 flex-1">
                   {cols.map((s) => (
                     <button key={s.orderId} onClick={() => setSelectedId(s.orderId)}
-                      className={`text-left p-4 border transition-colors hover:border-[rgba(245,242,236,0.25)] ${isLate(s.dueDate, s.status) ? "border-[rgba(233,180,33,0.35)]" : "border-[rgba(245,242,236,0.1)]"}`}
-                      style={{ background: "#171511" }}>
+                      className={`text-left p-4 bg-site-card border transition-colors hover:border-site-text/25 ${isLate(s.dueDate, s.status) ? "border-site-accent/35" : "border-site-text/10"}`}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{s.trackingCode}</span>
-                        {isLate(s.dueDate, s.status) && <AlertTriangle size={12} className="text-[#e9b421]" />}
+                        <span className="text-[11px] tracking-[1.5px] text-site-text/45" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{s.trackingCode}</span>
+                        {isLate(s.dueDate, s.status) && <AlertTriangle size={12} className="text-site-accent" />}
                       </div>
-                      <p className="text-[13px] text-[#f5f2ec] leading-[1.3] mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{s.customer.name}</p>
-                      <p className="text-[11px] text-[rgba(245,242,236,0.5)] leading-[1.4] mb-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.scope}</p>
-                      <div className="flex items-center gap-1 text-[11px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                      <p className="text-[13px] text-site-text leading-[1.3] mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{s.customer.name}</p>
+                      <p className="text-[11px] text-site-text/50 leading-[1.4] mb-3" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.scope}</p>
+                      <div className="flex items-center gap-1 text-[11px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                         <Clock size={10} />
                         {formatDate(s.dueDate)}
                       </div>
@@ -226,12 +225,12 @@ export default function Services() {
           })}
         </div>
       ) : (
-        <div className="border border-[rgba(245,242,236,0.08)] overflow-x-auto">
+        <div className="border border-site-text/8 overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[rgba(245,242,236,0.1)]">
+              <tr className="border-b border-site-text/10">
                 {["PROTOCOLO", "CLIENTE", "ESCOPO", "PRAZO", "STATUS", ""].map((h) => (
-                  <th key={h} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
+                  <th key={h} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -240,12 +239,12 @@ export default function Services() {
                 const late = isLate(s.dueDate, s.status);
                 const cfg = STATUS_CONFIG[s.status];
                 return (
-                  <tr key={s.orderId} className="border-b border-[rgba(245,242,236,0.06)] hover:bg-[rgba(245,242,236,0.02)]">
-                    <td className="px-5 py-4 text-[12px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{s.trackingCode}</td>
-                    <td className="px-5 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{s.customer.name}</td>
-                    <td className="px-5 py-4 text-[13px] text-[rgba(245,242,236,0.6)] max-w-[220px] truncate" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.scope}</td>
+                  <tr key={s.orderId} className="border-b border-site-text/6 hover:bg-site-text/2">
+                    <td className="px-5 py-4 text-[12px] text-site-text/50" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{s.trackingCode}</td>
+                    <td className="px-5 py-4 text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{s.customer.name}</td>
+                    <td className="px-5 py-4 text-[13px] text-site-text/60 max-w-[220px] truncate" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.scope}</td>
                     <td className="px-5 py-4">
-                      <div className={`flex items-center gap-1 text-[12px] ${late ? "text-[#e9b421]" : "text-[rgba(245,242,236,0.5)]"}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                      <div className={`flex items-center gap-1 text-[12px] ${late ? "text-site-accent" : "text-site-text/50"}`} style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                         {late && <AlertTriangle size={11} />}
                         {formatDate(s.dueDate)}
                       </div>
@@ -256,7 +255,7 @@ export default function Services() {
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      <button onClick={() => setSelectedId(s.orderId)} className="text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.4)] hover:text-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+                      <button onClick={() => setSelectedId(s.orderId)} className="text-[11px] tracking-[1.5px] text-site-text/40 hover:text-site-accent transition-colors" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
                         DETALHES
                       </button>
                     </td>
@@ -273,24 +272,24 @@ export default function Services() {
         <Drawer title={selected.trackingCode} onClose={() => { setSelectedId(null); setUpdateError(null); }}>
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CLIENTE</p>
-              <p className="text-[17px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{selected.customer.name}</p>
+              <p className="text-[11px] tracking-[2px] text-site-text/45 mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CLIENTE</p>
+              <p className="text-[17px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{selected.customer.name}</p>
             </div>
             <div>
-              <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ESCOPO</p>
-              <p className="text-[14px] text-[rgba(245,242,236,0.75)] leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{selected.scope}</p>
+              <p className="text-[11px] tracking-[2px] text-site-text/45 mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ESCOPO</p>
+              <p className="text-[14px] text-site-text/75 leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{selected.scope}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>PRAZO</p>
-                <p className={`text-[14px] ${isLate(selected.dueDate, selected.status) ? "text-[#e9b421]" : "text-[#f5f2ec]"}`} style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+                <p className="text-[11px] tracking-[2px] text-site-text/45 mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>PRAZO</p>
+                <p className={`text-[14px] ${isLate(selected.dueDate, selected.status) ? "text-site-accent" : "text-site-text"}`} style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                   {formatDate(selected.dueDate)}
                   {isLate(selected.dueDate, selected.status) && " ⚠ ATRASADO"}
                 </p>
               </div>
               {selected.completedAt && (
                 <div>
-                  <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONCLUÍDO EM</p>
+                  <p className="text-[11px] tracking-[2px] text-site-text/45 mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONCLUÍDO EM</p>
                   <p className="text-[14px] text-emerald-400" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                     {new Date(selected.completedAt).toLocaleDateString("pt-BR")}
                   </p>
@@ -299,14 +298,14 @@ export default function Services() {
             </div>
 
             <div>
-              <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)] mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ATUALIZAR STATUS</p>
+              <p className="text-[11px] tracking-[2px] text-site-text/45 mb-3" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ATUALIZAR STATUS</p>
               <div className="grid grid-cols-2 gap-2">
                 {STATUSES.map((st) => {
                   const cfg = STATUS_CONFIG[st];
                   return (
                     <button key={st} onClick={() => updateStatus(selected.orderId, st)}
                       disabled={updatingId !== null || selected.status === st}
-                      className={`py-3 text-[12px] tracking-[1.5px] border transition-all disabled:cursor-not-allowed ${selected.status === st ? `${cfg.bg} ${cfg.color} border-transparent` : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)] hover:border-[rgba(245,242,236,0.3)] disabled:opacity-50"}`}
+                      className={`py-3 text-[12px] tracking-[1.5px] border transition-all disabled:cursor-not-allowed ${selected.status === st ? `${cfg.bg} ${cfg.color} border-transparent` : "border-site-text/15 text-site-text/50 hover:border-site-text/30 disabled:opacity-50"}`}
                       style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
                       {cfg.label.toUpperCase()}
                     </button>
@@ -339,14 +338,14 @@ function OverduePanel({
   onOpen: (orderId: string) => void;
 }) {
   if (isLoading) {
-    return <p className="text-[14px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando atrasos...</p>;
+    return <p className="text-[14px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando atrasos...</p>;
   }
 
   if (error) {
     return (
       <div className="flex flex-col items-start gap-3">
         <p role="alert" className="text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{error}</p>
-        <button onClick={onRetry} className="px-4 py-2 border border-[rgba(245,242,236,0.2)] text-[12px] text-[rgba(245,242,236,0.7)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+        <button onClick={onRetry} className="px-4 py-2 border border-site-text/20 text-[12px] text-site-text/70 hover:text-site-accent" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
           TENTAR NOVAMENTE
         </button>
       </div>
@@ -359,7 +358,7 @@ function OverduePanel({
         <CheckCircle2 size={18} className="text-emerald-400 mt-0.5" />
         <div>
           <p className="text-[15px] text-emerald-300 mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>Tudo em dia</p>
-          <p className="text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <p className="text-[13px] text-site-text/60" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             Não há serviços com prazo vencido no momento.
           </p>
         </div>
@@ -369,19 +368,19 @@ function OverduePanel({
 
   return (
     <div>
-      <div className="flex items-center gap-3 px-5 py-3 mb-6 border border-[rgba(233,180,33,0.4)]">
-        <AlertTriangle size={16} className="text-[#e9b421]" />
-        <p className="text-[13px] text-[rgba(245,242,236,0.8)]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
-          <span className="text-[#e9b421] font-bold">{orders.length}</span> {orders.length === 1 ? "serviço atrasado" : "serviços atrasados"} — priorize estas entregas
+      <div className="flex items-center gap-3 px-5 py-3 mb-6 border border-site-accent/40">
+        <AlertTriangle size={16} className="text-site-accent" />
+        <p className="text-[13px] text-site-text/80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+          <span className="text-site-accent font-bold">{orders.length}</span> {orders.length === 1 ? "serviço atrasado" : "serviços atrasados"} — priorize estas entregas
         </p>
       </div>
 
-      <div className="border border-[rgba(233,180,33,0.25)] overflow-x-auto">
+      <div className="border border-site-accent/25 overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-[rgba(245,242,236,0.1)]">
+            <tr className="border-b border-site-text/10">
               {["PROTOCOLO", "CLIENTE", "ESCOPO", "PRAZO", "STATUS", ""].map((h) => (
-                <th key={h} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
+                <th key={h} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -389,15 +388,15 @@ function OverduePanel({
             {orders.map((s) => {
               const cfg = STATUS_CONFIG[s.status];
               return (
-                <tr key={s.orderId} className="border-b border-[rgba(245,242,236,0.06)] bg-[rgba(233,180,33,0.03)] hover:bg-[rgba(233,180,33,0.06)]">
-                  <td className="px-5 py-4 text-[12px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{s.trackingCode}</td>
-                  <td className="px-5 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{s.customer.name}</td>
-                  <td className="px-5 py-4 text-[13px] text-[rgba(245,242,236,0.6)] max-w-[220px] truncate" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.scope}</td>
+                <tr key={s.orderId} className="border-b border-site-text/6 bg-site-accent/3 hover:bg-site-accent/6">
+                  <td className="px-5 py-4 text-[12px] text-site-text/50" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{s.trackingCode}</td>
+                  <td className="px-5 py-4 text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{s.customer.name}</td>
+                  <td className="px-5 py-4 text-[13px] text-site-text/60 max-w-[220px] truncate" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{s.scope}</td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center gap-1 text-[12px] text-[#e9b421]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                    <div className="flex items-center gap-1 text-[12px] text-site-accent" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                       <AlertTriangle size={11} />
                       {formatDate(s.dueDate)}
-                      <span className="ml-2 text-[10px] tracking-[1.5px] px-2 py-0.5 bg-[rgba(233,180,33,0.15)]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>ATRASADO</span>
+                      <span className="ml-2 text-[10px] tracking-[1.5px] px-2 py-0.5 bg-site-accent/15" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>ATRASADO</span>
                     </div>
                   </td>
                   <td className="px-5 py-4">
@@ -406,7 +405,7 @@ function OverduePanel({
                     </span>
                   </td>
                   <td className="px-5 py-4">
-                    <button onClick={() => onOpen(s.orderId)} className="text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.4)] hover:text-[#e9b421] transition-colors" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+                    <button onClick={() => onOpen(s.orderId)} className="text-[11px] tracking-[1.5px] text-site-text/40 hover:text-site-accent transition-colors" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
                       DETALHES
                     </button>
                   </td>
@@ -424,10 +423,10 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] border-l border-[rgba(245,242,236,0.12)]" style={{ background: "#171511" }}>
-        <div className="flex items-center justify-between px-8 py-6 border-b border-[rgba(245,242,236,0.08)]">
-          <h2 className="text-[20px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
-          <button onClick={onClose} className="text-[rgba(245,242,236,0.35)] hover:text-[rgba(245,242,236,0.9)] transition-colors"><X size={20} /></button>
+      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] border-l border-site-text/12 bg-site-card">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-site-text/8">
+          <h2 className="text-[20px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
+          <button onClick={onClose} className="text-site-text/35 hover:text-site-text/90 transition-colors"><X size={20} /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-8 py-8">{children}</div>
       </aside>

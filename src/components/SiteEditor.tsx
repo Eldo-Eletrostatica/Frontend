@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Eye, RotateCcw, Check, Palette, Image as ImageIcon, Type, CalendarDays, Upload, Plus, Trash2, Pencil, X, LayoutList } from "lucide-react";
 import { ApiError } from "@/lib/api/ApiError";
 import { CACHE_TAGS } from "@/lib/api/server";
 import { revalidatePublicData } from "@/lib/api/revalidate";
+import { useVisualSettings } from "@/lib/siteSettings/VisualSettingsProvider";
 import {
   DEFAULT_VISUAL_SETTINGS,
   type CompanyEvent,
@@ -111,6 +113,8 @@ function formatDate(date: string): string {
 }
 
 export default function SiteEditor() {
+  const router = useRouter();
+  const { updateVisualSettings } = useVisualSettings();
   const [tab, setTab] = useState<Tab>("Cores");
   const [visualState, setVisualState] = useState<LoadState<VisualSettings>>({ kind: "loading" });
   const [draft, setDraft] = useState<VisualSettings>(DEFAULT_VISUAL_SETTINGS);
@@ -218,7 +222,9 @@ export default function SiteEditor() {
       const published = await publishVisualSettings();
       setDraft(published);
       setSavedDraft(published);
+      updateVisualSettings(published);
       await revalidatePublicData(CACHE_TAGS.visualSettings).catch(() => {});
+      router.refresh();
       setMessage("Alterações publicadas. O site já mostra a nova identidade visual.");
     } catch (error) {
       setActionError(errorMessageOf(error, "Não foi possível publicar as alterações."));
@@ -252,7 +258,9 @@ export default function SiteEditor() {
       const restored = await restoreDefaultVisualSettings();
       setDraft(restored);
       setSavedDraft(restored);
+      updateVisualSettings(restored);
       await revalidatePublicData(CACHE_TAGS.visualSettings).catch(() => {});
+      router.refresh();
       setMessage("Configuração padrão restaurada.");
     } catch (error) {
       setActionError(errorMessageOf(error, "Não foi possível restaurar a configuração padrão."));
@@ -433,7 +441,7 @@ export default function SiteEditor() {
   const projectsPerCategory = new Map(categories.map((category) => [category, projects.filter((project) => project.category === category).length]));
 
   if (visualState.kind === "loading") {
-    return <p className="py-16 text-center text-[14px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando editor...</p>;
+    return <p className="py-16 text-center text-[14px] text-site-text/45" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando editor...</p>;
   }
   if (visualState.kind === "failed") {
     return <p role="alert" className="py-16 text-center text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{visualState.message}</p>;
@@ -444,28 +452,28 @@ export default function SiteEditor() {
       {/* Header */}
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONFIGURAÇÕES VISUAIS</p>
-          <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Editor do Site</h1>
+          <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>CONFIGURAÇÕES VISUAIS</p>
+          <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Editor do Site</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setPreview(!preview)}
-            className={`flex items-center gap-2 px-4 py-2.5 border text-[13px] transition-colors ${preview ? "border-[#e9b421] text-[#e9b421]" : "border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)]"}`}
+            className={`flex items-center gap-2 px-4 py-2.5 border text-[13px] transition-colors ${preview ? "border-site-accent text-site-accent" : "border-site-text/18 text-site-text/70"}`}
             style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
             <Eye size={14} /> {preview ? "Fechar prévia" : "Pré-visualizar"}
           </button>
-          <button onClick={discard} disabled={isSaving} className="flex items-center gap-2 px-4 py-2.5 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.55)] text-[13px] hover:border-[rgba(245,242,236,0.35)] disabled:opacity-40" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+          <button onClick={discard} disabled={isSaving} className="flex items-center gap-2 px-4 py-2.5 border border-site-text/18 text-site-text/55 text-[13px] hover:border-site-text/35 disabled:opacity-40" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
             <X size={13} /> Descartar rascunho
           </button>
-          <button onClick={restoreDefault} disabled={isSaving} className="flex items-center gap-2 px-4 py-2.5 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.55)] text-[13px] hover:border-[rgba(245,242,236,0.35)] disabled:opacity-40" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+          <button onClick={restoreDefault} disabled={isSaving} className="flex items-center gap-2 px-4 py-2.5 border border-site-text/18 text-site-text/55 text-[13px] hover:border-site-text/35 disabled:opacity-40" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
             <RotateCcw size={13} /> Restaurar padrão
           </button>
           <button onClick={saveDraft} disabled={!isDirty || isSaving}
-            className={`flex items-center gap-2 px-4 py-2.5 border text-[13px] ${isDirty && !isSaving ? "border-[#e9b421] text-[#e9b421] hover:bg-[rgba(233,180,33,0.08)]" : "border-[rgba(245,242,236,0.12)] text-[rgba(245,242,236,0.3)] cursor-not-allowed"}`}
+            className={`flex items-center gap-2 px-4 py-2.5 border text-[13px] ${isDirty && !isSaving ? "border-site-accent text-site-accent hover:bg-site-accent/8" : "border-site-text/12 text-site-text/30 cursor-not-allowed"}`}
             style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
             Salvar rascunho
           </button>
           <button onClick={publish} disabled={isSaving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 bg-site-accent text-site-page text-[13px] hover:opacity-90 disabled:opacity-50"
             style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
             <Check size={14} /> {isSaving ? "Salvando..." : "Publicar alterações"}
           </button>
@@ -481,7 +489,7 @@ export default function SiteEditor() {
       {actionError && <p role="alert" className="mb-6 px-4 py-3 border border-red-500/40 text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{actionError}</p>}
       {showcaseError && <p role="alert" className="mb-6 px-4 py-3 border border-red-500/40 text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{showcaseError}</p>}
       {isDirty && (
-        <p className="mb-6 text-[12px] text-[#e9b421]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="mb-6 text-[12px] text-site-accent" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Há alterações não salvas no rascunho. Salve ou publique para aplicá-las.
         </p>
       )}
@@ -489,10 +497,10 @@ export default function SiteEditor() {
       <div className={`grid ${preview ? "xl:grid-cols-2" : ""} gap-8`}>
         <div>
           {/* Tabs */}
-          <div className="flex flex-wrap border-b border-[rgba(245,242,236,0.1)] mb-6">
+          <div className="flex flex-wrap border-b border-site-text/10 mb-6">
             {TABS.map((option) => (
               <button key={option} onClick={() => selectTab(option)}
-                className={`flex items-center gap-2 px-5 py-3 text-[13px] border-b-2 transition-all ${tab === option ? "border-[#e9b421] text-[#e9b421]" : "border-transparent text-[rgba(245,242,236,0.5)] hover:text-[rgba(245,242,236,0.8)]"}`}
+                className={`flex items-center gap-2 px-5 py-3 text-[13px] border-b-2 transition-all ${tab === option ? "border-site-accent text-site-accent" : "border-transparent text-site-text/50 hover:text-site-text/80"}`}
                 style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                 {option === "Cores" && <Palette size={13} />}
                 {option === "Logotipo" && <Type size={13} />}
@@ -513,9 +521,9 @@ export default function SiteEditor() {
                   {PRESET_COLORS.map((preset) => (
                     <button key={preset.name}
                       onClick={() => updateDraft({ colors: { ...draft.colors, accent: preset.accent, pageBackground: preset.pageBackground } })}
-                      className={`flex items-center gap-3 px-3 py-3 border transition-all text-left ${draft.colors.accent === preset.accent && draft.colors.pageBackground === preset.pageBackground ? "border-[#e9b421]" : "border-[rgba(245,242,236,0.12)] hover:border-[rgba(245,242,236,0.3)]"}`}>
+                      className={`flex items-center gap-3 px-3 py-3 border transition-all text-left ${draft.colors.accent === preset.accent && draft.colors.pageBackground === preset.pageBackground ? "border-site-accent" : "border-site-text/12 hover:border-site-text/30"}`}>
                       <div className="w-5 h-5 rounded-full flex-shrink-0" style={{ background: preset.accent }} />
-                      <span className="text-[12px] text-[rgba(245,242,236,0.7)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{preset.name}</span>
+                      <span className="text-[12px] text-site-text/70" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{preset.name}</span>
                     </button>
                   ))}
                 </div>
@@ -541,7 +549,7 @@ export default function SiteEditor() {
               <ImageField label="IMAGEM DO LOGOTIPO (OPCIONAL)" value={draft.logo.imageUrl}
                 onChange={(imageUrl) => updateDraft({ logo: { ...draft.logo, imageUrl } })}
                 onUpload={(file) => uploadImage(file, (url) => updateDraft({ logo: { ...draft.logo, imageUrl: url } }))} />
-              <p className="text-[12px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+              <p className="text-[12px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                 Sem imagem, o site usa o logotipo da Eldo que já vem no Frontend.
               </p>
             </EditorGroup>
@@ -592,33 +600,33 @@ export default function SiteEditor() {
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <SectionLabel>CATEGORIAS ({categories.length}/{MAX_CATEGORIES})</SectionLabel>
-                    <p className="text-[12px] text-[rgba(245,242,236,0.38)] mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                    <p className="text-[12px] text-site-text/38 mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                       Só texto, entre {MIN_CATEGORIES} e {MAX_CATEGORIES}. Cada categoria aceita de 1 a {MAX_PROJECTS_PER_CATEGORY} projetos.
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <input type="text" value={newCategory} onChange={(event) => setNewCategory(event.target.value)} placeholder="Nome da nova categoria" className="flex-1 h-[42px] px-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
-                  <button onClick={addCategory} disabled={categories.length >= MAX_CATEGORIES} className="h-[42px] px-4 border border-[rgba(245,242,236,0.18)] text-[12px] text-[rgba(245,242,236,0.7)] hover:border-[#e9b421] hover:text-[#e9b421] disabled:opacity-30" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Criar com projeto</button>
+                  <input type="text" value={newCategory} onChange={(event) => setNewCategory(event.target.value)} placeholder="Nome da nova categoria" className="flex-1 h-[42px] px-3 bg-site-card border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                  <button onClick={addCategory} disabled={categories.length >= MAX_CATEGORIES} className="h-[42px] px-4 border border-site-text/18 text-[12px] text-site-text/70 hover:border-site-accent hover:text-site-accent disabled:opacity-30" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Criar com projeto</button>
                 </div>
                 <div className="grid md:grid-cols-2 gap-3 mt-3">
                   {categories.map((category) => (
-                    <div key={category} className="p-4 border border-[rgba(245,242,236,0.1)] bg-[rgba(23,21,17,0.45)]">
+                    <div key={category} className="p-4 border border-site-text/10 bg-site-card/45">
                       <div className="flex items-center gap-2">
                         {editingCategory === category ? (
                           <>
-                            <input autoFocus type="text" value={editingCategoryName} onChange={(event) => setEditingCategoryName(event.target.value)} className="flex-1 h-[38px] px-3 bg-[#12100d] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+                            <input autoFocus type="text" value={editingCategoryName} onChange={(event) => setEditingCategoryName(event.target.value)} className="flex-1 h-[38px] px-3 bg-site-page border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
                             <button onClick={() => saveCategoryRename(category)} className="text-emerald-400 hover:opacity-80" title="Salvar"><Check size={16} /></button>
-                            <button onClick={() => setEditingCategory(null)} className="text-[rgba(245,242,236,0.4)] hover:text-[#f5f2ec]" title="Cancelar"><X size={16} /></button>
+                            <button onClick={() => setEditingCategory(null)} className="text-site-text/40 hover:text-site-text" title="Cancelar"><X size={16} /></button>
                           </>
                         ) : (
                           <>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[14px] text-[#f5f2ec] truncate" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{category}</p>
-                              <p className="text-[11px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{projectsPerCategory.get(category) ?? 0}/{MAX_PROJECTS_PER_CATEGORY} projetos</p>
+                              <p className="text-[14px] text-site-text truncate" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{category}</p>
+                              <p className="text-[11px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{projectsPerCategory.get(category) ?? 0}/{MAX_PROJECTS_PER_CATEGORY} projetos</p>
                             </div>
-                            <button onClick={() => { setEditingCategory(category); setEditingCategoryName(category); }} className="text-[rgba(245,242,236,0.4)] hover:text-[#e9b421]" title="Renomear"><Pencil size={14} /></button>
-                            <button onClick={() => removeCategory(category)} className="text-[rgba(245,242,236,0.4)] hover:text-red-400" title="Remover"><Trash2 size={14} /></button>
+                            <button onClick={() => { setEditingCategory(category); setEditingCategoryName(category); }} className="text-site-text/40 hover:text-site-accent" title="Renomear"><Pencil size={14} /></button>
+                            <button onClick={() => removeCategory(category)} className="text-site-text/40 hover:text-red-400" title="Remover"><Trash2 size={14} /></button>
                           </>
                         )}
                       </div>
@@ -631,31 +639,31 @@ export default function SiteEditor() {
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <SectionLabel>PROJETOS ({projects.length})</SectionLabel>
-                    <p className="text-[12px] text-[rgba(245,242,236,0.38)] mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                    <p className="text-[12px] text-site-text/38 mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                       Imagem de capa e categoria obrigatórias; fotos de antes e depois são opcionais. O mais novo aparece primeiro.
                     </p>
                   </div>
-                  <button onClick={() => openProjectForm()} disabled={categories.length === 0} className="flex items-center gap-2 h-[38px] px-4 border border-[rgba(245,242,236,0.18)] text-[12px] text-[rgba(245,242,236,0.7)] hover:border-[#e9b421] hover:text-[#e9b421] disabled:opacity-30" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+                  <button onClick={() => openProjectForm()} disabled={categories.length === 0} className="flex items-center gap-2 h-[38px] px-4 border border-site-text/18 text-[12px] text-site-text/70 hover:border-site-accent hover:text-site-accent disabled:opacity-30" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                     <Plus size={13} /> Novo projeto
                   </button>
                 </div>
                 {projectsState.kind === "loading" ? <Loading /> : projectsState.kind === "failed" ? <ErrorBox message={projectsState.message} /> : (
                   <div className="grid md:grid-cols-2 gap-4 mt-4">
                     {projects.map((project) => (
-                      <div key={project.showcaseItemId} className="border border-[rgba(245,242,236,0.1)] bg-[rgba(23,21,17,0.45)] overflow-hidden">
+                      <div key={project.showcaseItemId} className="border border-site-text/10 bg-site-card/45 overflow-hidden">
                         <ImagePreview src={project.imageUrl} alt={project.title} />
                         <div className="p-4">
-                          <p className="text-[10px] tracking-[1.5px] text-[#e9b421] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{project.category.toUpperCase()}</p>
-                          <p className="text-[15px] text-[#f5f2ec] mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{project.title}</p>
-                          <p className="text-[12px] text-[rgba(245,242,236,0.45)] line-clamp-2" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{project.description}</p>
+                          <p className="text-[10px] tracking-[1.5px] text-site-accent mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{project.category.toUpperCase()}</p>
+                          <p className="text-[15px] text-site-text mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{project.title}</p>
+                          <p className="text-[12px] text-site-text/45 line-clamp-2" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{project.description}</p>
                           <div className="flex items-center gap-3 mt-3">
-                            <button onClick={() => openProjectForm(project)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.55)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}><Pencil size={12} /> EDITAR</button>
-                            <button onClick={() => removeProject(project)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.55)] hover:text-red-400" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}><Trash2 size={12} /> REMOVER</button>
+                            <button onClick={() => openProjectForm(project)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-site-text/55 hover:text-site-accent" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}><Pencil size={12} /> EDITAR</button>
+                            <button onClick={() => removeProject(project)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-site-text/55 hover:text-red-400" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}><Trash2 size={12} /> REMOVER</button>
                           </div>
                         </div>
                       </div>
                     ))}
-                    {projects.length === 0 && <p className="md:col-span-2 py-10 text-center text-[13px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhum projeto cadastrado.</p>}
+                    {projects.length === 0 && <p className="md:col-span-2 py-10 text-center text-[13px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhum projeto cadastrado.</p>}
                   </div>
                 )}
               </div>
@@ -667,31 +675,31 @@ export default function SiteEditor() {
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <SectionLabel>EVENTOS ({events.length}/{MAX_EVENTS})</SectionLabel>
-                  <p className="text-[12px] text-[rgba(245,242,236,0.38)] mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                  <p className="text-[12px] text-site-text/38 mt-1" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                     Entre {MIN_EVENTS} e {MAX_EVENTS} eventos, com imagem e data. O mais novo aparece primeiro no painel.
                   </p>
                 </div>
-                <button onClick={() => openEventForm()} disabled={events.length >= MAX_EVENTS} className="flex items-center gap-2 h-[38px] px-4 border border-[rgba(245,242,236,0.18)] text-[12px] text-[rgba(245,242,236,0.7)] hover:border-[#e9b421] hover:text-[#e9b421] disabled:opacity-30" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+                <button onClick={() => openEventForm()} disabled={events.length >= MAX_EVENTS} className="flex items-center gap-2 h-[38px] px-4 border border-site-text/18 text-[12px] text-site-text/70 hover:border-site-accent hover:text-site-accent disabled:opacity-30" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
                   <Plus size={13} /> Novo evento
                 </button>
               </div>
               {eventsState.kind === "loading" ? <Loading /> : eventsState.kind === "failed" ? <ErrorBox message={eventsState.message} /> : (
                 <div className="grid md:grid-cols-2 gap-4 mt-4">
                   {events.map((event) => (
-                    <div key={event.showcaseItemId} className="border border-[rgba(245,242,236,0.1)] bg-[rgba(23,21,17,0.45)] overflow-hidden">
+                    <div key={event.showcaseItemId} className="border border-site-text/10 bg-site-card/45 overflow-hidden">
                       <ImagePreview src={event.imageUrl} alt={event.title} />
                       <div className="p-4">
-                        <p className="text-[10px] tracking-[1.5px] text-[#e9b421] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{formatDate(event.eventDate)}</p>
-                        <p className="text-[15px] text-[#f5f2ec] mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{event.title}</p>
-                        <p className="text-[12px] text-[rgba(245,242,236,0.45)] line-clamp-2" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{event.description}</p>
+                        <p className="text-[10px] tracking-[1.5px] text-site-accent mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{formatDate(event.eventDate)}</p>
+                        <p className="text-[15px] text-site-text mb-1" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{event.title}</p>
+                        <p className="text-[12px] text-site-text/45 line-clamp-2" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{event.description}</p>
                         <div className="flex items-center gap-3 mt-3">
-                          <button onClick={() => openEventForm(event)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.55)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}><Pencil size={12} /> EDITAR</button>
-                          <button onClick={() => removeEvent(event)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.55)] hover:text-red-400" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}><Trash2 size={12} /> REMOVER</button>
+                          <button onClick={() => openEventForm(event)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-site-text/55 hover:text-site-accent" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}><Pencil size={12} /> EDITAR</button>
+                          <button onClick={() => removeEvent(event)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-site-text/55 hover:text-red-400" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}><Trash2 size={12} /> REMOVER</button>
                         </div>
                       </div>
                     </div>
                   ))}
-                  {events.length === 0 && <p className="md:col-span-2 py-10 text-center text-[13px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhum evento cadastrado.</p>}
+                  {events.length === 0 && <p className="md:col-span-2 py-10 text-center text-[13px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Nenhum evento cadastrado.</p>}
                 </div>
               )}
             </div>
@@ -700,10 +708,10 @@ export default function SiteEditor() {
 
         {/* Preview panel */}
         {preview && (
-          <div className="border border-[rgba(245,242,236,0.12)] h-fit xl:sticky xl:top-6">
-            <div className="px-4 py-2 border-b border-[rgba(245,242,236,0.08)] flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[rgba(245,242,236,0.2)]" />
-              <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>PRÉ-VISUALIZAÇÃO DO RASCUNHO</p>
+          <div className="border border-site-text/12 h-fit xl:sticky xl:top-6">
+            <div className="px-4 py-2 border-b border-site-text/8 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-site-text/20" />
+              <p className="text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>PRÉ-VISUALIZAÇÃO DO RASCUNHO</p>
             </div>
             <div style={{ background: draft.colors.pageBackground }}>
               <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: "rgba(245,242,236,0.08)" }}>
@@ -791,26 +799,25 @@ export default function SiteEditor() {
         document.body
       )}
 
-      <style>{`.drw-inp { width:100%; height:46px; padding:0 14px; background:#12100d; border:1px solid rgba(245,242,236,0.18); color:#f5f2ec; font-size:14px; outline:none; transition:border-color .15s; } .drw-inp:focus { border-color:#e9b421; } .drw-inp option { background:#1a1713; }`}</style>
     </div>
   );
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{children}</p>;
+  return <p className="text-[11px] tracking-[2px] text-site-text/45" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{children}</p>;
 }
 
 function EditorGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="p-5 border border-[rgba(245,242,236,0.1)] bg-[rgba(23,21,17,0.45)]">
-      <p className="text-[11px] tracking-[2px] text-[#e9b421] mb-5" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{title}</p>
+    <div className="p-5 border border-site-text/10 bg-site-card/45">
+      <p className="text-[11px] tracking-[2px] text-site-accent mb-5" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{title}</p>
       <div className="flex flex-col gap-4">{children}</div>
     </div>
   );
 }
 
 function TextEditor({ label, value, onChange, multiline = false, maxLength }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean; maxLength?: number }) {
-  const className = "mt-2 w-full px-4 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] transition-colors";
+  const className = "mt-2 w-full px-4 bg-site-card border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent transition-colors";
   return (
     <label>
       <SectionLabel>{label}</SectionLabel>
@@ -828,11 +835,11 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
     <div>
       <SectionLabel>{label}</SectionLabel>
       <div className="flex items-center gap-3 mt-2">
-        <div className="relative w-[44px] h-[44px] flex-shrink-0 border border-[rgba(245,242,236,0.15)]">
+        <div className="relative w-[44px] h-[44px] flex-shrink-0 border border-site-text/15">
           <div className="absolute inset-0" style={{ background: value }} />
           <input type="color" value={value} onChange={(event) => onChange(event.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
         </div>
-        <input type="text" value={value} maxLength={7} onChange={(event) => onChange(event.target.value)} className="flex-1 h-[44px] px-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421]" style={{ fontFamily: "monospace" }} />
+        <input type="text" value={value} maxLength={7} onChange={(event) => onChange(event.target.value)} className="flex-1 h-[44px] px-3 bg-site-card border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent" style={{ fontFamily: "monospace" }} />
       </div>
     </div>
   );
@@ -844,14 +851,14 @@ function ImageField({ label, value, onChange, onUpload, required = false }: { la
       <SectionLabel>{label}{required ? " *" : ""}</SectionLabel>
       {value && <ImagePreview src={value} alt={label} />}
       <div className="flex mt-2">
-        <input type="text" value={value ?? ""} onChange={(event) => onChange(event.target.value || null)} className="min-w-0 flex-1 h-[42px] px-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[12px] outline-none focus:border-[#e9b421]" placeholder="URL devolvida pelo upload" />
-        <label className="h-[42px] px-4 border border-l-0 border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.7)] flex items-center gap-2 cursor-pointer hover:text-[#e9b421]">
+        <input type="text" value={value ?? ""} onChange={(event) => onChange(event.target.value || null)} className="min-w-0 flex-1 h-[42px] px-3 bg-site-card border border-site-text/18 text-site-text text-[12px] outline-none focus:border-site-accent" placeholder="URL devolvida pelo upload" />
+        <label className="h-[42px] px-4 border border-l-0 border-site-text/18 text-site-text/70 flex items-center gap-2 cursor-pointer hover:text-site-accent">
           <Upload size={13} />
           <span className="text-[11px]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Enviar</span>
           <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => onUpload(event.target.files?.[0])} />
         </label>
         {value && (
-          <button type="button" onClick={() => onChange(null)} className="h-[42px] px-3 border border-l-0 border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.45)] hover:text-red-400" title="Remover imagem">
+          <button type="button" onClick={() => onChange(null)} className="h-[42px] px-3 border border-l-0 border-site-text/18 text-site-text/45 hover:text-red-400" title="Remover imagem">
             <X size={14} />
           </button>
         )}
@@ -861,14 +868,14 @@ function ImageField({ label, value, onChange, onUpload, required = false }: { la
 }
 
 function ImagePreview({ src, alt }: { src: string; alt: string }) {
-  return <img src={src} alt={alt} className="mt-2 w-full h-[140px] object-cover border border-[rgba(245,242,236,0.1)]" />;
+  return <img src={src} alt={alt} className="mt-2 w-full h-[140px] object-cover border border-site-text/10" />;
 }
 
 function FormActions({ isSaving, onCancel, confirmLabel }: { isSaving: boolean; onCancel: () => void; confirmLabel: string }) {
   return (
     <div className="flex gap-3 mt-3">
-      <button type="button" onClick={onCancel} className="flex-1 h-[48px] border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.6)] text-[13px]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Cancelar</button>
-      <button type="submit" disabled={isSaving} className="flex-1 h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] disabled:opacity-50" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{isSaving ? "Salvando..." : confirmLabel}</button>
+      <button type="button" onClick={onCancel} className="flex-1 h-[48px] border border-site-text/18 text-site-text/60 text-[13px]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Cancelar</button>
+      <button type="submit" disabled={isSaving} className="flex-1 h-[48px] bg-site-accent text-site-page text-[13px] disabled:opacity-50" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{isSaving ? "Salvando..." : confirmLabel}</button>
     </div>
   );
 }
@@ -877,10 +884,10 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[560px] border-l border-[rgba(245,242,236,0.12)]" style={{ background: "#171511" }}>
-        <div className="flex items-center justify-between px-8 py-6 border-b border-[rgba(245,242,236,0.08)]">
-          <h2 className="text-[20px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
-          <button onClick={onClose} className="text-[rgba(245,242,236,0.35)] hover:text-[rgba(245,242,236,0.9)] transition-colors"><X size={20} /></button>
+      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[560px] bg-site-card border-l border-site-text/12">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-site-text/8">
+          <h2 className="text-[20px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
+          <button onClick={onClose} className="text-site-text/35 hover:text-site-text/90 transition-colors"><X size={20} /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-8 py-8">{children}</div>
       </aside>
@@ -889,7 +896,7 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
 }
 
 function Loading() {
-  return <p className="py-10 text-center text-[13px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando...</p>;
+  return <p className="py-10 text-center text-[13px] text-site-text/40" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando...</p>;
 }
 
 function ErrorBox({ message }: { message: string }) {

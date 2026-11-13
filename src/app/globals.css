@@ -97,6 +97,53 @@ html {
 }
 
 body {
+  background-color: var(--site-page-background);
+  color: var(--site-text);
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
+}
+
+.drw-inp {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  background: var(--site-page-background);
+  border: 1px solid color-mix(in srgb, var(--site-text) 18%, transparent);
+  color: var(--site-text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.drw-inp:focus {
+  border-color: var(--site-accent);
+}
+
+.drw-inp option {
+  background: var(--site-card-background);
+}
+
+.drw-inp:disabled {
+  opacity: 0.55;
+}
+
+.input-base {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  background: var(--site-card-background);
+  border-width: 1px;
+  border-style: solid;
+  color: var(--site-text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input-base:focus {
+  border-color: var(--site-accent);
+}
+
+.input-base option {
+  background: var(--site-card-background);
 }

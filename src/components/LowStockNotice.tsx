@@ -29,11 +29,11 @@ export default function LowStockNotice() {
   return (
     <Link
       href={ROUTES.inventory}
-      className="flex items-center gap-3 px-5 py-3 mb-6 border border-[rgba(233,180,33,0.4)] hover:bg-[rgba(233,180,33,0.06)] transition-colors"
+      className="flex items-center gap-3 px-5 py-3 mb-6 border border-site-accent/40 hover:bg-site-accent/6 transition-colors"
     >
-      <AlertTriangle size={16} className="text-[#e9b421] flex-shrink-0" />
-      <p className="text-[13px] text-[rgba(245,242,236,0.8)]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
-        <span className="text-[#e9b421] font-bold">{lowStockCount}</span>{" "}
+      <AlertTriangle size={16} className="text-site-accent flex-shrink-0" />
+      <p className="text-[13px] text-site-text/80" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
+        <span className="text-site-accent font-bold">{lowStockCount}</span>{" "}
         {lowStockCount === 1 ? "item abaixo" : "itens abaixo"} do estoque mínimo.{" "}
         <span className="underline">Ver estoque</span>
       </p>

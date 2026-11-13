@@ -89,7 +89,7 @@ function readErrorMessage(error: unknown, fallback: string): string {
 }
 
 function getBorderClassName(error: string | undefined): string {
-  return error ? "border-red-400" : "border-[rgba(245,242,236,0.18)]";
+  return error ? "border-red-400" : "border-site-text/18";
 }
 
 export default function Employees() {
@@ -319,17 +319,17 @@ export default function Employees() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
         <div>
-          <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+          <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
             CONTROLE DE ACESSO
           </p>
-          <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+          <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
             Funcionários
           </h1>
         </div>
         <button
           type="button"
           onClick={openAddDrawer}
-          className="flex items-center gap-2 px-5 py-3 bg-[#e9b421] text-[#12100d] text-[13px] tracking-[0.5px] hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-5 py-3 bg-site-accent text-site-page text-[13px] tracking-[0.5px] hover:opacity-90 transition-opacity"
           style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
         >
           <Plus size={16} /> Novo funcionário
@@ -338,19 +338,19 @@ export default function Employees() {
 
       {/* Search */}
       <div className="relative mb-6 max-w-[400px]">
-        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-[rgba(245,242,236,0.35)]" />
+        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-site-text/35" />
         <input
           type="text"
           placeholder="Buscar por nome ou e-mail"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="w-full h-[44px] pl-10 pr-4 bg-[#171511] border border-[rgba(245,242,236,0.15)] text-[#f5f2ec] text-[14px] placeholder-[rgba(245,242,236,0.3)] outline-none focus:border-[#e9b421] transition-colors"
+          className="w-full h-[44px] pl-10 pr-4 bg-site-card border border-site-text/15 text-site-text text-[14px] placeholder-site-text/30 outline-none focus:border-site-accent transition-colors"
           style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
         />
       </div>
 
       {listState.kind === "loading" && (
-        <p className="px-5 py-10 text-center text-[14px] text-[rgba(245,242,236,0.35)] border border-[rgba(245,242,236,0.08)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+        <p className="px-5 py-10 text-center text-[14px] text-site-text/35 border border-site-text/8" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
           Carregando funcionários...
         </p>
       )}
@@ -363,7 +363,7 @@ export default function Employees() {
           <button
             type="button"
             onClick={reloadEmployees}
-            className="px-5 py-2.5 border border-[rgba(245,242,236,0.2)] text-[13px] text-[#f5f2ec] hover:border-[#e9b421] hover:text-[#e9b421] transition-colors"
+            className="px-5 py-2.5 border border-site-text/20 text-[13px] text-site-text hover:border-site-accent hover:text-site-accent transition-colors"
             style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
           >
             Tentar novamente
@@ -373,14 +373,14 @@ export default function Employees() {
 
       {listState.kind === "loaded" && (
         <>
-          <div className="border border-[rgba(245,242,236,0.08)] overflow-x-auto">
+          <div className="border border-site-text/8 overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[rgba(245,242,236,0.1)]">
+                <tr className="border-b border-site-text/10">
                   {["NOME", "E-MAIL", "PERMISSÃO", ""].map((header) => (
                     <th
                       key={header}
-                      className="px-5 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]"
+                      className="px-5 py-4 text-left text-[11px] tracking-[2px] text-site-text/40"
                       style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}
                     >
                       {header}
@@ -393,15 +393,15 @@ export default function Employees() {
                   <tr
                     key={employee.employeeId}
                     data-employee-id={employee.employeeId}
-                    className={`border-b border-[rgba(245,242,236,0.06)] hover:bg-[rgba(245,242,236,0.02)] transition-colors ${index % 2 === 0 ? "" : "bg-[rgba(245,242,236,0.015)]"}`}
+                    className={`border-b border-site-text/6 hover:bg-site-text/2 transition-colors ${index % 2 === 0 ? "" : "bg-site-text/2"}`}
                   >
                     <td className="px-5 py-4">
-                      <p className="text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
+                      <p className="text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>
                         {employee.name}
                       </p>
                     </td>
                     <td className="px-5 py-4">
-                      <p className="text-[13px] text-[rgba(245,242,236,0.6)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                      <p className="text-[13px] text-site-text/60" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                         {employee.email}
                       </p>
                     </td>
@@ -415,7 +415,7 @@ export default function Employees() {
                           onClick={() => openEditDrawer(employee)}
                           aria-label={`Editar ${employee.name}`}
                           title="Editar funcionário"
-                          className="text-[rgba(245,242,236,0.35)] hover:text-[#e9b421] transition-colors"
+                          className="text-site-text/35 hover:text-site-accent transition-colors"
                         >
                           <Pencil size={14} />
                         </button>
@@ -424,7 +424,7 @@ export default function Employees() {
                           onClick={() => openDeleteModal(employee)}
                           aria-label={`Excluir ${employee.name}`}
                           title="Excluir funcionário"
-                          className="text-[rgba(245,242,236,0.35)] hover:text-red-400 transition-colors"
+                          className="text-site-text/35 hover:text-red-400 transition-colors"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -436,7 +436,7 @@ export default function Employees() {
                   <tr>
                     <td
                       colSpan={4}
-                      className="px-5 py-10 text-center text-[14px] text-[rgba(245,242,236,0.35)]"
+                      className="px-5 py-10 text-center text-[14px] text-site-text/35"
                       style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
                     >
                       Nenhum funcionário encontrado.
@@ -446,7 +446,7 @@ export default function Employees() {
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-[12px] text-[rgba(245,242,236,0.3)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <p className="mt-3 text-[12px] text-site-text/30" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             {filteredEmployees.length} {filteredEmployees.length === 1 ? "funcionário" : "funcionários"}
           </p>
         </>
@@ -457,17 +457,14 @@ export default function Employees() {
         createPortal(
           <>
             <div className="fixed inset-0 z-40 bg-black/60" onClick={closeDrawer} />
-            <aside
-              className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] border-l border-[rgba(245,242,236,0.12)]"
-              style={{ background: "#171511" }}
-            >
+            <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] border-l border-site-text/12 bg-site-card">
               {/* Drawer header */}
-              <div className="flex items-center justify-between px-8 py-6 border-b border-[rgba(245,242,236,0.08)]">
+              <div className="flex items-center justify-between px-8 py-6 border-b border-site-text/8">
                 <div>
-                  <p className="text-[11px] tracking-[2px] text-[#e9b421] mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+                  <p className="text-[11px] tracking-[2px] text-site-accent mb-1" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
                     {drawerMode === "add" ? "NOVO CADASTRO" : "EDITAR CADASTRO"}
                   </p>
-                  <h2 className="text-[22px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+                  <h2 className="text-[22px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
                     {drawerMode === "add" ? "Novo funcionário" : "Editar funcionário"}
                   </h2>
                 </div>
@@ -476,7 +473,7 @@ export default function Employees() {
                   onClick={closeDrawer}
                   disabled={isSaving}
                   aria-label="Fechar painel"
-                  className="text-[rgba(245,242,236,0.35)] hover:text-[rgba(245,242,236,0.9)] transition-colors disabled:opacity-40"
+                  className="text-site-text/35 hover:text-site-text/90 transition-colors disabled:opacity-40"
                 >
                   <X size={20} />
                 </button>
@@ -534,7 +531,7 @@ export default function Employees() {
                         type="button"
                         onClick={() => setIsPasswordVisible((visible) => !visible)}
                         aria-label={isPasswordVisible ? "Ocultar senha" : "Mostrar senha"}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[rgba(245,242,236,0.4)] hover:text-[rgba(245,242,236,0.85)] transition-colors"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-site-text/40 hover:text-site-text/85 transition-colors"
                       >
                         {isPasswordVisible ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -546,7 +543,7 @@ export default function Employees() {
                       id="employee-role"
                       value={form.role}
                       onChange={(event) => updateField("role", event.target.value as Role)}
-                      className="input-base border-[rgba(245,242,236,0.18)]"
+                      className="input-base border-site-text/18"
                       style={{ fontFamily: "'Barlow:Regular', sans-serif" }}
                     >
                       <option value="employee">Funcionário</option>
@@ -556,11 +553,11 @@ export default function Employees() {
                   </Field>
 
                   {/* Role description */}
-                  <div className="border border-[rgba(245,242,236,0.07)] px-5 py-4">
-                    <p className="text-[11px] tracking-[1.8px] text-[rgba(245,242,236,0.4)] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+                  <div className="border border-site-text/7 px-5 py-4">
+                    <p className="text-[11px] tracking-[1.8px] text-site-text/40 mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
                       SOBRE ESTE NÍVEL
                     </p>
-                    <p className="text-[13px] text-[rgba(245,242,236,0.55)] leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                    <p className="text-[13px] text-site-text/55 leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                       {ROLE_DESCRIPTIONS[form.role]}
                     </p>
                   </div>
@@ -577,12 +574,12 @@ export default function Employees() {
                 </div>
 
                 {/* Drawer footer */}
-                <div className="px-8 py-6 border-t border-[rgba(245,242,236,0.08)] flex gap-3">
+                <div className="px-8 py-6 border-t border-site-text/8 flex gap-3">
                   <button
                     type="button"
                     onClick={closeDrawer}
                     disabled={isSaving}
-                    className="flex-1 h-[48px] border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.6)] text-[13px] hover:border-[rgba(245,242,236,0.35)] transition-colors disabled:opacity-50"
+                    className="flex-1 h-[48px] border border-site-text/18 text-site-text/60 text-[13px] hover:border-site-text/35 transition-colors disabled:opacity-50"
                     style={{ fontFamily: "'Barlow:Medium', sans-serif" }}
                   >
                     Cancelar
@@ -590,7 +587,7 @@ export default function Employees() {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex-1 h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] hover:opacity-90 transition-opacity disabled:opacity-60"
+                    className="flex-1 h-[48px] bg-site-accent text-site-page text-[13px] hover:opacity-90 transition-opacity disabled:opacity-60"
                     style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}
                   >
                     {isSaving ? "Salvando..." : drawerMode === "add" ? "Criar conta" : "Salvar alterações"}
@@ -606,8 +603,8 @@ export default function Employees() {
       {deleteTarget !== null &&
         createPortal(
           <Modal title="Excluir funcionário" onClose={closeDeleteModal}>
-            <p className="text-[15px] text-[rgba(245,242,236,0.7)] leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
-              Esta ação removerá o acesso de <strong className="text-[#f5f2ec]">{deleteTarget.name}</strong> à área interna. O histórico de vendas realizadas por esta conta será preservado. Deseja continuar?
+            <p className="text-[15px] text-site-text/70 leading-[1.6]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+              Esta ação removerá o acesso de <strong className="text-site-text">{deleteTarget.name}</strong> à área interna. O histórico de vendas realizadas por esta conta será preservado. Deseja continuar?
             </p>
             {deleteError && (
               <p
@@ -623,7 +620,7 @@ export default function Employees() {
                 type="button"
                 onClick={closeDeleteModal}
                 disabled={isDeleting}
-                className="px-5 py-2.5 border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.6)] text-[13px] hover:border-[rgba(245,242,236,0.35)] transition-colors disabled:opacity-50"
+                className="px-5 py-2.5 border border-site-text/18 text-site-text/60 text-[13px] hover:border-site-text/35 transition-colors disabled:opacity-50"
                 style={{ fontFamily: "'Barlow:Medium', sans-serif" }}
               >
                 Cancelar
@@ -641,17 +638,15 @@ export default function Employees() {
           </Modal>,
           document.body,
         )}
-
-      <style>{`.input-base { width: 100%; height: 46px; padding: 0 14px; background: #171511; border-width: 1px; border-style: solid; color: #f5f2ec; font-size: 14px; outline: none; transition: border-color 0.15s; } .input-base:focus { border-color: #e9b421; } .input-base option { background: #1a1713; }`}</style>
     </div>
   );
 }
 
 function RoleTag({ role }: { role: Role }) {
   const colors: Record<Role, string> = {
-    admin: "bg-[#e9b421] text-[#12100d]",
-    manager: "bg-[rgba(233,180,33,0.18)] text-[#e9b421]",
-    employee: "bg-[rgba(245,242,236,0.08)] text-[rgba(245,242,236,0.6)]",
+    admin: "bg-site-accent text-site-page",
+    manager: "bg-site-accent/18 text-site-accent",
+    employee: "bg-site-text/8 text-site-text/60",
   };
   return (
     <span
@@ -676,7 +671,7 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={htmlFor} className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
+      <label htmlFor={htmlFor} className="text-[11px] tracking-[2px] text-site-text/50" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>
         {label}
       </label>
       {children}
@@ -693,12 +688,12 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative w-full max-w-[480px] border border-[rgba(245,242,236,0.12)] p-8" style={{ background: "#171511" }}>
+      <div className="relative w-full max-w-[480px] border border-site-text/12 bg-site-card p-8">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-[20px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
+          <h2 className="text-[20px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>
             {title}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Fechar janela" className="text-[rgba(245,242,236,0.4)] hover:text-[rgba(245,242,236,0.9)] transition-colors">
+          <button type="button" onClick={onClose} aria-label="Fechar janela" className="text-site-text/40 hover:text-site-text/90 transition-colors">
             <X size={18} />
           </button>
         </div>

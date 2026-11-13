@@ -205,8 +205,8 @@ export default function Commissions() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-[12px] tracking-[2.5px] text-[#e9b421] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>COMISSÕES</p>
-          <h1 className="text-[32px] text-[#f5f2ec] leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Comissões</h1>
+          <p className="text-[12px] tracking-[2.5px] text-site-accent mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>COMISSÕES</p>
+          <h1 className="text-[32px] text-site-text leading-[1.2] tracking-[-0.64px]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>Comissões</h1>
         </div>
       </div>
 
@@ -218,10 +218,10 @@ export default function Commissions() {
       )}
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-0 mb-6 border-b border-[rgba(245,242,236,0.1)]">
+      <div className="flex flex-wrap gap-0 mb-6 border-b border-site-text/10">
         {visibleTabs.map((option) => (
           <button key={option} onClick={() => changeTab(option)}
-            className={`px-6 py-3 text-[13px] border-b-2 transition-all ${tab === option ? "border-[#e9b421] text-[#e9b421]" : "border-transparent text-[rgba(245,242,236,0.5)] hover:text-[rgba(245,242,236,0.8)]"}`}
+            className={`px-6 py-3 text-[13px] border-b-2 transition-all ${tab === option ? "border-site-accent text-site-accent" : "border-transparent text-site-text/50 hover:text-site-text/80"}`}
             style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>
             {option}
           </button>
@@ -233,67 +233,67 @@ export default function Commissions() {
           <div className="flex flex-wrap items-end gap-4 mb-6">
             {canSeeOtherSellers && (
               <label className="flex flex-col gap-2">
-                <span className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>FUNCIONÁRIO</span>
-                <select value={employeeId} onChange={(event) => changeEmployee(event.target.value)} className="h-[40px] px-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                <span className="text-[11px] tracking-[2px] text-site-text/45" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>FUNCIONÁRIO</span>
+                <select value={employeeId} onChange={(event) => changeEmployee(event.target.value)} className="h-[40px] px-3 bg-site-card border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent [&>option]:bg-site-card" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                   {sellers.map((seller) => <option key={seller.employeeId} value={seller.employeeId}>{seller.name}</option>)}
                 </select>
               </label>
             )}
             <label className="flex flex-col gap-2">
-              <span className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>DE</span>
-              <input type="date" value={startDate} onChange={(event) => changeStartDate(event.target.value)} className="h-[40px] px-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] [color-scheme:dark]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+              <span className="text-[11px] tracking-[2px] text-site-text/45" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>DE</span>
+              <input type="date" value={startDate} onChange={(event) => changeStartDate(event.target.value)} className="h-[40px] px-3 bg-site-card border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent [color-scheme:dark]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
             </label>
             <label className="flex flex-col gap-2">
-              <span className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ATÉ</span>
-              <input type="date" value={endDate} onChange={(event) => changeEndDate(event.target.value)} className="h-[40px] px-3 bg-[#171511] border border-[rgba(245,242,236,0.18)] text-[#f5f2ec] text-[13px] outline-none focus:border-[#e9b421] [color-scheme:dark]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
+              <span className="text-[11px] tracking-[2px] text-site-text/45" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>ATÉ</span>
+              <input type="date" value={endDate} onChange={(event) => changeEndDate(event.target.value)} className="h-[40px] px-3 bg-site-card border border-site-text/18 text-site-text text-[13px] outline-none focus:border-site-accent [color-scheme:dark]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }} />
             </label>
           </div>
 
           {!periodIsValid ? (
             <p role="alert" className="py-10 text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{INVALID_PERIOD_MESSAGE}</p>
           ) : commissionsState.kind === "idle" || commissionsState.kind === "loading" ? (
-            <p className="py-16 text-center text-[14px] text-[rgba(245,242,236,0.45)]" aria-live="polite" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando comissões...</p>
+            <p className="py-16 text-center text-[14px] text-site-text/45" aria-live="polite" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>Carregando comissões...</p>
           ) : commissionsState.kind === "failed" ? (
             <p role="alert" className="py-10 text-[14px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{commissionsState.message}</p>
           ) : (
             <>
-              <div className="grid md:grid-cols-3 gap-px bg-[rgba(245,242,236,0.08)] mb-6">
-                <div className="bg-[#12100d] p-6">
-                  <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>COMISSÃO ACUMULADA</p>
-                  <p className="text-[32px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{BRL.format(commissionsState.commissions.totalCommission)}</p>
+              <div className="grid md:grid-cols-3 gap-px bg-site-text/8 mb-6">
+                <div className="bg-site-page p-6">
+                  <p className="text-[11px] tracking-[2px] text-site-text/40 mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>COMISSÃO ACUMULADA</p>
+                  <p className="text-[32px] text-site-accent" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{BRL.format(commissionsState.commissions.totalCommission)}</p>
                 </div>
-                <div className="bg-[#12100d] p-6">
-                  <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>VALOR VENDIDO</p>
-                  <p className="text-[32px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{BRL.format(commissionsState.commissions.totalSalesValue)}</p>
+                <div className="bg-site-page p-6">
+                  <p className="text-[11px] tracking-[2px] text-site-text/40 mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>VALOR VENDIDO</p>
+                  <p className="text-[32px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{BRL.format(commissionsState.commissions.totalSalesValue)}</p>
                 </div>
-                <div className="bg-[#12100d] p-6">
-                  <p className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)] mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>VENDAS NO PERÍODO</p>
-                  <p className="text-[32px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{commissionsState.commissions.salesCount}</p>
+                <div className="bg-site-page p-6">
+                  <p className="text-[11px] tracking-[2px] text-site-text/40 mb-2" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>VENDAS NO PERÍODO</p>
+                  <p className="text-[32px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{commissionsState.commissions.salesCount}</p>
                 </div>
               </div>
 
               {commissionsState.commissions.sales.length === 0 ? (
-                <p className="py-12 text-center text-[14px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+                <p className="py-12 text-center text-[14px] text-site-text/45" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
                   Nenhuma venda no período. O total acumulado é R$ 0,00.
                 </p>
               ) : (
-                <div className="border border-[rgba(245,242,236,0.08)] overflow-x-auto">
+                <div className="border border-site-text/8 overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-[rgba(245,242,236,0.1)]">
+                      <tr className="border-b border-site-text/10">
                         {["PROTOCOLO", "DATA", "VALOR", "COMISSÃO", "STATUS"].map((header) => (
-                          <th key={header} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{header}</th>
+                          <th key={header} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{header}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {commissionsState.commissions.sales.map((sale) => (
-                        <tr key={sale.orderId} className="border-b border-[rgba(245,242,236,0.06)]">
-                          <td className="px-5 py-4 text-[12px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{sale.trackingCode}</td>
-                          <td className="px-5 py-4 text-[13px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{formatSoldAt(sale.soldAt)}</td>
-                          <td className="px-5 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{BRL.format(sale.finalPrice)}</td>
-                          <td className="px-5 py-4 text-[14px] text-[#e9b421]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{BRL.format(sale.commission)}</td>
-                          <td className="px-5 py-4 text-[12px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{sale.status}</td>
+                        <tr key={sale.orderId} className="border-b border-site-text/6">
+                          <td className="px-5 py-4 text-[12px] text-site-text/55" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{sale.trackingCode}</td>
+                          <td className="px-5 py-4 text-[13px] text-site-text/55" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{formatSoldAt(sale.soldAt)}</td>
+                          <td className="px-5 py-4 text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{BRL.format(sale.finalPrice)}</td>
+                          <td className="px-5 py-4 text-[14px] text-site-accent" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{BRL.format(sale.commission)}</td>
+                          <td className="px-5 py-4 text-[12px] text-site-text/55" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{sale.status}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -308,27 +308,27 @@ export default function Commissions() {
       {tab === "Regras de comissão" && isAdmin && (
         <div>
           {actionError && <p role="alert" className="mb-4 px-4 py-3 border border-red-500/40 text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{actionError}</p>}
-          <p className="mb-4 text-[13px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
+          <p className="mb-4 text-[13px] text-site-text/50" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>
             Cada funcionário tem uma regra vigente, em percentual ou valor fixo. A venda guarda a comissão calculada no lançamento; mudar a regra não altera vendas antigas.
           </p>
-          <div className="border border-[rgba(245,242,236,0.08)] overflow-x-auto">
+          <div className="border border-site-text/8 overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[rgba(245,242,236,0.1)]">
+                <tr className="border-b border-site-text/10">
                   {["FUNCIONÁRIO", "E-MAIL", "NÍVEL", "REGRA ATUAL", ""].map((header) => (
-                    <th key={header} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-[rgba(245,242,236,0.4)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{header}</th>
+                    <th key={header} className="px-5 py-4 text-left text-[11px] tracking-[2px] text-site-text/40" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{header}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {employees.map((employee) => (
-                  <tr key={employee.employeeId} className="border-b border-[rgba(245,242,236,0.06)]">
-                    <td className="px-5 py-4 text-[14px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{employee.name}</td>
-                    <td className="px-5 py-4 text-[13px] text-[rgba(245,242,236,0.55)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{employee.email}</td>
-                    <td className="px-5 py-4 text-[12px] text-[rgba(245,242,236,0.45)]" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{employee.role.toUpperCase()}</td>
-                    <td className="px-5 py-4 text-[14px] text-[#e9b421]" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{formatRule(employee.commissionType, employee.commissionValue)}</td>
+                  <tr key={employee.employeeId} className="border-b border-site-text/6">
+                    <td className="px-5 py-4 text-[14px] text-site-text" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{employee.name}</td>
+                    <td className="px-5 py-4 text-[13px] text-site-text/55" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{employee.email}</td>
+                    <td className="px-5 py-4 text-[12px] text-site-text/45" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{employee.role.toUpperCase()}</td>
+                    <td className="px-5 py-4 text-[14px] text-site-accent" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{formatRule(employee.commissionType, employee.commissionValue)}</td>
                     <td className="px-5 py-4">
-                      <button onClick={() => openRuleForm(employee)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-[rgba(245,242,236,0.5)] hover:text-[#e9b421]" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
+                      <button onClick={() => openRuleForm(employee)} className="flex items-center gap-1 text-[11px] tracking-[1.5px] text-site-text/50 hover:text-site-accent" style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
                         <Pencil size={12} /> EDITAR
                       </button>
                     </td>
@@ -348,7 +348,7 @@ export default function Commissions() {
               <div className="grid grid-cols-3 gap-2">
                 {([["none", "SEM REGRA"], ["percentage", "PERCENTUAL"], ["fixed", "VALOR FIXO"]] as const).map(([type, label]) => (
                   <button key={type} type="button" onClick={() => setRuleForm({ ...ruleForm, type })}
-                    className={`h-[44px] border text-[11px] tracking-[1px] ${ruleForm.type === type ? "border-[#e9b421] bg-[rgba(233,180,33,0.1)] text-[#e9b421]" : "border-[rgba(245,242,236,0.15)] text-[rgba(245,242,236,0.5)]"}`}
+                    className={`h-[44px] border text-[11px] tracking-[1px] ${ruleForm.type === type ? "border-site-accent bg-site-accent/10 text-site-accent" : "border-site-text/15 text-site-text/50"}`}
                     style={{ fontFamily: "'Barlow Condensed:SemiBold', sans-serif" }}>
                     {label}
                   </button>
@@ -362,15 +362,13 @@ export default function Commissions() {
             )}
             {actionError && <p role="alert" className="text-[13px] text-red-300" style={{ fontFamily: "'Barlow:Regular', sans-serif" }}>{actionError}</p>}
             <div className="flex gap-3 mt-3">
-              <button type="button" onClick={() => setRuleForm(null)} className="flex-1 h-[48px] border border-[rgba(245,242,236,0.18)] text-[rgba(245,242,236,0.6)] text-[13px]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Cancelar</button>
-              <button type="submit" disabled={isSaving} className="flex-1 h-[48px] bg-[#e9b421] text-[#12100d] text-[13px] disabled:opacity-50" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{isSaving ? "Salvando..." : "Salvar regra"}</button>
+              <button type="button" onClick={() => setRuleForm(null)} className="flex-1 h-[48px] border border-site-text/18 text-site-text/60 text-[13px]" style={{ fontFamily: "'Barlow:Medium', sans-serif" }}>Cancelar</button>
+              <button type="submit" disabled={isSaving} className="flex-1 h-[48px] bg-site-accent text-site-page text-[13px] disabled:opacity-50" style={{ fontFamily: "'Poppins:SemiBold', sans-serif" }}>{isSaving ? "Salvando..." : "Salvar regra"}</button>
             </div>
           </form>
         </Drawer>,
         document.body
       )}
-
-      <style>{`.drw-inp { width:100%; height:46px; padding:0 14px; background:#12100d; border:1px solid rgba(245,242,236,0.18); color:#f5f2ec; font-size:14px; outline:none; transition:border-color .15s; } .drw-inp:focus { border-color:#e9b421; } .drw-inp option { background:#1a1713; }`}</style>
     </div>
   );
 }
@@ -379,10 +377,10 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] border-l border-[rgba(245,242,236,0.12)]" style={{ background: "#171511" }}>
-        <div className="flex items-center justify-between px-8 py-6 border-b border-[rgba(245,242,236,0.08)]">
-          <h2 className="text-[20px] text-[#f5f2ec]" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
-          <button onClick={onClose} className="text-[rgba(245,242,236,0.35)] hover:text-[rgba(245,242,236,0.9)] transition-colors"><X size={20} /></button>
+      <aside className="fixed inset-y-0 right-0 z-50 flex flex-col w-full max-w-[480px] border-l border-site-text/12 bg-site-card">
+        <div className="flex items-center justify-between px-8 py-6 border-b border-site-text/8">
+          <h2 className="text-[20px] text-site-text" style={{ fontFamily: "'Poppins:Bold', sans-serif" }}>{title}</h2>
+          <button onClick={onClose} className="text-site-text/35 hover:text-site-text/90 transition-colors"><X size={20} /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-8 py-8">{children}</div>
       </aside>
@@ -393,7 +391,7 @@ function Drawer({ title, onClose, children }: { title: string; onClose: () => vo
 function DF({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-[11px] tracking-[2px] text-[rgba(245,242,236,0.5)]" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{label}</label>
+      <label className="text-[11px] tracking-[2px] text-site-text/50" style={{ fontFamily: "'Barlow Condensed:Regular', sans-serif" }}>{label}</label>
       {children}
     </div>
   );
