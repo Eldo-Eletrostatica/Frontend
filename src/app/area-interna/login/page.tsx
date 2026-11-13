@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 import { findPathAfterLogin } from "@/lib/auth/loginRedirect";
 import { ROUTES } from "@/lib/routes";
 
-const BLANK_SCREEN = <div className="min-h-screen" style={{ background: "#12100d" }} />;
+const BLANK_SCREEN = <div className="min-h-screen bg-site-page" />;
 
 function InternalLogin() {
   const router = useRouter();

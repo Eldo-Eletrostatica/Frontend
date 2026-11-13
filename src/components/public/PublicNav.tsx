@@ -4,11 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ROUTES } from "@/lib/routes";
-import type { VisualSettings } from "./publicContent";
+import BrandLogo from "@/components/BrandLogo";
 import { PUBLIC_LINKS } from "./publicLinks";
-import SiteLogo from "./SiteLogo";
 
-export default function PublicNav({ logo }: { logo: VisualSettings["logo"] }) {
+export default function PublicNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -36,7 +35,7 @@ export default function PublicNav({ logo }: { logo: VisualSettings["logo"] }) {
         <div className="max-w-[1240px] mx-auto px-5 h-[64px] flex items-center justify-between">
           {/* Logo */}
           <Link href={ROUTES.home} onClick={() => handleNavigate(ROUTES.home)} className="flex items-center gap-3 flex-shrink-0">
-            <SiteLogo logo={logo} size={36} textClassName="text-[13px] tracking-[2.1px] leading-tight" taglineClassName="text-site-text/50 text-[8px] tracking-[2.4px]" />
+            <BrandLogo bare size={36} textClassName="text-[13px] tracking-[2.1px] leading-tight" taglineClassName="text-site-text/50 text-[8px] tracking-[2.4px]" />
           </Link>
 
           {/* Desktop nav */}
@@ -86,7 +85,7 @@ export default function PublicNav({ logo }: { logo: VisualSettings["logo"] }) {
           >
             {/* Logo in drawer */}
             <Link href={ROUTES.home} onClick={() => handleNavigate(ROUTES.home)} className="w-full flex items-center gap-3 px-6 pt-8 pb-6 border-b border-site-text/8 text-left">
-              <SiteLogo logo={logo} size={42} textClassName="text-[13px] tracking-[2px]" taglineClassName="text-site-text/40 text-[9px] tracking-[2px]" />
+              <BrandLogo bare size={42} textClassName="text-[13px] tracking-[2px]" taglineClassName="text-site-text/40 text-[9px] tracking-[2px]" />
             </Link>
 
             {/* Nav links */}
