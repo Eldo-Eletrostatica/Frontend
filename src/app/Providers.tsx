@@ -1,10 +1,20 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { VisualSettings } from "@/components/public/publicContent";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
+import { VisualSettingsProvider } from "@/lib/siteSettings/VisualSettingsProvider";
 
-// The employee session lives in this context. It sits in the root layout so it
-// survives navigation between routes.
-export default function Providers({ children }: { children: ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
+export default function Providers({
+  initialVisualSettings,
+  children,
+}: {
+  initialVisualSettings: VisualSettings;
+  children: ReactNode;
+}) {
+  return (
+    <VisualSettingsProvider initialVisualSettings={initialVisualSettings}>
+      <AuthProvider>{children}</AuthProvider>
+    </VisualSettingsProvider>
+  );
 }

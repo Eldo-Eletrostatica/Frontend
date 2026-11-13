@@ -1,23 +1,10 @@
 import type { VisualSettings } from "./publicContent";
-
-const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
-
-// The values go into a <style> tag, so anything that is not a plain hex color
-// is dropped and the default from globals.css stays.
-function formatDeclaration(variable: string, color: string): string {
-  return HEX_COLOR_PATTERN.test(color) ? `${variable}: ${color};` : "";
-}
+import { buildThemeDeclarations } from "@/lib/siteSettings/theme";
 
 // Rendered on the server, so the first paint already has the published colors.
-// It targets :root because the modals are portaled to <body>, outside the
-// site layout.
+// It targets :root because modals and internal layouts rely on the same tokens.
 export default function SiteThemeStyle({ colors }: { colors: VisualSettings["colors"] }) {
-  const declarations = [
-    formatDeclaration("--site-accent", colors.accent),
-    formatDeclaration("--site-page-background", colors.pageBackground),
-    formatDeclaration("--site-card-background", colors.cardBackground),
-    formatDeclaration("--site-text", colors.text),
-  ].join(" ");
+  const declarations = buildThemeDeclarations(colors);
 
   return <style>{`:root { ${declarations} }`}</style>;
 }
