@@ -3,6 +3,7 @@
 //   npm run test:e2e                     every flow, in order
 //   npm run test:e2e -- venda estoque    only these flows
 //   npm run test:e2e -- fumaca           one test of each flow
+//   npm run test:e2e -- producao         read-only check of production
 //
 // Before the browser opens it checks the variables, wakes the site and the
 // API up (free instances sleep) and, with E2E_DATABASE_URL, saves a copy of
@@ -17,7 +18,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 const { clearSiteCache } = require("./support/api");
-const { ADMIN_CREDENTIALS, BASE_URL } = require("./support/browser");
+const { ADMIN_CREDENTIALS, BASE_URL, IS_PRODUCTION, MANAGER_CREDENTIALS } = require("./support/browser");
 
 const E2E_DIRECTORY = __dirname;
 const DATABASE_URL = process.env.E2E_DATABASE_URL;
@@ -57,6 +58,8 @@ const FLOWS = {
   gestao: [{ file: "08-gestor", pattern: "\\(US1[12]\\)" }],
   administracao: [{ file: "04-administrador" }],
   celular: [{ file: "09-celular" }],
+  // Read-only: the only flow allowed against production.
+  producao: [{ file: "01-visitante-vitrine" }, { file: "10-producao" }],
 };
 // One test per flow, to check a deploy in a few minutes.
 const SMOKE_FLOW = [
@@ -69,13 +72,23 @@ const SMOKE_FLOW = [
   { file: "09-celular", pattern: "site público" },
 ];
 const SMOKE_FLOW_NAME = "fumaca";
+const PRODUCTION_FLOW_NAME = "producao";
 
 function isLocalUrl(url) {
   return ["localhost", "127.0.0.1"].includes(new URL(url).hostname);
 }
 
+// The other flows create contacts, sales and employees and restore the
+// database at the end, which in production would erase what real clients did
+// meanwhile.
 function selectFlows(names) {
-  if (names.length === 0) return Object.keys(FLOWS);
+  if (IS_PRODUCTION) {
+    if (names.some((name) => name !== PRODUCTION_FLOW_NAME)) {
+      throw new Error(`Na produção só roda o fluxo ${PRODUCTION_FLOW_NAME}, que não grava nada.`);
+    }
+    return [PRODUCTION_FLOW_NAME];
+  }
+  if (names.length === 0) return Object.keys(FLOWS).filter((name) => name !== PRODUCTION_FLOW_NAME);
   const unknown = names.filter((name) => name !== SMOKE_FLOW_NAME && !FLOWS[name]);
   if (unknown.length > 0) {
     const available = [...Object.keys(FLOWS), SMOKE_FLOW_NAME].join(", ");
@@ -87,6 +100,13 @@ function selectFlows(names) {
 // The development defaults only exist locally, so a remote site needs the
 // staging values.
 function checkVariables() {
+  if (IS_PRODUCTION) {
+    if (DATABASE_URL) throw new Error("Na produção, tire o E2E_DATABASE_URL: o banco de produção nunca é restaurado.");
+    if (!process.env.E2E_MANAGER_EMAIL || !process.env.E2E_MANAGER_PASSWORD) {
+      throw new Error("Para rodar na produção, defina E2E_MANAGER_EMAIL e E2E_MANAGER_PASSWORD da conta de gestor de teste (ver o README).");
+    }
+    return;
+  }
   if (isLocalUrl(BASE_URL)) return;
   const missing = [];
   if (!process.env.E2E_CAPTCHA_TOKEN) missing.push("E2E_CAPTCHA_TOKEN");
@@ -132,8 +152,9 @@ async function wakeUp() {
   ]);
   await waitUntilAvailable(`${BASE_URL}/api`, "O proxy do site para a API");
   // A restore made outside the suite may have left the site's cache behind
-  // the database.
-  await clearSiteCache();
+  // the database. Production is never restored and the suite has no admin
+  // account there.
+  if (!IS_PRODUCTION) await clearSiteCache();
 }
 
 // The PostgreSQL client runs from Docker, so nobody installs it. A database on
@@ -259,7 +280,8 @@ async function restoreAndUnlock(dumpPath) {
 async function main() {
   const flowNames = selectFlows(process.argv.slice(2));
   checkVariables();
-  console.log(`Site: ${BASE_URL} | admin: ${ADMIN_CREDENTIALS.email} | fluxos: ${flowNames.join(", ")}`);
+  const account = IS_PRODUCTION ? `gestor: ${MANAGER_CREDENTIALS.email}` : `admin: ${ADMIN_CREDENTIALS.email}`;
+  console.log(`Site: ${BASE_URL} | ${account} | fluxos: ${flowNames.join(", ")}`);
   await wakeUp();
 
   const runId = randomUUID();
