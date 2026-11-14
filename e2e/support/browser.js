@@ -12,6 +12,10 @@ const { Builder, By, Key, until } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
 
 const BASE_URL = (process.env.E2E_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+// The site the clients use, where only the read-only flow runs. A custom
+// domain, once it exists, joins this list.
+const PRODUCTION_HOSTNAMES = ["eldo-site.onrender.com"];
+const IS_PRODUCTION = PRODUCTION_HOSTNAMES.includes(new URL(BASE_URL).hostname);
 const ADMIN_CREDENTIALS = {
   email: process.env.E2E_ADMIN_EMAIL ?? "admin@eldo.com.br",
   password: process.env.E2E_ADMIN_PASSWORD ?? "Admin@123",
@@ -335,6 +339,7 @@ module.exports = {
   BASE_URL,
   DEFAULT_TIMEOUT,
   EMPLOYEE_CREDENTIALS,
+  IS_PRODUCTION,
   MANAGER_CREDENTIALS,
   buildDriver,
   buildMobileDriver,

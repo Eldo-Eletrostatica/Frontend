@@ -157,7 +157,7 @@ Todo PR para a `main` ou para a `producao` e todo push nelas rodam o workflow `.
 
 ## Testes de ponta a ponta
 
-A suíte em `e2e/` usa Selenium. Ela abre o Chrome da máquina que roda e visita o site no endereço de `E2E_BASE_URL`: o localhost ou a **homologação**, nunca a produção, porque a suíte cria contatos, orçamentos, vendas e funcionários de teste (ADR 0009). O Selenium Manager, que vem com o `selenium-webdriver`, baixa o ChromeDriver compatível com o Chrome instalado. Precisa do Node 22 e do Docker, que roda o cliente do PostgreSQL.
+A suíte em `e2e/` usa Selenium. Ela abre o Chrome da máquina que roda e visita o site no endereço de `E2E_BASE_URL`: o localhost ou a **homologação**, porque a suíte cria contatos, orçamentos, vendas e funcionários de teste. Na **produção** roda só o fluxo `producao`, que não grava nada (ADR 0009). O Selenium Manager, que vem com o `selenium-webdriver`, baixa o ChromeDriver compatível com o Chrome instalado. Precisa do Node 22 e do Docker, que roda o cliente do PostgreSQL.
 
 ### Fluxos
 
@@ -174,9 +174,10 @@ A suíte roda por fluxo de interação, uma jornada que pode passar por várias 
 | `administracao` | Login, funcionários, permissões, tabela de orçamento, identidade visual, portfólio e eventos | `04` (US08, US09, US10, US25, US26, US27) |
 | `celular` | Site e área interna numa tela de 390 px, sem rolagem lateral | `09` |
 | `fumaca` | Um teste de cada fluxo, para conferir um deploy em poucos minutos | |
+| `producao` | Só leitura: vitrine, página de orçamento sem enviar, protocolo inexistente, telas da área interna com o gestor de teste e site no celular. O único aceito na produção | `01` e `10` |
 
 ```bash
-npm run test:e2e                     # todos os fluxos, na ordem da tabela
+npm run test:e2e                     # todos os fluxos, na ordem da tabela (menos o producao)
 npm run test:e2e -- venda estoque    # só esses
 npm run test:e2e -- fumaca           # checagem rápida
 ```
@@ -248,6 +249,24 @@ A homologação já tem os eventos e o portfólio reais. Como o banco volta ao e
 | `E2E_STEP_DELAY_MS` | `1000`, a pausa entre os passos para quem assiste; `0` roda direto |
 | `E2E_HEADLESS` | `false`, com o navegador aberto na tela; `true` roda sem tela |
 
+#### Contra a produção
+
+Na produção roda só o fluxo `producao`, à mão, depois de uma promoção. Ele navega e confere as telas sem enviar formulário nem salvar nada, e o banco não é copiado nem restaurado. O `e2e/run.js` reconhece o endereço da produção e recusa qualquer outro fluxo ou um `E2E_DATABASE_URL`.
+
+O login usa uma **conta de gestor só para os testes**, que o administrador cria uma vez em **Área interna → Funcionários**, com o perfil Gestor. Os dados ficam num arquivo fora dos repositórios, por exemplo `../prod-e2e.env`:
+
+```env
+E2E_BASE_URL='https://eldo-site.onrender.com'
+E2E_MANAGER_EMAIL='<e-mail do gestor de teste>'
+E2E_MANAGER_PASSWORD='<senha do gestor de teste>'
+```
+
+```bash
+node --env-file=../prod-e2e.env e2e/run.js producao
+```
+
+No localhost e na homologação, o mesmo fluxo roda com `npm run test:e2e -- producao` e cria o gestor de teste da suíte, como os outros.
+
 ### No GitHub Actions
 
 O workflow `.github/workflows/e2e-homologacao.yml` roda o fluxo `fumaca` sem tela depois de cada commit na `main`. Ele espera o CI passar e o Render publicar o commit na homologação (a rota `/versao` do site devolve o commit no ar) e só então abre o Chrome. Se falhar, os prints ficam como artefato da execução, e a mudança não deve ser promovida para a `producao`.
@@ -255,3 +274,5 @@ O workflow `.github/workflows/e2e-homologacao.yml` roda o fluxo `fumaca` sem tel
 Para rodar outros fluxos, ou depois de uma mudança no Backend, use **Actions → Selenium na homologação → Run workflow** e informe os fluxos.
 
 O workflow usa estes segredos do repositório (Settings → Secrets and variables → Actions): `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_CAPTCHA_TOKEN` e `E2E_DATABASE_URL`, com os mesmos valores da homologação acima.
+
+Na produção, **Actions → Selenium na produção → Run workflow** roda o fluxo `producao` sem tela, com os testes da branch `producao`. Ele não roda sozinho e usa os segredos `PROD_E2E_MANAGER_EMAIL` e `PROD_E2E_MANAGER_PASSWORD`, da conta de gestor de teste.

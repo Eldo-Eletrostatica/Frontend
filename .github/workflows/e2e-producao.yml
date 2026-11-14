@@ -1,0 +1,52 @@
+name: Selenium na produção
+
+# Read-only check of the site the clients use, run by hand after a promotion.
+# run.js only accepts the producao flow against production, never restores
+# its database and needs no admin account there.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-producao
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  E2E_BASE_URL: https://eldo-site.onrender.com
+
+jobs:
+  e2e:
+    name: Checagem da produção
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # The tests of the producao branch match the code production runs.
+      - uses: actions/checkout@v4
+        with:
+          ref: producao
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Rodar o fluxo producao
+        env:
+          E2E_HEADLESS: "true"
+          E2E_STEP_DELAY_MS: "0"
+          E2E_MANAGER_EMAIL: ${{ secrets.PROD_E2E_MANAGER_EMAIL }}
+          E2E_MANAGER_PASSWORD: ${{ secrets.PROD_E2E_MANAGER_PASSWORD }}
+        run: npm run test:e2e -- producao
+
+      - name: Guardar os prints das falhas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prints-selenium-producao
+          path: e2e/screenshots/
+          if-no-files-found: ignore
