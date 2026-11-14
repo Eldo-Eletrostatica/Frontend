@@ -1,0 +1,89 @@
+name: Selenium na homologação
+
+# Runs after the CI of a commit on main succeeds, which is also when Render
+# starts deploying it to the staging environment (checksPass). Run it by hand,
+# with the flows of your choice, after a Backend change.
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      flows:
+        description: "Fluxos separados por espaço (vazio = fumaca)"
+        required: false
+        default: fumaca
+
+# The suite restores the staging database at the end, so two runs never
+# overlap; a newer one waits for the current one.
+concurrency:
+  group: e2e-homologacao
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  E2E_BASE_URL: https://eldo-site-homolog.onrender.com
+  # Woken directly: a request from the site does not wake a sleeping API.
+  E2E_API_URL: https://eldo-api-homolog.onrender.com
+  # Building, deploying and waking a free instance up takes a while.
+  DEPLOY_TIMEOUT_MINUTES: 25
+
+jobs:
+  e2e:
+    name: Fluxos na homologação
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # /versao answers the commit Render runs; a manual run tests whatever is
+      # deployed.
+      - name: Esperar o Render publicar o commit
+        if: github.event_name == 'workflow_run'
+        env:
+          EXPECTED_COMMIT: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          deadline=$(( $(date +%s) + DEPLOY_TIMEOUT_MINUTES * 60 ))
+          until [ "$(curl -s -m 60 "$E2E_BASE_URL/versao" | jq -r .commit)" = "$EXPECTED_COMMIT" ]; do
+            if [ "$(date +%s)" -gt "$deadline" ]; then
+              echo "O Render não publicou $EXPECTED_COMMIT em $DEPLOY_TIMEOUT_MINUTES minutos."
+              exit 1
+            fi
+            sleep 30
+          done
+          echo "Homologação no commit $EXPECTED_COMMIT."
+
+      # Chrome comes with the GitHub runner; Selenium Manager downloads the
+      # matching ChromeDriver, and Docker runs pg_dump and pg_restore.
+      - name: Rodar os fluxos
+        env:
+          E2E_HEADLESS: "true"
+          E2E_STEP_DELAY_MS: "0"
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_CAPTCHA_TOKEN: ${{ secrets.E2E_CAPTCHA_TOKEN }}
+          E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+          FLOWS: ${{ github.event.inputs.flows || 'fumaca' }}
+        run: npm run test:e2e -- $FLOWS
+
+      - name: Guardar os prints das falhas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prints-selenium
+          path: e2e/screenshots/
+          if-no-files-found: ignore
